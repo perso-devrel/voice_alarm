@@ -278,6 +278,10 @@
     "thanks": "💝 고마워",
     "thanked": "💝 고마움을 전했어요"
   },
+  "offline": {
+    "banner": "오프라인 상태입니다",
+    "cachedData": "마지막으로 저장된 데이터를 표시합니다"
+  },
   "login": {
     "google": "Google로 계속하기",
     "apple": "Apple로 계속하기"

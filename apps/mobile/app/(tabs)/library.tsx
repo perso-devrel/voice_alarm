@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,8 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { getLibrary, toggleFavorite } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
+import { cacheLibrary, getCachedLibrary } from '../../src/services/offlineCache';
 import { ErrorView } from '../../src/components/QueryStateView';
 import { Audio } from 'expo-av';
 import type { LibraryItem } from '../../src/types';
@@ -28,6 +30,12 @@ export default function LibraryScreen() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const { t } = useTranslation();
+  const isConnected = useNetworkStatus();
+  const [cachedItems, setCachedItems] = useState<LibraryItem[] | null>(null);
+
+  useEffect(() => {
+    getCachedLibrary().then(setCachedItems);
+  }, []);
 
   const {
     data: items,
@@ -37,8 +45,18 @@ export default function LibraryScreen() {
   } = useQuery({
     queryKey: ['library', filter],
     queryFn: () => getLibrary(filter === 'favorite' ? 'favorite' : undefined),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
+
+  useEffect(() => {
+    if (items && items.length > 0 && filter === 'all') {
+      cacheLibrary(items);
+      setCachedItems(items);
+    }
+  }, [items, filter]);
+
+  const displayItems = items ?? (filter === 'all' ? cachedItems : null);
+  const showingCached = !items && !!cachedItems && !isConnected && filter === 'all';
 
   const favoriteMutation = useMutation({
     mutationFn: toggleFavorite,
@@ -162,11 +180,17 @@ export default function LibraryScreen() {
         </TouchableOpacity>
       </View>
 
-      {isLoading ? (
+      {showingCached && (
+        <View style={styles.cachedBanner}>
+          <Text style={styles.cachedText}>{t('offline.cachedData')}</Text>
+        </View>
+      )}
+
+      {isLoading && !cachedItems ? (
         <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
-      ) : isError ? (
+      ) : isError && !cachedItems ? (
         <ErrorView onRetry={refetch} />
-      ) : items?.length === 0 ? (
+      ) : displayItems?.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>📭</Text>
           <Text style={styles.emptyText}>
@@ -175,7 +199,7 @@ export default function LibraryScreen() {
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={displayItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
@@ -230,6 +254,19 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: '#FFF',
+  },
+  cachedBanner: {
+    backgroundColor: Colors.light.surfaceVariant,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  cachedText: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
   },
   list: {
     padding: Spacing.lg,

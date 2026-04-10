@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
-import { Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../src/constants/theme';
+import { OfflineBanner } from '../../src/components/OfflineBanner';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
@@ -19,15 +20,17 @@ export default function TabLayout() {
   const { t } = useTranslation();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: Colors.light.primary,
-        tabBarInactiveTintColor: Colors.light.textTertiary,
-        tabBarLabelStyle: styles.tabLabel,
-      }}
-    >
+    <View style={styles.root}>
+      <OfflineBanner />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: Colors.light.primary,
+          tabBarInactiveTintColor: Colors.light.textTertiary,
+          tabBarLabelStyle: styles.tabLabel,
+        }}
+      >
       <Tabs.Screen
         name="index"
         options={{
@@ -71,10 +74,14 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   tabBar: {
     backgroundColor: '#FFFFFF',
     borderTopColor: Colors.light.border,

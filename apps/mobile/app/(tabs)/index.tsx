@@ -17,18 +17,30 @@ import { getAlarms, getMessages } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import LoginButtons from '../../src/components/LoginButtons';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
+import {
+  cacheAlarms,
+  getCachedAlarms,
+  cacheMessages,
+  getCachedMessages,
+} from '../../src/services/offlineCache';
 import { Audio } from 'expo-av';
-import type { Alarm } from '../../src/types';
+import type { Alarm, Message } from '../../src/types';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { isAuthenticated, hasCompletedOnboarding, setPlaying, currentPlayingId } = useAppStore();
+  const isConnected = useNetworkStatus();
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
+  const [cachedAlarmsList, setCachedAlarmsList] = useState<Alarm[] | null>(null);
+  const [cachedMessagesList, setCachedMessagesList] = useState<Message[] | null>(null);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
+    getCachedAlarms().then(setCachedAlarmsList);
+    getCachedMessages().then(setCachedMessagesList);
   }, []);
   useEffect(() => {
     if (mounted && !hasCompletedOnboarding) {
@@ -43,7 +55,7 @@ export default function HomeScreen() {
   } = useQuery({
     queryKey: ['alarms'],
     queryFn: getAlarms,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
 
   const {
@@ -53,8 +65,25 @@ export default function HomeScreen() {
   } = useQuery({
     queryKey: ['messages'],
     queryFn: () => getMessages(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
+
+  useEffect(() => {
+    if (alarms && alarms.length > 0) {
+      cacheAlarms(alarms);
+      setCachedAlarmsList(alarms);
+    }
+  }, [alarms]);
+
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      cacheMessages(messages);
+      setCachedMessagesList(messages);
+    }
+  }, [messages]);
+
+  const displayAlarms = alarms ?? cachedAlarmsList;
+  const displayMessages = messages ?? cachedMessagesList;
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -74,8 +103,8 @@ export default function HomeScreen() {
   };
 
   const greeting = getTimeGreeting();
-  const nextAlarm = alarms?.find((a: Alarm) => a.is_active);
-  const latestMessage = messages?.[0];
+  const nextAlarm = displayAlarms?.find((a: Alarm) => a.is_active);
+  const latestMessage = displayMessages?.[0];
 
   const handlePlayMessage = async (messageId: string) => {
     if (currentSound) {

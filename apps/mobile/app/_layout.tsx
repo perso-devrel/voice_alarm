@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../src/stores/useAppStore';
 import { setupAudioSession, ensureAudioDir } from '../src/services/audio';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 import '../src/i18n';
 
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <StatusBar style="dark" />
+        <OfflineBanner />
         <Stack
           screenOptions={{
             headerShown: false,

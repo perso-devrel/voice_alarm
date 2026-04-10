@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +18,8 @@ import { getAlarms, updateAlarm, deleteAlarm } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { ErrorView } from '../../src/components/QueryStateView';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
+import { cacheAlarms, getCachedAlarms } from '../../src/services/offlineCache';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 
@@ -25,6 +28,12 @@ export default function AlarmsScreen() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const isConnected = useNetworkStatus();
+  const [cachedAlarms, setCachedAlarms] = useState<Alarm[] | null>(null);
+
+  useEffect(() => {
+    getCachedAlarms().then(setCachedAlarms);
+  }, []);
 
   const {
     data: alarms,
@@ -34,8 +43,18 @@ export default function AlarmsScreen() {
   } = useQuery({
     queryKey: ['alarms'],
     queryFn: getAlarms,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
+
+  useEffect(() => {
+    if (alarms && alarms.length > 0) {
+      cacheAlarms(alarms);
+      setCachedAlarms(alarms);
+    }
+  }, [alarms]);
+
+  const displayAlarms = alarms ?? cachedAlarms;
+  const showingCached = !alarms && !!cachedAlarms && !isConnected;
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
@@ -117,11 +136,17 @@ export default function AlarmsScreen() {
         </TouchableOpacity>
       </View>
 
-      {isLoading ? (
+      {showingCached && (
+        <View style={styles.cachedBanner}>
+          <Text style={styles.cachedText}>{t('offline.cachedData')}</Text>
+        </View>
+      )}
+
+      {isLoading && !cachedAlarms ? (
         <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
-      ) : isError ? (
+      ) : isError && !cachedAlarms ? (
         <ErrorView onRetry={refetch} />
-      ) : alarms?.length === 0 ? (
+      ) : displayAlarms?.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>⏰</Text>
           <Text style={styles.emptyTitle}>{t('alarms.emptyTitle')}</Text>
@@ -132,7 +157,7 @@ export default function AlarmsScreen() {
         </View>
       ) : (
         <FlatList
-          data={alarms}
+          data={displayAlarms}
           keyExtractor={(item) => item.id}
           renderItem={renderAlarm}
           contentContainerStyle={styles.list}
@@ -169,6 +194,19 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: FontSize.md,
     fontWeight: '600',
+  },
+  cachedBanner: {
+    backgroundColor: Colors.light.surfaceVariant,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  cachedText: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
   },
   list: {
     padding: Spacing.lg,

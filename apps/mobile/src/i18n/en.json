@@ -278,6 +278,10 @@
     "thanks": "💝 Thank you",
     "thanked": "💝 You sent your thanks"
   },
+  "offline": {
+    "banner": "You are offline",
+    "cachedData": "Showing last saved data"
+  },
   "login": {
     "google": "Continue with Google",
     "apple": "Continue with Apple"
