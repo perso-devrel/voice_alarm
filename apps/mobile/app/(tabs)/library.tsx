@@ -13,11 +13,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getLibrary, toggleFavorite } from '../../src/services/api';
-import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { cacheLibrary, getCachedLibrary } from '../../src/services/offlineCache';
 import { ErrorView } from '../../src/components/QueryStateView';
+import { MiniWaveformPlayer } from '../../src/components/MiniWaveformPlayer';
 import { Audio } from 'expo-av';
 import type { LibraryItem } from '../../src/types';
 
@@ -68,31 +68,17 @@ export default function LibraryScreen() {
     },
   });
 
-  const handlePlay = async (messageId: string) => {
+  const handleMiniPlay = (messageId: string, sound: Audio.Sound) => {
     if (currentSound) {
-      await currentSound.unloadAsync();
-      setCurrentSound(null);
+      currentSound.unloadAsync();
     }
+    setCurrentSound(sound);
+    setPlaying(messageId);
+  };
 
-    if (currentPlayingId === messageId) {
-      setPlaying(null);
-      return;
-    }
-
-    const cached = await isAudioCached(messageId);
-    if (cached) {
-      const localPath = getLocalAudioPath(messageId);
-      const sound = await playAudio(localPath);
-      setCurrentSound(sound);
-      setPlaying(messageId);
-
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if ('didJustFinish' in status && status.didJustFinish) {
-          setPlaying(null);
-          setCurrentSound(null);
-        }
-      });
-    }
+  const handleMiniStop = () => {
+    setPlaying(null);
+    setCurrentSound(null);
   };
 
   const getCategoryEmoji = (category: string) => {
@@ -110,49 +96,52 @@ export default function LibraryScreen() {
     return map[category] || '💌';
   };
 
-  const renderItem = ({ item }: { item: LibraryItem }) => (
-    <TouchableOpacity
-      style={styles.messageCard}
-      onPress={() => handlePlay(item.message_id)}
-      activeOpacity={0.8}
-    >
-      <View style={styles.messageLeft}>
-        <View style={styles.avatarSmall}>
-          <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
-        </View>
-        <View style={styles.messageContent}>
-          <View style={styles.messageHeader}>
-            <Text style={styles.voiceName}>{item.voice_name}</Text>
-            <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
+  const renderItem = ({ item }: { item: LibraryItem }) => {
+    const isActive = currentPlayingId === item.message_id;
+    return (
+      <View style={styles.messageCard}>
+        <View style={styles.messageLeft}>
+          <View style={styles.avatarSmall}>
+            <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
           </View>
-          <Text style={styles.messageText} numberOfLines={2}>
-            "{item.text}"
-          </Text>
-          <Text style={styles.messageDate}>
-            {new Date(item.received_at).toLocaleDateString('ko-KR', {
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
+          <View style={styles.messageContent}>
+            <View style={styles.messageHeader}>
+              <Text style={styles.voiceName}>{item.voice_name}</Text>
+              <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
+            </View>
+            <Text style={styles.messageText} numberOfLines={2}>
+              "{item.text}"
+            </Text>
+            <View style={styles.miniPlayerRow}>
+              <MiniWaveformPlayer
+                messageId={item.message_id}
+                isActive={isActive}
+                onPlay={handleMiniPlay}
+                onStop={handleMiniStop}
+              />
+            </View>
+            <Text style={styles.messageDate}>
+              {new Date(item.received_at).toLocaleDateString('ko-KR', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.messageActions}>
+          <TouchableOpacity
+            onPress={() => favoriteMutation.mutate(item.id)}
+            hitSlop={8}
+          >
+            <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.messageActions}>
-        {currentPlayingId === item.message_id && <Text style={styles.playingIndicator}>♫</Text>}
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            favoriteMutation.mutate(item.id);
-          }}
-          hitSlop={8}
-        >
-          <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -320,6 +309,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 18,
   },
+  miniPlayerRow: {
+    marginTop: Spacing.xs,
+  },
   messageDate: {
     fontSize: FontSize.xs,
     color: Colors.light.textTertiary,
@@ -329,10 +321,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-  },
-  playingIndicator: {
-    fontSize: 18,
-    color: Colors.light.primary,
   },
   favoriteIcon: {
     fontSize: 20,

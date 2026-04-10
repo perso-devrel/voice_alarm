@@ -65,7 +65,8 @@
     "once": "한 번만",
     "daily": "매일",
     "weekday": "평일",
-    "weekend": "주말"
+    "weekend": "주말",
+    "nextIn": "다음 알람까지"
   },
   "voices": {
     "title": "음성 프로필",

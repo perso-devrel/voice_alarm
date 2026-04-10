@@ -18,6 +18,14 @@ import { requestMicPermission, startRecording, stopRecording } from '../../src/s
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 
+const LEVEL_BAR_COUNT = 20;
+const LEVEL_HISTORY_SIZE = 20;
+
+function dbToNormalized(db: number): number {
+  const clamped = Math.max(-60, Math.min(0, db));
+  return (clamped + 60) / 60;
+}
+
 export default function RecordScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -30,14 +38,19 @@ export default function RecordScreen() {
   const [duration, setDuration] = useState(0);
   const [name, setName] = useState('');
   const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
+  const [levelHistory, setLevelHistory] = useState<number[]>(
+    () => new Array(LEVEL_HISTORY_SIZE).fill(0),
+  );
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const meteringRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     requestMicPermission().then(setHasPermission);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (meteringRef.current) clearInterval(meteringRef.current);
     };
   }, []);
 
@@ -61,14 +74,27 @@ export default function RecordScreen() {
 
   const handleStartRecording = async () => {
     try {
-      const rec = await startRecording();
+      const rec = await startRecording(true);
       setRecording(rec);
       setIsRecording(true);
       setDuration(0);
+      setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
 
       timerRef.current = setInterval(() => {
         setDuration((d) => d + 1);
       }, 1000);
+
+      meteringRef.current = setInterval(async () => {
+        try {
+          const status = await rec.getStatusAsync();
+          if (status.isRecording && status.metering != null) {
+            const level = dbToNormalized(status.metering);
+            setLevelHistory((prev) => [...prev.slice(1), level]);
+          }
+        } catch {
+          // recording may have stopped
+        }
+      }, 100);
 
       Animated.loop(
         Animated.sequence([
@@ -84,6 +110,7 @@ export default function RecordScreen() {
   const handleStopRecording = async () => {
     if (!recording) return;
     if (timerRef.current) clearInterval(timerRef.current);
+    if (meteringRef.current) clearInterval(meteringRef.current);
     pulseAnim.stopAnimation();
     pulseAnim.setValue(1);
 
@@ -151,6 +178,28 @@ export default function RecordScreen() {
             )}
           </TouchableOpacity>
         </Animated.View>
+
+        {isRecording && (
+          <View style={styles.levelContainer}>
+            {levelHistory.map((level, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.levelBar,
+                  {
+                    height: Math.max(3, level * 40),
+                    backgroundColor:
+                      level > 0.7
+                        ? Colors.light.primary
+                        : level > 0.3
+                          ? Colors.light.primaryLight
+                          : Colors.light.border,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        )}
 
         <Text style={styles.recordHint}>
           {isRecording ? t('voiceRecord.recording') : t('voiceRecord.tapToRecord')}
@@ -308,6 +357,20 @@ const styles = StyleSheet.create({
   micIcon: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  levelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    gap: 2,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
+  levelBar: {
+    width: 3,
+    borderRadius: 1.5,
+    minHeight: 3,
   },
   recordHint: {
     fontSize: FontSize.sm,

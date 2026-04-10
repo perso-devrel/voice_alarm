@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,47 @@ import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 
+function getNextFireMs(alarm: Alarm): number | null {
+  if (!alarm.is_active) return null;
+  const [h, m] = alarm.time.split(':').map(Number);
+  const days: number[] = JSON.parse(alarm.repeat_days || '[]');
+  const now = new Date();
+  const todayMinutes = now.getHours() * 60 + now.getMinutes();
+  const alarmMinutes = h * 60 + m;
+  const todayDow = now.getDay();
+
+  if (days.length === 0) {
+    const target = new Date(now);
+    target.setHours(h, m, 0, 0);
+    if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+    return target.getTime() - now.getTime();
+  }
+
+  for (let offset = 0; offset <= 7; offset++) {
+    const dow = (todayDow + offset) % 7;
+    if (!days.includes(dow)) continue;
+    if (offset === 0 && alarmMinutes <= todayMinutes) continue;
+    const target = new Date(now);
+    target.setDate(target.getDate() + offset);
+    target.setHours(h, m, 0, 0);
+    return target.getTime() - now.getTime();
+  }
+  return null;
+}
+
+function formatCountdown(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remHours = hours % 24;
+    return `${days}일 ${remHours}시간`;
+  }
+  if (hours > 0) return `${hours}시간 ${mins}분`;
+  return `${mins}분`;
+}
+
 export default function AlarmsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -31,6 +72,8 @@ export default function AlarmsScreen() {
   const { t } = useTranslation();
   const isConnected = useNetworkStatus();
   const [cachedAlarms, setCachedAlarms] = useState<Alarm[] | null>(null);
+  const [countdownText, setCountdownText] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     getCachedAlarms().then(setCachedAlarms);
@@ -46,6 +89,26 @@ export default function AlarmsScreen() {
     queryFn: getAlarms,
     enabled: isAuthenticated && isConnected,
   });
+
+  const computeCountdown = useCallback(() => {
+    const all = alarms ?? cachedAlarms;
+    if (!all || all.length === 0) { setCountdownText(null); return; }
+    let nearest = Infinity;
+    for (const a of all) {
+      const ms = getNextFireMs(a);
+      if (ms !== null && ms < nearest) nearest = ms;
+    }
+    setCountdownText(nearest < Infinity ? formatCountdown(nearest) : null);
+  }, [alarms, cachedAlarms]);
+
+  useEffect(() => {
+    computeCountdown();
+    const id = setInterval(() => {
+      computeCountdown();
+      setTick((t) => t + 1);
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [computeCountdown]);
 
   useEffect(() => {
     if (alarms && alarms.length > 0) {
@@ -107,6 +170,9 @@ export default function AlarmsScreen() {
 
   const renderAlarm = ({ item }: { item: Alarm }) => {
     const repeatDays = JSON.parse(item.repeat_days || '[]');
+    void tick;
+    const nextFireMs = getNextFireMs(item);
+    const perAlarmCountdown = nextFireMs !== null ? formatCountdown(nextFireMs) : null;
     return (
       <TouchableOpacity
         style={[styles.alarmCard, !item.is_active && styles.alarmCardInactive]}
@@ -117,9 +183,14 @@ export default function AlarmsScreen() {
           <Text style={[styles.alarmTime, !item.is_active && styles.textInactive]}>
             {item.time}
           </Text>
-          <Text style={[styles.alarmRepeat, !item.is_active && styles.textInactive]}>
-            {formatRepeatDays(repeatDays)}
-          </Text>
+          <View style={styles.alarmSubRow}>
+            <Text style={[styles.alarmRepeat, !item.is_active && styles.textInactive]}>
+              {formatRepeatDays(repeatDays)}
+            </Text>
+            {perAlarmCountdown && (
+              <Text style={styles.alarmCountdown}>{perAlarmCountdown}</Text>
+            )}
+          </View>
           <View style={styles.alarmMeta}>
             <Text style={styles.alarmVoice}>🗣️ {item.voice_name}</Text>
             <Text style={styles.alarmMessage} numberOfLines={1}>
@@ -148,6 +219,13 @@ export default function AlarmsScreen() {
           <Text style={styles.addButtonText}>{t('alarms.add')}</Text>
         </TouchableOpacity>
       </View>
+
+      {countdownText && (
+        <View style={styles.countdownBanner}>
+          <Text style={styles.countdownLabel}>{t('alarms.nextIn')}</Text>
+          <Text style={styles.countdownValue}>{countdownText}</Text>
+        </View>
+      )}
 
       {showingCached && (
         <View style={styles.cachedBanner}>
@@ -208,6 +286,27 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '600',
   },
+  countdownBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.primaryLight + '33',
+  },
+  countdownLabel: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+  },
+  countdownValue: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.light.primary,
+  },
   cachedBanner: {
     backgroundColor: Colors.light.surfaceVariant,
     marginHorizontal: Spacing.lg,
@@ -252,10 +351,20 @@ const styles = StyleSheet.create({
   textInactive: {
     color: Colors.light.textTertiary,
   },
+  alarmSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: 2,
+  },
   alarmRepeat: {
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
-    marginTop: 2,
+  },
+  alarmCountdown: {
+    fontSize: FontSize.xs,
+    color: Colors.light.primary,
+    fontWeight: '600',
   },
   alarmMeta: {
     marginTop: Spacing.sm,

@@ -71,10 +71,14 @@ export async function requestMicPermission(): Promise<boolean> {
 }
 
 /** 녹음 시작 */
-export async function startRecording(): Promise<Audio.Recording> {
+export async function startRecording(enableMetering = false): Promise<Audio.Recording> {
   await setupAudioSession();
   const recording = new Audio.Recording();
-  await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+  const options = {
+    ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+    isMeteringEnabled: enableMetering,
+  };
+  await recording.prepareToRecordAsync(options);
   await recording.startAsync();
   return recording;
 }

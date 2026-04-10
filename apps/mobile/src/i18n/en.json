@@ -65,7 +65,8 @@
     "once": "Once",
     "daily": "Daily",
     "weekday": "Weekdays",
-    "weekend": "Weekends"
+    "weekend": "Weekends",
+    "nextIn": "Next alarm in"
   },
   "voices": {
     "title": "Voice Profiles",

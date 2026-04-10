@@ -10,6 +10,7 @@ import {
 } from '../services/api';
 import type { VoiceProfile, Message, PresetCategory, Friend } from '../types';
 import { getApiErrorMessage } from '../types';
+import { InlineAudioPlayer } from '../components/InlineAudioPlayer';
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   morning: '🌅',
@@ -219,9 +220,10 @@ export default function MessagesPage() {
                   className="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] flex items-center gap-4 transition-colors"
                 >
                   <span className="text-2xl">{CATEGORY_EMOJIS[msg.category] || '💌'}</span>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[var(--color-primary)]">{msg.voice_name}</p>
                     <p className="text-[var(--color-text)]">"{msg.text}"</p>
+                    {msg.audio_url && <InlineAudioPlayer audioUrl={msg.audio_url} />}
                     <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
                       {new Date(msg.created_at).toLocaleDateString('ko-KR')}
                     </p>

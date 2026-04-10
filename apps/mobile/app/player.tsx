@@ -1,36 +1,75 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  PanResponder,
+  LayoutChangeEvent,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../src/constants/theme';
 import { playAudio, getLocalAudioPath } from '../src/services/audio';
 import { useAppStore } from '../src/stores/useAppStore';
+import { generateWaveform, formatTime } from '../src/utils/waveform';
 
 const WAVEFORM_BAR_COUNT = 48;
 const WAVEFORM_BAR_WIDTH = 3;
 const WAVEFORM_BAR_GAP = 2;
 const WAVEFORM_HEIGHT = 56;
-function generateWaveform(seed: string): number[] {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-  }
-  const bars: number[] = [];
-  for (let i = 0; i < WAVEFORM_BAR_COUNT; i++) {
-    hash = ((hash * 1103515245 + 12345) & 0x7fffffff);
-    const normalized = (hash % 1000) / 1000;
-    const envelope = Math.sin((i / WAVEFORM_BAR_COUNT) * Math.PI);
-    bars.push(0.15 + normalized * 0.85 * (0.3 + envelope * 0.7));
-  }
-  return bars;
-}
+const WAVEFORM_TOTAL_WIDTH = WAVEFORM_BAR_COUNT * (WAVEFORM_BAR_WIDTH + WAVEFORM_BAR_GAP);
+const ACTIVE_PULSE_RANGE = 3;
 
-function formatTime(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${sec.toString().padStart(2, '0')}`;
+function WaveformBar({
+  height,
+  played,
+  isNearPlayhead,
+  isPlaying,
+}: {
+  height: number;
+  played: boolean;
+  isNearPlayhead: boolean;
+  isPlaying: boolean;
+}) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (isPlaying && isNearPlayhead) {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.25,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      animation.start();
+      return () => animation.stop();
+    }
+    pulseAnim.setValue(1);
+  }, [isPlaying, isNearPlayhead, pulseAnim]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.waveformBar,
+        {
+          height: height * WAVEFORM_HEIGHT,
+          backgroundColor: played ? Colors.light.primary : Colors.light.primaryLight,
+          transform: [{ scaleY: pulseAnim }],
+        },
+      ]}
+    />
+  );
 }
 
 export default function PlayerScreen() {
@@ -50,26 +89,87 @@ export default function PlayerScreen() {
   const [progress, setProgress] = useState(0);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const waveformWidth = useRef(WAVEFORM_TOTAL_WIDTH);
+  const progressRef = useRef(0);
+  const durationRef = useRef(0);
+  const playheadAnim = useRef(new Animated.Value(0)).current;
 
   const waveformBars = useMemo(
-    () => generateWaveform(params.messageId || 'default'),
+    () => generateWaveform(params.messageId || 'default', WAVEFORM_BAR_COUNT),
     [params.messageId],
   );
 
-  const onPlaybackStatus = useCallback((status: AVPlaybackStatus) => {
-    if (!status.isLoaded) return;
-    if (status.durationMillis && status.durationMillis > 0) {
-      setDurationMs(status.durationMillis);
-      setPositionMs(status.positionMillis);
-      setProgress(status.positionMillis / status.durationMillis);
+  const activeBarIndex = Math.floor(progress * WAVEFORM_BAR_COUNT);
+
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  useEffect(() => {
+    durationRef.current = durationMs;
+  }, [durationMs]);
+
+  useEffect(() => {
+    if (!isSeeking) {
+      playheadAnim.setValue(progress);
     }
-    if (status.didJustFinish) {
-      setIsPlaying(false);
-      setPlaying(null);
-      setProgress(1);
-    }
-  }, [setPlaying]);
+  }, [progress, isSeeking, playheadAnim]);
+
+  const seekToPosition = useCallback(
+    async (x: number) => {
+      const w = waveformWidth.current;
+      const clamped = Math.max(0, Math.min(x, w));
+      const seekProgress = clamped / w;
+      const dur = durationRef.current;
+      setProgress(seekProgress);
+      setPositionMs(seekProgress * dur);
+      playheadAnim.setValue(seekProgress);
+      if (soundRef.current && dur > 0) {
+        await soundRef.current.setPositionAsync(seekProgress * dur);
+      }
+    },
+    [playheadAnim],
+  );
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (evt) => {
+          setIsSeeking(true);
+          seekToPosition(evt.nativeEvent.locationX);
+        },
+        onPanResponderMove: (evt) => {
+          seekToPosition(evt.nativeEvent.locationX);
+        },
+        onPanResponderRelease: () => {
+          setIsSeeking(false);
+        },
+      }),
+    [seekToPosition],
+  );
+
+  const onPlaybackStatus = useCallback(
+    (status: AVPlaybackStatus) => {
+      if (!status.isLoaded) return;
+      if (status.durationMillis && status.durationMillis > 0) {
+        setDurationMs(status.durationMillis);
+        if (!isSeeking) {
+          setPositionMs(status.positionMillis);
+          setProgress(status.positionMillis / status.durationMillis);
+        }
+      }
+      if (status.didJustFinish) {
+        setIsPlaying(false);
+        setPlaying(null);
+        setProgress(1);
+      }
+    },
+    [setPlaying, isSeeking],
+  );
 
   const getBackgroundColor = () => {
     const map: Record<string, string[]> = {
@@ -125,15 +225,6 @@ export default function PlayerScreen() {
     newSound.setOnPlaybackStatusUpdate(onPlaybackStatus);
   };
 
-  const handleSeek = async (barIndex: number) => {
-    if (!sound || durationMs <= 0) return;
-    const seekProgress = barIndex / WAVEFORM_BAR_COUNT;
-    const seekMs = seekProgress * durationMs;
-    await sound.setPositionAsync(seekMs);
-    setProgress(seekProgress);
-    setPositionMs(seekMs);
-  };
-
   const handleClose = async () => {
     if (sound) {
       await sound.unloadAsync();
@@ -142,6 +233,15 @@ export default function PlayerScreen() {
     router.back();
   };
 
+  const onWaveformLayout = (e: LayoutChangeEvent) => {
+    waveformWidth.current = e.nativeEvent.layout.width;
+  };
+
+  const playheadLeft = playheadAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, WAVEFORM_TOTAL_WIDTH],
+  });
+
   return (
     <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
       <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
@@ -149,10 +249,8 @@ export default function PlayerScreen() {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        {/* 아이콘 */}
         <Text style={styles.categoryEmoji}>{getEmoji()}</Text>
 
-        {/* 프로필 */}
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{params.voiceName?.charAt(0) || '?'}</Text>
@@ -160,34 +258,35 @@ export default function PlayerScreen() {
           <Text style={styles.voiceName}>{params.voiceName}</Text>
         </View>
 
-        {/* 메시지 */}
         <Text style={styles.messageText}>"{params.text}"</Text>
 
-        {/* 파형 시각화 */}
         <View style={styles.waveformContainer}>
-          <View style={styles.waveformBars}>
+          <View
+            style={styles.waveformBars}
+            onLayout={onWaveformLayout}
+            {...panResponder.panHandlers}
+          >
             {waveformBars.map((height, i) => {
               const played = i / WAVEFORM_BAR_COUNT < progress;
+              const distance = Math.abs(i - activeBarIndex);
+              const isNearPlayhead = distance <= ACTIVE_PULSE_RANGE;
               return (
-                <TouchableOpacity
-                  key={i}
-                  onPress={() => handleSeek(i)}
-                  style={styles.waveformBarTouch}
-                >
-                  <View
-                    style={[
-                      styles.waveformBar,
-                      {
-                        height: height * WAVEFORM_HEIGHT,
-                        backgroundColor: played
-                          ? Colors.light.primary
-                          : Colors.light.primaryLight,
-                      },
-                    ]}
+                <View key={i} style={styles.waveformBarTouch}>
+                  <WaveformBar
+                    height={height}
+                    played={played}
+                    isNearPlayhead={isNearPlayhead}
+                    isPlaying={isPlaying}
                   />
-                </TouchableOpacity>
+                </View>
               );
             })}
+            <Animated.View
+              style={[
+                styles.playhead,
+                { transform: [{ translateX: playheadLeft }] },
+              ]}
+            />
           </View>
           <View style={styles.timeRow}>
             <Text style={styles.timeText}>{formatTime(positionMs)}</Text>
@@ -197,12 +296,10 @@ export default function PlayerScreen() {
           </View>
         </View>
 
-        {/* 재생 컨트롤 */}
         <TouchableOpacity style={styles.playButton} onPress={handlePlay}>
           <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶️'}</Text>
         </TouchableOpacity>
 
-        {/* 반응 */}
         {!reacted ? (
           <TouchableOpacity style={styles.reactionButton} onPress={() => setReacted(true)}>
             <Text style={styles.reactionText}>{t('player.thanks')}</Text>
@@ -291,6 +388,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: WAVEFORM_HEIGHT,
+    position: 'relative',
   },
   waveformBarTouch: {
     width: WAVEFORM_BAR_WIDTH + WAVEFORM_BAR_GAP,
@@ -301,6 +399,15 @@ const styles = StyleSheet.create({
   waveformBar: {
     width: WAVEFORM_BAR_WIDTH,
     borderRadius: WAVEFORM_BAR_WIDTH / 2,
+  },
+  playhead: {
+    position: 'absolute',
+    left: 0,
+    top: -2,
+    width: 2,
+    height: WAVEFORM_HEIGHT + 4,
+    backgroundColor: Colors.light.primaryDark,
+    borderRadius: 1,
   },
   timeRow: {
     flexDirection: 'row',

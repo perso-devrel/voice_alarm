@@ -70,18 +70,29 @@ friend.post('/', async (c) => {
 friend.get('/list', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '20', 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  const result = await db.execute({
-    sql: `SELECT f.id, f.user_a, f.user_b, f.created_at,
-            u.email as friend_email, u.name as friend_name, u.picture as friend_picture
-          FROM friendships f
-          JOIN users u ON u.google_id = CASE WHEN f.user_a = ? THEN f.user_b ELSE f.user_a END
-          WHERE (f.user_a = ? OR f.user_b = ?) AND f.status = 'accepted'
-          ORDER BY f.created_at DESC`,
-    args: [userId, userId, userId],
-  });
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: `SELECT COUNT(*) as total FROM friendships
+            WHERE (user_a = ? OR user_b = ?) AND status = 'accepted'`,
+      args: [userId, userId],
+    }),
+    db.execute({
+      sql: `SELECT f.id, f.user_a, f.user_b, f.created_at,
+              u.email as friend_email, u.name as friend_name, u.picture as friend_picture
+            FROM friendships f
+            JOIN users u ON u.google_id = CASE WHEN f.user_a = ? THEN f.user_b ELSE f.user_a END
+            WHERE (f.user_a = ? OR f.user_b = ?) AND f.status = 'accepted'
+            ORDER BY f.created_at DESC
+            LIMIT ? OFFSET ?`,
+      args: [userId, userId, userId, limit, offset],
+    }),
+  ]);
 
-  return c.json({ friends: result.rows });
+  const total = Number(countRes.rows[0].total);
+  return c.json({ friends: result.rows, total, limit, offset });
 });
 
 /** 대기 중인 친구 요청 (내가 받은 것) */

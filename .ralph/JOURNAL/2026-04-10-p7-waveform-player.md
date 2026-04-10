@@ -10,24 +10,23 @@ slug: p7-waveform-player
 
 ## 접근
 
-실제 오디오 amplitude 분석은 expo-av에서 직접 지원하지 않고 별도 네이티브 모듈이 필요하므로, messageId 기반 deterministic pseudo-waveform 생성 방식 채택:
+### 1차 (이전 루프)
+messageId 기반 deterministic pseudo-waveform: LCG + sin envelope → 48개 바. 탭 seek, progress 추적, 시간 표시.
 
-- LCG(Linear Congruential Generator)로 messageId 해시 → 48개 바 높이 생성
-- sin envelope 적용으로 자연스러운 음성 파형 형태 (양끝 낮고 중간 높음)
-- `onPlaybackStatusUpdate`에서 `positionMillis / durationMillis`로 실시간 progress 추적
-- 재생된 바는 primary 색상, 미재생은 primaryLight로 구분
-- 각 바 탭 시 해당 위치로 seek 가능
-- 하단에 현재 위치 / 전체 길이 시간 표시
-- 재생 완료 후 다시 재생 시 처음부터 시작
-
-대안: `react-native-audio-waveform` 등 외부 라이브러리 — 네이티브 빌드 필요 + dev-client 재빌드 비용이 커서 기각. TTS 음성은 대부분 짧고 정형화되어 pseudo-waveform으로 충분.
+### 2차 (이번 루프) — 인터랙션 + 애니메이션 강화
+1. **PanResponder 드래그 시킹**: 파형 위를 드래그하여 연속 seek. isSeeking 플래그로 드래그 중 onPlaybackStatus 위치 업데이트 무시 → UI 떨림 방지.
+2. **WaveformBar 펄스 애니메이션**: 플레이헤드 근처 ±3개 바가 scaleY 1→1.25로 펄싱 (Animated.loop, useNativeDriver).
+3. **Animated 플레이헤드 인디케이터**: 2px primaryDark 세로선이 progress에 따라 translateX 이동.
+4. **유틸리티 추출**: 린터가 generateWaveform/formatTime을 src/utils/waveform.ts로 자동 추출.
 
 ## 변경 파일
-1. `apps/mobile/app/player.tsx` — waveform 바 렌더링, playback progress 추적, seek, 시간 표시 추가
+1. `apps/mobile/app/player.tsx` — PanResponder, Animated playhead, WaveformBar 컴포넌트 분리, playhead 스타일
+2. `apps/mobile/src/utils/waveform.ts` — 린터 자동 생성 (generateWaveform, formatTime 추출)
 
 ## 검증 결과
 - Mobile `npx tsc --noEmit` — 통과
+- Backend `npx tsc --noEmit` — 통과
+- Web `npx tsc --noEmit` + `npm run build` — 통과
 
 ## 다음 루프 주의사항
-- P7 전체 완료. P8 새 항목 추가함
-- P8 첫 항목: 라이브러리 탭 인라인 미니 파형 플레이어 (generateWaveform 함수를 공용 유틸로 추출 고려)
+- P7 전체 완료. 다음은 미완료 항목 탐색 (P1 테스트 또는 자가 생성 풀).
