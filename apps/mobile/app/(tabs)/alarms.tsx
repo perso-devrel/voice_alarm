@@ -17,6 +17,7 @@ import { getAlarms, updateAlarm, deleteAlarm } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { ErrorView } from '../../src/components/QueryStateView';
+import type { Alarm, AxiosApiError } from '../../src/types';
 
 export default function AlarmsScreen() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function AlarmsScreen() {
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
       updateAlarm(id, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
-    onError: (err: any) => {
+    onError: (err: AxiosApiError) => {
       Alert.alert('오류', err.response?.data?.error ?? '알람 상태 변경에 실패했어요.');
     },
   });
@@ -41,7 +42,7 @@ export default function AlarmsScreen() {
   const deleteMutation = useMutation({
     mutationFn: deleteAlarm,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
-    onError: (err: any) => {
+    onError: (err: AxiosApiError) => {
       Alert.alert('오류', err.response?.data?.error ?? '알람 삭제에 실패했어요.');
     },
   });
@@ -65,7 +66,7 @@ export default function AlarmsScreen() {
     return days.map((d) => DAYS_OF_WEEK[d]).join(', ');
   };
 
-  const renderAlarm = ({ item }: { item: any }) => {
+  const renderAlarm = ({ item }: { item: Alarm }) => {
     const repeatDays = JSON.parse(item.repeat_days || '[]');
     return (
       <TouchableOpacity

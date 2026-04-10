@@ -15,6 +15,7 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { getMessages, createAlarm, getFriendList } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
+import type { Friend, Message, AxiosApiError } from '../../src/types';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function CreateAlarmScreen() {
         { text: '확인', onPress: () => router.back() },
       ]);
     },
-    onError: (err: any) => {
+    onError: (err: AxiosApiError) => {
       Alert.alert('오류', err.response?.data?.error || '알람 생성에 실패했습니다.');
     },
   });
@@ -95,7 +96,7 @@ export default function CreateAlarmScreen() {
             >
               <Text style={[styles.targetText, !targetUserId && styles.targetTextActive]}>나</Text>
             </TouchableOpacity>
-            {friends.map((f: any) => {
+            {friends.map((f: Friend) => {
               const friendId = f.user_a === userId ? f.user_b : f.user_a;
               const isSelected = targetUserId === friendId;
               return (
@@ -104,7 +105,7 @@ export default function CreateAlarmScreen() {
                   style={[styles.targetChip, isSelected && styles.targetChipActive]}
                   onPress={() => {
                     setTargetUserId(isSelected ? null : friendId);
-                    setTargetName(isSelected ? null : (f.friend_name || f.friend_email));
+                    setTargetName(isSelected ? null : (f.friend_name || f.friend_email || null));
                   }}
                 >
                   <Text style={[styles.targetText, isSelected && styles.targetTextActive]}>
@@ -218,7 +219,7 @@ export default function CreateAlarmScreen() {
         </TouchableOpacity>
       ) : (
         <View style={styles.messageList}>
-          {messages.map((msg: any) => (
+          {messages.map((msg: Message) => (
             <TouchableOpacity
               key={msg.id}
               style={[

@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { getApiErrorMessage } from '../../src/types';
 
 export default function ReceivedGiftsScreen() {
   const queryClient = useQueryClient();
@@ -28,8 +29,8 @@ export default function ReceivedGiftsScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
       Alert.alert('수락 완료', '메시지가 보관함에 추가되었습니다.');
     },
-    onError: (err: any) => {
-      Alert.alert('오류', err.response?.data?.error || '수락에 실패했습니다.');
+    onError: (err: unknown) => {
+      Alert.alert('오류', getApiErrorMessage(err, '수락에 실패했습니다.'));
     },
   });
 
@@ -38,8 +39,8 @@ export default function ReceivedGiftsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
     },
-    onError: (err: any) => {
-      Alert.alert('오류', err.response?.data?.error || '거절에 실패했습니다.');
+    onError: (err: unknown) => {
+      Alert.alert('오류', getApiErrorMessage(err, '거절에 실패했습니다.'));
     },
   });
 

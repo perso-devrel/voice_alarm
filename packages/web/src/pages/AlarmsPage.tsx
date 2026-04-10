@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAlarms, updateAlarm, deleteAlarm } from '../services/api';
+import type { Alarm } from '../types';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -48,7 +49,7 @@ export default function AlarmsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {alarms.map((alarm: any) => (
+          {alarms.map((alarm: Alarm) => (
             <div
               key={alarm.id}
               className={`bg-white rounded-2xl p-6 border border-[#F2E8E5] shadow-sm flex items-center gap-6 transition-opacity ${

@@ -16,6 +16,7 @@ import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/
 import { useAppStore } from '../../src/stores/useAppStore';
 import { ErrorView } from '../../src/components/QueryStateView';
 import { Audio } from 'expo-av';
+import type { LibraryItem } from '../../src/types';
 
 type FilterType = 'all' | 'favorite';
 
@@ -78,7 +79,7 @@ export default function LibraryScreen() {
     return map[category] || '💌';
   };
 
-  const renderItem = ({ item }: { item: any }) => (
+  const renderItem = ({ item }: { item: LibraryItem }) => (
     <TouchableOpacity
       style={styles.messageCard}
       onPress={() => handlePlay(item.message_id)}

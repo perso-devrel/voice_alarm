@@ -17,6 +17,7 @@ import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/
 import LoginButtons from '../../src/components/LoginButtons';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { Audio } from 'expo-av';
+import type { Alarm } from '../../src/types';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function HomeScreen() {
   };
 
   const greeting = getTimeGreeting();
-  const nextAlarm = alarms?.find((a: any) => a.is_active);
+  const nextAlarm = alarms?.find((a: Alarm) => a.is_active);
   const latestMessage = messages?.[0];
 
   const handlePlayMessage = async (messageId: string) => {

@@ -45,13 +45,13 @@
 - [x] 웹 대시보드 Cloudflare Pages 배포 검증 (자동배포 워크플로우 동작 확인)
 - [x] 백엔드 자동배포 워크플로우 동작 확인
 - [x] README 갱신 (현재 배포 상태, 환경변수, 실행 방법)
-- [ ] CHANGELOG.md 신규
-- [ ] ARCHITECTURE.md 신규 (다이어그램 + 데이터 흐름)
+- [x] CHANGELOG.md 신규
+- [x] ARCHITECTURE.md 신규 (다이어그램 + 데이터 흐름)
 
 ## P3 - 품질 / 성능 / 정리
 
 - [x] TypeScript strict 모드 위반 (any) 점검 — 백엔드 완료 (0 any), 모바일/웹은 별도
-- [ ] 모바일 앱 `any` 타입 제거 (apps/mobile)
+- [x] 모바일 앱 `any` 타입 제거 (apps/mobile)
 - [ ] 웹 대시보드 `any` 타입 제거 (packages/web)
 - [ ] 불필요한 의존성 점검
 - [ ] 모바일 앱 번들 크기 줄이기

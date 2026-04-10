@@ -19,6 +19,7 @@ import {
   stopRecording,
 } from '../../src/services/audio';
 import { createVoiceClone } from '../../src/services/api';
+import { getApiErrorMessage } from '../../src/types';
 
 const GUIDE_SENTENCES = [
   '안녕하세요, 오늘 하루도 좋은 하루 되세요.',
@@ -64,8 +65,8 @@ export default function RecordScreen() {
         [{ text: '확인', onPress: () => router.back() }]
       );
     },
-    onError: (err: any) => {
-      Alert.alert('오류', err.response?.data?.error || '음성 클론 생성에 실패했습니다.');
+    onError: (err: unknown) => {
+      Alert.alert('오류', getApiErrorMessage(err, '음성 클론 생성에 실패했습니다.'));
     },
   });
 

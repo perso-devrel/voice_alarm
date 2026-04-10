@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVoiceProfiles, createVoiceClone, diarizeAudio, deleteVoiceProfile } from '../services/api';
+import type { VoiceProfile } from '../types';
+import { getApiErrorMessage } from '../types';
 
 export default function VoicesPage() {
   const queryClient = useQueryClient();

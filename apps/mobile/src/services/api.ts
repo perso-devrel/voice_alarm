@@ -56,7 +56,7 @@ export async function createVoiceClone(
   provider: 'perso' | 'elevenlabs' = 'perso'
 ) {
   const formData = new FormData();
-  formData.append('audio', audioFile as any);
+  formData.append('audio', audioFile as unknown as Blob);
   formData.append('name', name);
   formData.append('provider', provider);
 
@@ -68,7 +68,7 @@ export async function createVoiceClone(
 
 export async function diarizeAudio(audioFile: { uri: string; name: string; type: string }) {
   const formData = new FormData();
-  formData.append('audio', audioFile as any);
+  formData.append('audio', audioFile as unknown as Blob);
 
   const { data } = await api.post('/voice/diarize', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

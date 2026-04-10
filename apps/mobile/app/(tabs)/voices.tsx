@@ -15,6 +15,7 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { getVoiceProfiles, deleteVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { ErrorView } from '../../src/components/QueryStateView';
+import type { VoiceProfile, AxiosApiError } from '../../src/types';
 
 export default function VoicesScreen() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function VoicesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
     },
-    onError: (err: any) => {
+    onError: (err: AxiosApiError) => {
       Alert.alert('오류', err.response?.data?.error ?? '음성 프로필 삭제에 실패했어요.');
     },
   });
@@ -65,7 +66,7 @@ export default function VoicesScreen() {
     }
   };
 
-  const renderProfile = ({ item }: { item: any }) => {
+  const renderProfile = ({ item }: { item: VoiceProfile }) => {
     const badge = getStatusBadge(item.status);
     return (
       <View style={styles.profileCard}>

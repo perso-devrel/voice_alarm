@@ -15,6 +15,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { diarizeAudio, createVoiceClone } from '../../src/services/api';
+import type { AxiosApiError } from '../../src/types';
 
 interface Speaker {
   speaker_id: string;
@@ -43,7 +44,7 @@ export default function DiarizeScreen() {
       setSpeakers(data);
       setStep('select');
     },
-    onError: (err: any) => {
+    onError: (err: AxiosApiError) => {
       Alert.alert('화자 분리 실패', err.response?.data?.error || '다시 시도해주세요.');
     },
   });
@@ -69,7 +70,7 @@ export default function DiarizeScreen() {
         [{ text: '확인', onPress: () => router.back() }]
       );
     },
-    onError: (err: any) => {
+    onError: (err: AxiosApiError) => {
       Alert.alert('오류', err.response?.data?.error || '음성 클론 생성에 실패했습니다.');
     },
   });

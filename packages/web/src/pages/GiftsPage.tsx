@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getReceivedGifts, getSentGifts, acceptGift, rejectGift } from '../services/api';
+import type { Gift } from '../types';
 
 export default function GiftsPage() {
   const queryClient = useQueryClient();
@@ -75,7 +76,7 @@ export default function GiftsPage() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {received.map((g: any) => (
+            {received.map((g: Gift) => (
               <div key={g.id} className="bg-white rounded-xl p-5 border border-[#F2E8E5]">
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -131,7 +132,7 @@ export default function GiftsPage() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {sent.map((g: any) => (
+            {sent.map((g: Gift) => (
               <div key={g.id} className="bg-white rounded-xl p-5 border border-[#F2E8E5]">
                 <div className="flex items-center justify-between mb-3">
                   <div>

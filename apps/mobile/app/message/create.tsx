@@ -17,6 +17,7 @@ import { PRESET_CATEGORIES } from '../../src/constants/presets';
 import { getVoiceProfiles, generateTTS, getFriendList, sendGift } from '../../src/services/api';
 import { saveAudioLocally, playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
+import type { VoiceProfile, Friend, AxiosApiError } from '../../src/types';
 
 export default function CreateMessageScreen() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function CreateMessageScreen() {
     enabled: isAuthenticated,
   });
 
-  const readyProfiles = voiceProfiles?.filter((p: any) => p.status === 'ready') ?? [];
+  const readyProfiles = voiceProfiles?.filter((p: VoiceProfile) => p.status === 'ready') ?? [];
 
   const ttsMutation = useMutation({
     mutationFn: generateTTS,
@@ -59,7 +60,7 @@ export default function CreateMessageScreen() {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
-    onError: (err: any) => {
+    onError: (err: AxiosApiError) => {
       Alert.alert('TTS 생성 실패', err.response?.data?.error || '다시 시도해주세요.');
     },
   });
@@ -118,7 +119,7 @@ export default function CreateMessageScreen() {
         </TouchableOpacity>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.voiceRow}>
-          {readyProfiles.map((profile: any) => (
+          {readyProfiles.map((profile: VoiceProfile) => (
             <TouchableOpacity
               key={profile.id}
               style={[
@@ -292,18 +293,19 @@ export default function CreateMessageScreen() {
                   Alert.alert('친구 없음', '먼저 친구를 추가해주세요.');
                   return;
                 }
-                const buttons = friends.slice(0, 5).map((f: any) => ({
-                  text: f.friend_name || f.friend_email,
+                const buttons = friends.slice(0, 5).map((f: Friend) => ({
+                  text: f.friend_name || f.friend_email || '?',
                   onPress: async () => {
                     try {
                       await sendGift({
-                        recipient_email: f.friend_email,
+                        recipient_email: f.friend_email ?? '',
                         message_id: generatedAudioId!,
                         note: messageText ?? undefined,
                       });
                       Alert.alert('전송 완료', `${f.friend_name || f.friend_email}님에게 선물을 보냈습니다!`);
-                    } catch (err: any) {
-                      Alert.alert('오류', err.response?.data?.error || '선물 전송에 실패했습니다.');
+                    } catch (err: unknown) {
+                      const apiErr = err as AxiosApiError;
+                      Alert.alert('오류', apiErr.response?.data?.error || '선물 전송에 실패했습니다.');
                     }
                   },
                 }));

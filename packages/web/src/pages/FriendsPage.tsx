@@ -7,6 +7,8 @@ import {
   acceptFriendRequest,
   deleteFriend,
 } from '../services/api';
+import type { Friend, PendingFriendRequest } from '../types';
+import { getApiErrorMessage } from '../types';
 
 export default function FriendsPage() {
   const queryClient = useQueryClient();
@@ -78,7 +80,7 @@ export default function FriendsPage() {
 
       {sendMutation.isError && (
         <p className="text-red-500 text-sm mb-4">
-          {(sendMutation.error as any)?.response?.data?.error || '친구 요청에 실패했습니다.'}
+          {getApiErrorMessage(sendMutation.error, '친구 요청에 실패했습니다.')}
         </p>
       )}
       {sendMutation.isSuccess && (
@@ -117,7 +119,7 @@ export default function FriendsPage() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {friends.map((f: any) => (
+            {friends.map((f: Friend) => (
               <div key={f.id} className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]">
                 <div className="w-10 h-10 rounded-full bg-[#FFB4A8] flex items-center justify-center text-[#E05A47] font-bold mr-4">
                   {(f.friend_name || f.friend_email || '?')[0].toUpperCase()}
@@ -151,7 +153,7 @@ export default function FriendsPage() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {pending.map((p: any) => (
+            {pending.map((p: PendingFriendRequest) => (
               <div key={p.id} className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]">
                 <div className="w-10 h-10 rounded-full bg-[#FFB4A8] flex items-center justify-center text-[#E05A47] font-bold mr-4">
                   {(p.requester_name || p.requester_email || '?')[0].toUpperCase()}

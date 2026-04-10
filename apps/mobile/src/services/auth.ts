@@ -71,8 +71,8 @@ export async function signInWithApple(): Promise<{
         name,
       },
     };
-  } catch (err: any) {
-    if (err.code === 'ERR_REQUEST_CANCELED') return null;
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'ERR_REQUEST_CANCELED') return null;
     throw err;
   }
 }

@@ -13,6 +13,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { createVoiceClone } from '../../src/services/api';
+import { getApiErrorMessage } from '../../src/types';
 
 export default function UploadScreen() {
   const router = useRouter();
@@ -40,8 +41,8 @@ export default function UploadScreen() {
         [{ text: '확인', onPress: () => router.back() }]
       );
     },
-    onError: (err: any) => {
-      Alert.alert('오류', err.response?.data?.error || '업로드에 실패했습니다.');
+    onError: (err: unknown) => {
+      Alert.alert('오류', getApiErrorMessage(err, '업로드에 실패했습니다.'));
     },
   });
 
