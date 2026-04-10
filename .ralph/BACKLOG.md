@@ -113,9 +113,9 @@
 
 ## P11 - 자가 생성 항목 (8차)
 
-- [ ] 웹: GiftsPage에서 수락/거절 시 낙관적 업데이트 (optimistic update)
-- [ ] 모바일: 선물 받은 화면(gift/received.tsx) 스켈레톤 로딩 UX 개선
-- [ ] 백엔드: alarm 라우트에 입력 검증 강화 (time 형식, repeat_days 범위 등)
+- [x] 웹: GiftsPage에서 수락/거절 시 낙관적 업데이트 (optimistic update)
+- [x] 모바일: 선물 받은 화면(gift/received.tsx) 스켈레톤 로딩 UX 개선
+- [x] 백엔드: alarm 라우트에 입력 검증 강화 (UUID 형식, time 형식, repeat_days 범위 등)
 - [ ] 모바일: 알람 목록에서 스와이프 삭제 제스처 지원
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)

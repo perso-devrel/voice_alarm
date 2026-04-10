@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const alarm = new Hono<AppEnv>();
 
 /** 알람 목록 조회 */
@@ -41,6 +43,14 @@ alarm.post('/', async (c) => {
     return c.json({ error: 'message_id and time are required' }, 400);
   }
 
+  if (!UUID_RE.test(body.message_id)) {
+    return c.json({ error: 'Invalid message_id format' }, 400);
+  }
+
+  if (body.target_user_id && typeof body.target_user_id !== 'string') {
+    return c.json({ error: 'Invalid target_user_id' }, 400);
+  }
+
   if (!/^\d{2}:\d{2}$/.test(body.time)) {
     return c.json({ error: 'time must be in HH:mm format' }, 400);
   }
@@ -52,13 +62,17 @@ alarm.post('/', async (c) => {
 
   if (
     body.repeat_days &&
-    (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))
+    (!Array.isArray(body.repeat_days) ||
+      body.repeat_days.some((d) => !Number.isInteger(d) || d < 0 || d > 6))
   ) {
-    return c.json({ error: 'repeat_days must be an array of numbers 0-6' }, 400);
+    return c.json({ error: 'repeat_days must be an array of integers 0-6' }, 400);
   }
 
-  if (body.snooze_minutes !== undefined && (body.snooze_minutes < 1 || body.snooze_minutes > 30)) {
-    return c.json({ error: 'snooze_minutes must be between 1 and 30' }, 400);
+  if (
+    body.snooze_minutes !== undefined &&
+    (!Number.isInteger(body.snooze_minutes) || body.snooze_minutes < 1 || body.snooze_minutes > 30)
+  ) {
+    return c.json({ error: 'snooze_minutes must be an integer between 1 and 30' }, 400);
   }
 
   if (body.target_user_id && body.target_user_id !== userId) {
@@ -122,6 +136,10 @@ alarm.patch('/:id', async (c) => {
   const db = getDB(c.env);
   const id = c.req.param('id');
 
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid alarm ID format' }, 400);
+  }
+
   const body = await c.req.json<{
     time?: string;
     repeat_days?: number[];
@@ -129,6 +147,10 @@ alarm.patch('/:id', async (c) => {
     snooze_minutes?: number;
     message_id?: string;
   }>();
+
+  if (body.message_id !== undefined && !UUID_RE.test(body.message_id)) {
+    return c.json({ error: 'Invalid message_id format' }, 400);
+  }
 
   // 알람 소유 확인
   const existing = await db.execute({
@@ -151,13 +173,21 @@ alarm.patch('/:id', async (c) => {
 
   if (
     body.repeat_days !== undefined &&
-    (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))
+    (!Array.isArray(body.repeat_days) ||
+      body.repeat_days.some((d) => !Number.isInteger(d) || d < 0 || d > 6))
   ) {
-    return c.json({ error: 'repeat_days must be an array of numbers 0-6' }, 400);
+    return c.json({ error: 'repeat_days must be an array of integers 0-6' }, 400);
   }
 
-  if (body.snooze_minutes !== undefined && (body.snooze_minutes < 1 || body.snooze_minutes > 30)) {
-    return c.json({ error: 'snooze_minutes must be between 1 and 30' }, 400);
+  if (
+    body.snooze_minutes !== undefined &&
+    (!Number.isInteger(body.snooze_minutes) || body.snooze_minutes < 1 || body.snooze_minutes > 30)
+  ) {
+    return c.json({ error: 'snooze_minutes must be an integer between 1 and 30' }, 400);
+  }
+
+  if (body.is_active !== undefined && typeof body.is_active !== 'boolean') {
+    return c.json({ error: 'is_active must be a boolean' }, 400);
   }
 
   const updates: string[] = [];
@@ -204,6 +234,10 @@ alarm.delete('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid alarm ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'DELETE FROM alarms WHERE id = ? AND user_id = ?',

@@ -19,7 +19,18 @@ export default function GiftsPage() {
 
   const acceptMutation = useMutation({
     mutationFn: acceptGift,
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['gifts-received'] });
+      const prev = queryClient.getQueryData<Gift[]>(['gifts-received']);
+      queryClient.setQueryData<Gift[]>(['gifts-received'], (old) =>
+        old?.map((g) => (g.id === id ? { ...g, status: 'accepted' } : g)) ?? [],
+      );
+      return { prev };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prev) queryClient.setQueryData(['gifts-received'], context.prev);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
@@ -27,7 +38,18 @@ export default function GiftsPage() {
 
   const rejectMutation = useMutation({
     mutationFn: rejectGift,
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['gifts-received'] });
+      const prev = queryClient.getQueryData<Gift[]>(['gifts-received']);
+      queryClient.setQueryData<Gift[]>(['gifts-received'], (old) =>
+        old?.map((g) => (g.id === id ? { ...g, status: 'rejected' } : g)) ?? [],
+      );
+      return { prev };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prev) queryClient.setQueryData(['gifts-received'], context.prev);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
     },
   });

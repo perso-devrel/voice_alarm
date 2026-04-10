@@ -1,12 +1,13 @@
+import { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   RefreshControl,
+  Animated,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +15,44 @@ import { useTranslation } from 'react-i18next';
 import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getApiErrorMessage } from '../../src/types';
+
+function SkeletonGiftCard() {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [opacity]);
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <View style={styles.senderInfo}>
+          <Animated.View style={[styles.skeletonLine, { width: 100, height: 14, opacity }]} />
+          <Animated.View style={[styles.skeletonLine, { width: 160, height: 11, marginTop: 4, opacity }]} />
+        </View>
+        <Animated.View style={[styles.skeletonLine, { width: 50, height: 18, opacity }]} />
+      </View>
+      <Animated.View style={[styles.skeletonBlock, { opacity }]} />
+    </View>
+  );
+}
+
+function SkeletonGiftList({ count = 3 }: { count?: number }) {
+  return (
+    <View style={styles.list}>
+      {Array.from({ length: count }, (_, i) => (
+        <SkeletonGiftCard key={i} />
+      ))}
+    </View>
+  );
+}
 
 export default function ReceivedGiftsScreen() {
   const queryClient = useQueryClient();
@@ -49,7 +88,7 @@ export default function ReceivedGiftsScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator style={styles.loader} color={Colors.light.primary} />
+        <SkeletonGiftList count={3} />
       </SafeAreaView>
     );
   }
@@ -62,6 +101,7 @@ export default function ReceivedGiftsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <View style={[styles.listWrap, isRefetching && styles.listDimmed]}>
       <FlatList
         data={data ?? []}
         keyExtractor={(item) => item.id}
@@ -132,6 +172,7 @@ export default function ReceivedGiftsScreen() {
           </View>
         )}
       />
+      </View>
     </SafeAreaView>
   );
 }
@@ -141,8 +182,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
-  loader: {
-    marginTop: Spacing.xxl,
+  listWrap: {
+    flex: 1,
+  },
+  listDimmed: {
+    opacity: 0.5,
+  },
+  skeletonLine: {
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.light.border,
+  },
+  skeletonBlock: {
+    height: 60,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.light.border,
   },
   list: {
     padding: Spacing.lg,
