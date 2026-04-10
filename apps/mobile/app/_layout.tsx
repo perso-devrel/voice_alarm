@@ -3,8 +3,10 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../src/stores/useAppStore';
 import { setupAudioSession, ensureAudioDir } from '../src/services/audio';
+import '../src/i18n';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +19,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const loadPersistedState = useAppStore((s) => s.loadPersistedState);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadPersistedState();
@@ -39,27 +42,27 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
           <Stack.Screen
             name="voice/record"
-            options={{ headerShown: true, title: '음성 녹음', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('screen.voiceRecord'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="voice/upload"
-            options={{ headerShown: true, title: '파일 업로드', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('screen.fileUpload'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="voice/diarize"
-            options={{ headerShown: true, title: '화자 분리', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('screen.diarize'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="alarm/create"
-            options={{ headerShown: true, title: '알람 설정', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('screen.alarmSetting'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="message/create"
-            options={{ headerShown: true, title: '메시지 작성', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('screen.writeMessage'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="gift/received"
-            options={{ headerShown: true, title: '받은 선물', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('screen.receivedGifts'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="player"

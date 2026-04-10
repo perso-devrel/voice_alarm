@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getVoiceProfiles, deleteVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -22,6 +23,7 @@ export default function VoicesScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const { t } = useTranslation();
 
   const { data: profiles, isLoading, isError, refetch } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -35,18 +37,18 @@ export default function VoicesScreen() {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '음성 프로필 삭제에 실패했어요.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voices.deleteError')));
     },
   });
 
   const handleDelete = (id: string, name: string) => {
     Alert.alert(
-      '음성 프로필 삭제',
-      `"${name}" 프로필을 삭제하시겠어요?\n이 음성으로 만든 메시지는 유지됩니다.`,
+      t('voices.deleteTitle'),
+      t('voices.deleteConfirm', { name }),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '삭제',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => deleteMutation.mutate(id),
         },
@@ -57,11 +59,11 @@ export default function VoicesScreen() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ready':
-        return { label: '사용 가능', color: Colors.light.success };
+        return { label: t('voices.statusReady'), color: Colors.light.success };
       case 'processing':
-        return { label: '생성 중...', color: Colors.light.warning };
+        return { label: t('voices.statusProcessing'), color: Colors.light.warning };
       case 'failed':
-        return { label: '실패', color: Colors.light.error };
+        return { label: t('voices.statusFailed'), color: Colors.light.error };
       default:
         return { label: status, color: Colors.light.textTertiary };
     }
@@ -90,7 +92,7 @@ export default function VoicesScreen() {
           style={styles.deleteButton}
           onPress={() => handleDelete(item.id, item.name)}
         >
-          <Text style={styles.deleteText}>삭제</Text>
+          <Text style={styles.deleteText}>{t('common.delete')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -99,11 +101,10 @@ export default function VoicesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>음성 프로필</Text>
-        <Text style={styles.subtitle}>소중한 사람의 목소리를 등록하세요</Text>
+        <Text style={styles.title}>{t('voices.title')}</Text>
+        <Text style={styles.subtitle}>{t('voices.subtitle')}</Text>
       </View>
 
-      {/* 등록 방법 선택 */}
       <View style={styles.addSection}>
         <TouchableOpacity
           style={styles.addCard}
@@ -111,8 +112,8 @@ export default function VoicesScreen() {
         >
           <Text style={styles.addEmoji}>🎙️</Text>
           <View>
-            <Text style={styles.addTitle}>직접 녹음</Text>
-            <Text style={styles.addDesc}>마이크로 음성을 녹음해요</Text>
+            <Text style={styles.addTitle}>{t('voices.record')}</Text>
+            <Text style={styles.addDesc}>{t('voices.recordDesc')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -122,8 +123,8 @@ export default function VoicesScreen() {
         >
           <Text style={styles.addEmoji}>📁</Text>
           <View>
-            <Text style={styles.addTitle}>파일 업로드</Text>
-            <Text style={styles.addDesc}>오디오 파일을 선택해요</Text>
+            <Text style={styles.addTitle}>{t('voices.upload')}</Text>
+            <Text style={styles.addDesc}>{t('voices.uploadDesc')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -133,18 +134,17 @@ export default function VoicesScreen() {
         >
           <Text style={styles.addEmoji}>📞</Text>
           <View>
-            <Text style={[styles.addTitle, { color: '#FFF' }]}>통화 녹음</Text>
+            <Text style={[styles.addTitle, { color: '#FFF' }]}>{t('voices.callRecord')}</Text>
             <Text style={[styles.addDesc, { color: 'rgba(255,255,255,0.8)' }]}>
-              통화 녹음에서 화자를 분리해요
+              {t('voices.callRecordDesc')}
             </Text>
           </View>
         </TouchableOpacity>
       </View>
 
-      {/* 프로필 목록 */}
       <View style={styles.listSection}>
         <Text style={styles.listTitle}>
-          등록된 음성 ({profiles?.length ?? 0})
+          {t('voices.registered')} ({profiles?.length ?? 0})
         </Text>
         {isLoading ? (
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
@@ -154,7 +154,7 @@ export default function VoicesScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🎵</Text>
             <Text style={styles.emptyText}>
-              아직 등록된 음성이 없어요{'\n'}위의 버튼으로 음성을 등록해보세요!
+              {t('voices.emptyTitle')}{'\n'}{t('voices.emptyDesc')}
             </Text>
           </View>
         ) : (

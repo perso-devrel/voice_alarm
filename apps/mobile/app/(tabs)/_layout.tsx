@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../src/constants/theme';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
@@ -19,6 +20,8 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 }
 
 export default function TabLayout() {
+  const { t } = useTranslation();
+
   return (
     <Tabs
       screenOptions={{
@@ -32,42 +35,42 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '홈',
+          title: t('tab.home'),
           tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="voices"
         options={{
-          title: '음성',
+          title: t('tab.voices'),
           tabBarIcon: ({ focused }) => <TabIcon name="voices" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="alarms"
         options={{
-          title: '알람',
+          title: t('tab.alarms'),
           tabBarIcon: ({ focused }) => <TabIcon name="alarms" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="friends"
         options={{
-          title: '친구',
+          title: t('tab.friends'),
           tabBarIcon: ({ focused }) => <TabIcon name="friends" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
-          title: '보관함',
+          title: t('tab.library'),
           tabBarIcon: ({ focused }) => <TabIcon name="library" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: '설정',
+          title: t('tab.settings'),
           tabBarIcon: ({ focused }) => <TabIcon name="settings" focused={focused} />,
         }}
       />

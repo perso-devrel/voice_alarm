@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getAlarms, updateAlarm, deleteAlarm } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -24,6 +25,7 @@ export default function AlarmsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const { t } = useTranslation();
 
   const { data: alarms, isLoading, isError, refetch } = useQuery({
     queryKey: ['alarms'],
@@ -36,7 +38,7 @@ export default function AlarmsScreen() {
       updateAlarm(id, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '알람 상태 변경에 실패했어요.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarms.toggleError')));
     },
   });
 
@@ -44,15 +46,15 @@ export default function AlarmsScreen() {
     mutationFn: deleteAlarm,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '알람 삭제에 실패했어요.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarms.deleteError')));
     },
   });
 
   const handleDelete = (id: string) => {
-    Alert.alert('알람 삭제', '이 알람을 삭제하시겠어요?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t('alarms.deleteTitle'), t('alarms.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: '삭제',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => deleteMutation.mutate(id),
       },
@@ -60,10 +62,10 @@ export default function AlarmsScreen() {
   };
 
   const formatRepeatDays = (days: number[]) => {
-    if (days.length === 0) return '한 번만';
-    if (days.length === 7) return '매일';
-    if (JSON.stringify(days.sort()) === JSON.stringify([1, 2, 3, 4, 5])) return '평일';
-    if (JSON.stringify(days.sort()) === JSON.stringify([0, 6])) return '주말';
+    if (days.length === 0) return t('alarms.once');
+    if (days.length === 7) return t('alarms.daily');
+    if (JSON.stringify(days.sort()) === JSON.stringify([1, 2, 3, 4, 5])) return t('alarms.weekday');
+    if (JSON.stringify(days.sort()) === JSON.stringify([0, 6])) return t('alarms.weekend');
     return days.map((d) => DAYS_OF_WEEK[d]).join(', ');
   };
 
@@ -107,12 +109,12 @@ export default function AlarmsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>알람</Text>
+        <Text style={styles.title}>{t('alarms.title')}</Text>
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => router.push('/alarm/create')}
         >
-          <Text style={styles.addButtonText}>+ 추가</Text>
+          <Text style={styles.addButtonText}>{t('alarms.add')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -123,15 +125,13 @@ export default function AlarmsScreen() {
       ) : alarms?.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>⏰</Text>
-          <Text style={styles.emptyTitle}>알람이 없어요</Text>
-          <Text style={styles.emptyDesc}>
-            소중한 사람의 목소리로{'\n'}알람을 설정해보세요
-          </Text>
+          <Text style={styles.emptyTitle}>{t('alarms.emptyTitle')}</Text>
+          <Text style={styles.emptyDesc}>{t('alarms.emptyDesc')}</Text>
           <TouchableOpacity
             style={styles.emptyButton}
             onPress={() => router.push('/alarm/create')}
           >
-            <Text style={styles.emptyButtonText}>첫 알람 만들기</Text>
+            <Text style={styles.emptyButtonText}>{t('alarms.emptyButton')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
