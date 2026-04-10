@@ -17,23 +17,26 @@ interface TokenPayload {
  */
 export async function authMiddleware(c: Context<AppEnv>, next: Next) {
   const authHeader = c.req.header('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'Missing or invalid Authorization header' }, 401);
+  if (!authHeader) {
+    return c.json({ error: 'Authorization header required', code: 'AUTH_MISSING' }, 401);
+  }
+  if (!authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Authorization header must use Bearer scheme', code: 'AUTH_INVALID_SCHEME' }, 401);
   }
 
   const token = authHeader.slice(7);
+  if (!token) {
+    return c.json({ error: 'Token is empty', code: 'AUTH_EMPTY_TOKEN' }, 401);
+  }
 
   try {
-    // JWT 헤더에서 issuer 판별
     const payload = decodeJwtPayload(token);
 
     let verified: TokenPayload;
 
     if (payload.iss === 'https://appleid.apple.com') {
-      // Apple ID Token
       verified = await verifyAppleToken(token);
     } else {
-      // Google ID Token
       verified = await verifyGoogleToken(token, c.env.GOOGLE_CLIENT_ID);
     }
 
@@ -43,13 +46,17 @@ export async function authMiddleware(c: Context<AppEnv>, next: Next) {
     c.set('userPicture', verified.picture || '');
     await next();
   } catch (err) {
-    return c.json(
-      {
-        error: 'Invalid or expired token',
-        detail: err instanceof Error ? err.message : 'Unknown',
-      },
-      401,
-    );
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    const code = message.includes('expired')
+      ? 'AUTH_TOKEN_EXPIRED'
+      : message.includes('audience')
+        ? 'AUTH_AUDIENCE_MISMATCH'
+        : message.includes('issuer')
+          ? 'AUTH_INVALID_ISSUER'
+          : message.includes('format')
+            ? 'AUTH_MALFORMED_TOKEN'
+            : 'AUTH_VERIFICATION_FAILED';
+    return c.json({ error: message, code }, 401);
   }
 }
 

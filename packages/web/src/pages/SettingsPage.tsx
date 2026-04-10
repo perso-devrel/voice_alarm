@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile, deleteAccount } from '../services/api';
 
@@ -27,16 +27,33 @@ export default function SettingsPage({ darkMode }: Props) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'error' } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const showToast = useCallback((message: string) => {
+    setToast({ message, type: 'error' });
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
       await deleteAccount();
       localStorage.removeItem('auth_token');
-      window.location.reload();
-    } catch {
+      window.location.href = '/login';
+    } catch (err) {
       setDeleting(false);
-      alert('계정 삭제에 실패했습니다. 다시 시도해주세요.');
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        showToast('인증이 만료되었습니다. 다시 로그인해주세요.');
+      } else if (status === 429) {
+        showToast('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        showToast('계정 삭제에 실패했습니다. 다시 시도해주세요.');
+      }
     }
   };
 
@@ -198,6 +215,12 @@ export default function SettingsPage({ darkMode }: Props) {
           계정 삭제
         </button>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg text-sm font-medium animate-[fadeIn_0.2s_ease-out]">
+          {toast.message}
+        </div>
+      )}
 
       {showDeleteDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowDeleteDialog(false)}>
