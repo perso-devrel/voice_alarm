@@ -4,6 +4,7 @@ import type { Env, AppEnv } from './types';
 import { authMiddleware } from './middleware/auth';
 import { loggerMiddleware } from './middleware/logger';
 import { rateLimitMiddleware } from './middleware/rateLimit';
+import { publicCache, privateCache, noStore } from './middleware/cache';
 import { getDB, initDB } from './lib/db';
 import voiceRoutes from './routes/voice';
 import ttsRoutes from './routes/tts';
@@ -66,7 +67,7 @@ app.post('/api/init-db', async (c) => {
 });
 
 // 공개 라우트 (인증 불필요)
-app.get('/api/tts/presets', async (c) => {
+app.get('/api/tts/presets', publicCache, async (c) => {
   await import('./routes/tts');
   // 프리셋은 정적 데이터이므로 직접 반환
   const presets = [
@@ -142,6 +143,10 @@ app.get('/api/tts/presets', async (c) => {
 const api = new Hono<AppEnv>();
 api.use('*', authMiddleware);
 api.use('*', rateLimitMiddleware);
+api.use('*', async (c, next) => {
+  const mw = c.req.method === 'GET' ? privateCache : noStore;
+  return mw(c, next);
+});
 api.route('/voice', voiceRoutes);
 api.route('/tts', ttsRoutes);
 api.route('/alarm', alarmRoutes);
