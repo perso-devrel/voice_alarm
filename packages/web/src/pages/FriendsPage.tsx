@@ -52,10 +52,8 @@ export default function FriendsPage() {
           ...(old ?? []),
           {
             id: accepted.id,
-            friend_id: accepted.requester_id ?? '',
             friend_name: accepted.requester_name,
             friend_email: accepted.requester_email,
-            status: 'accepted' as const,
             created_at: accepted.created_at,
           },
         ]);
