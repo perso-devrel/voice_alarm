@@ -11,6 +11,8 @@ import { setupAudioSession, ensureAudioDir } from '../src/services/audio';
 import {
   requestNotificationPermissions,
   addNotificationResponseListener,
+  scheduleSnoozeNotification,
+  SNOOZE_ACTION,
 } from '../src/services/notifications';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import '../src/i18n';
@@ -37,7 +39,21 @@ export default function RootLayout() {
     requestNotificationPermissions();
 
     responseListener.current = addNotificationResponseListener((response) => {
-      const data = response.notification.request.content.data;
+      const actionId = response.actionIdentifier;
+      const { content } = response.notification.request;
+      const data = content.data;
+
+      if (actionId === SNOOZE_ACTION && data) {
+        const minutes = typeof data.snoozeMinutes === 'number' ? data.snoozeMinutes : 5;
+        scheduleSnoozeNotification(
+          content.title || '⏰ VoiceAlarm',
+          content.body || '',
+          data as Record<string, unknown>,
+          minutes,
+        );
+        return;
+      }
+
       if (data?.messageId) {
         router.push({
           pathname: '/player',

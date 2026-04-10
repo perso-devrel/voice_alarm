@@ -72,6 +72,7 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
           title,
           body,
           sound: 'default',
+          categoryIdentifier: ALARM_CATEGORY,
           data: notificationData,
           ...(Platform.OS === 'android' && { channelId: 'alarms' }),
         },
@@ -103,6 +104,30 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
     }
   }
 }
+
+export async function scheduleSnoozeNotification(
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+  snoozeMinutes: number,
+): Promise<void> {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      sound: 'default',
+      categoryIdentifier: ALARM_CATEGORY,
+      data,
+      ...(Platform.OS === 'android' && { channelId: 'alarms' }),
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: snoozeMinutes * 60,
+    },
+  });
+}
+
+export { SNOOZE_ACTION, DISMISS_ACTION };
 
 export function addNotificationResponseListener(
   handler: (response: Notifications.NotificationResponse) => void,
