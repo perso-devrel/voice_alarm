@@ -4,6 +4,7 @@ import type { Env, AppEnv } from './types';
 import { authMiddleware } from './middleware/auth';
 import { loggerMiddleware } from './middleware/logger';
 import { rateLimitMiddleware } from './middleware/rateLimit';
+import { bodyLimitMiddleware } from './middleware/bodyLimit';
 import { publicCache, privateCache, noStore } from './middleware/cache';
 import { getDB, initDB } from './lib/db';
 import voiceRoutes from './routes/voice';
@@ -23,13 +24,25 @@ app.use('*', loggerMiddleware);
 // Rate limiting (per-isolate sliding window, 60 req/min)
 app.use('*', rateLimitMiddleware);
 
+// Body size limit (512 KB)
+app.use('*', bodyLimitMiddleware);
+
 // CORS
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:8081',
+  'exp://localhost:8081',
+  'https://voice-alarm.pages.dev',
+  'https://voicealarm.pages.dev',
+];
+
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:8081', 'exp://localhost:8081'],
+    origin: (origin) => (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]),
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400,
   }),
 );
 

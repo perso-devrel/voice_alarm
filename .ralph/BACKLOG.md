@@ -276,7 +276,27 @@
 
 - [x] 백엔드: voice.test.ts 신규 (14개 테스트 — 목록/상세/통계/삭제 + UUID검증/409경고/force삭제)
 - [x] 백엔드: tts.test.ts 신규 (17개 테스트 — generate 검증/제한/404, messages 목록/삭제/409, presets)
-- [ ] 백엔드: library.test.ts 추가 테스트 (test/ 디렉토리에 이미 존재하나 src/routes/ 쪽 없음)
+- [x] 백엔드: library.test.ts 신규 (14개 테스트 — 목록/필터/페이지네이션/즐겨찾기/삭제)
+
+## P34 - 자가 생성 항목 (보안 + 데이터 무결성)
+
+- [x] 백엔드: CORS 설정 강화 (origin 화이트리스트 함수 + 프로덕션 도메인 + maxAge 추가)
+- [x] 백엔드: bodyLimitMiddleware 신규 (512KB 제한, Content-Length 기반 413 응답)
+- [x] 백엔드: voice DELETE cascade — force 삭제 시 연관 alarms → message_library → messages 순서로 정리
+- [x] 백엔드: GET /api/user/me — 이미 구현 확인 (프로필 + stats + plan 반환)
+
+## P35 - 미들웨어 테스트 커버리지
+
+- [x] 백엔드: rateLimit.test.ts 신규 (6개 테스트 — 기본 허용/헤더/카운트 감소/429/userId 키/IP 폴백)
+- [x] 백엔드: logger.test.ts 신규 (6개 테스트 — 구조화 로그/requestId/4xx warn/5xx error/userId 포함/미포함)
+- [x] 백엔드: cache.test.ts 신규 (7개 테스트 — Cache-Control 설정/에러 스킵/Vary/publicCache/privateCache/noStore)
+
+## P36 - 자가 생성 항목 (API 견고성 + UX 개선)
+
+- [ ] 백엔드: bodyLimit 미들웨어 테스트 (bodyLimit.test.ts 신규)
+- [ ] 백엔드: POST /api/voice 음성 프로필 생성 엔드포인트에 name 최대 길이 제한 (50자)
+- [ ] 웹: 세션 만료 시 자동 로그아웃 + 로그인 페이지로 리다이렉트 (401 인터셉터)
+- [ ] 모바일: 네트워크 오류 시 재시도 버튼이 있는 통합 에러 화면 (현재 각 탭 개별 처리)
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

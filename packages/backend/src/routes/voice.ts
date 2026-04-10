@@ -289,12 +289,27 @@ voice.delete('/:id', async (c) => {
     // 외부 API 삭제 실패해도 로컬은 삭제 진행
   }
 
+  if (msgCount > 0) {
+    await db.execute({
+      sql: 'DELETE FROM alarms WHERE message_id IN (SELECT id FROM messages WHERE voice_profile_id = ?)',
+      args: [id],
+    });
+    await db.execute({
+      sql: 'DELETE FROM message_library WHERE message_id IN (SELECT id FROM messages WHERE voice_profile_id = ?)',
+      args: [id],
+    });
+    await db.execute({
+      sql: 'DELETE FROM messages WHERE voice_profile_id = ?',
+      args: [id],
+    });
+  }
+
   await db.execute({
     sql: 'DELETE FROM voice_profiles WHERE id = ?',
     args: [id],
   });
 
-  return c.json({ success: true });
+  return c.json({ success: true, messages_deleted: msgCount });
 });
 
 export default voice;
