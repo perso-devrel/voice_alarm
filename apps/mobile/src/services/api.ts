@@ -294,12 +294,24 @@ export async function deleteLibraryItem(id: string) {
 
 // ===== Stats API =====
 
+export interface WeekTrend {
+  thisWeek: number;
+  lastWeek: number;
+}
+
 export interface Stats {
   alarms: { total: number; active: number };
   messages: { total: number };
   voices: { total: number };
   friends: { total: number };
   gifts: { received: number; receivedPending: number; sent: number };
+  trends: {
+    alarms: WeekTrend;
+    messages: WeekTrend;
+    voices: WeekTrend;
+    friends: WeekTrend;
+    gifts: WeekTrend;
+  };
 }
 
 export async function getStats() {

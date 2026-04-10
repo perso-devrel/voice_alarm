@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getAlarms, getMessages, getStats } from '../../src/services/api';
-import type { Stats } from '../../src/services/api';
+import type { Stats, WeekTrend } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import LoginButtons from '../../src/components/LoginButtons';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -27,6 +27,14 @@ import {
 } from '../../src/services/offlineCache';
 import { Audio } from 'expo-av';
 import type { Alarm, Message } from '../../src/types';
+
+function TrendBadge({ trend }: { trend: WeekTrend }) {
+  const diff = trend.thisWeek - trend.lastWeek;
+  if (trend.thisWeek === 0 && trend.lastWeek === 0) return null;
+  const color = diff > 0 ? '#22c55e' : diff < 0 ? '#f87171' : Colors.light.textSecondary;
+  const label = diff > 0 ? `+${diff} ↑` : diff < 0 ? `${diff} ↓` : '0';
+  return <Text style={{ fontSize: FontSize.xs, color, marginTop: 2 }}>{label}</Text>;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -165,14 +173,17 @@ export default function HomeScreen() {
             <View style={styles.statItem}>
               <Text style={styles.statCount}>{stats.alarms.active}</Text>
               <Text style={styles.statLabel}>{t('home.activeAlarms', '활성 알람')}</Text>
+              {stats.trends && <TrendBadge trend={stats.trends.alarms} />}
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statCount}>{stats.messages.total}</Text>
               <Text style={styles.statLabel}>{t('home.messages', '메시지')}</Text>
+              {stats.trends && <TrendBadge trend={stats.trends.messages} />}
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statCount}>{stats.friends.total}</Text>
               <Text style={styles.statLabel}>{t('home.friends', '친구')}</Text>
+              {stats.trends && <TrendBadge trend={stats.trends.friends} />}
             </View>
             {stats.gifts.receivedPending > 0 && (
               <TouchableOpacity style={styles.statItem} onPress={() => router.push('/gift/received')}>

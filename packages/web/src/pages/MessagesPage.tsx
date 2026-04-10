@@ -33,6 +33,8 @@ export default function MessagesPage() {
   const [messageText, setMessageText] = useState('');
   const [category, setCategory] = useState('custom');
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
 
   const { data: voices } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -231,6 +233,52 @@ export default function MessagesPage() {
         </div>
       ) : (
         <div>
+          {/* 검색 + 카테고리 필터 */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="메시지 검색 (텍스트, 음성 이름...)"
+                aria-label="메시지 검색"
+                className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded-xl px-4 py-2.5 pl-10 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-colors"
+              />
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
+                🔍
+              </span>
+            </div>
+            <div className="flex gap-1.5 flex-wrap" role="radiogroup" aria-label="카테고리 필터">
+              <button
+                role="radio"
+                aria-checked={filterCategory === 'all'}
+                onClick={() => setFilterCategory('all')}
+                className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  filterCategory === 'all'
+                    ? 'bg-[var(--color-primary)] text-white'
+                    : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+                }`}
+              >
+                전체
+              </button>
+              {Object.entries(CATEGORY_EMOJIS).map(([cat, emoji]) => (
+                <button
+                  key={cat}
+                  role="radio"
+                  aria-checked={filterCategory === cat}
+                  onClick={() => setFilterCategory(cat)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    filterCategory === cat
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+                  }`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {isLoading ? (
             <MessageSkeleton />
           ) : !messages?.length ? (
@@ -239,8 +287,32 @@ export default function MessagesPage() {
               <p className="text-[var(--color-text-secondary)]">아직 생성된 메시지가 없어요</p>
             </div>
           ) : (
+            (() => {
+              const q = search.toLowerCase().trim();
+              const filtered = messages.filter((m: Message) => {
+                if (filterCategory !== 'all' && m.category !== filterCategory) return false;
+                if (q) {
+                  return (
+                    m.text.toLowerCase().includes(q) ||
+                    (m.voice_name ?? '').toLowerCase().includes(q)
+                  );
+                }
+                return true;
+              });
+              if (filtered.length === 0) {
+                return (
+                  <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+                    <p className="text-3xl mb-3">🔍</p>
+                    <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+                    <button onClick={() => { setSearch(''); setFilterCategory('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+                      필터 초기화
+                    </button>
+                  </div>
+                );
+              }
+              return (
             <div className="space-y-3">
-              {messages.map((msg: Message) => (
+              {filtered.map((msg: Message) => (
                 <div
                   key={msg.id}
                   className="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] flex items-center gap-4 transition-colors"

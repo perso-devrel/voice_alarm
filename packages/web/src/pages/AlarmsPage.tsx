@@ -16,10 +16,14 @@ import { getApiErrorMessage } from '../types';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
+type AlarmFilter = 'all' | 'active' | 'inactive';
+
 export default function AlarmsPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<AlarmFilter>('all');
 
   const { data: alarms, isLoading } = useQuery({
     queryKey: ['alarms'],
@@ -105,6 +109,40 @@ export default function AlarmsPage() {
         </button>
       </div>
 
+      {/* 검색 + 필터 */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="알람 검색 (시간, 메시지, 음성...)"
+            aria-label="알람 검색"
+            className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded-xl px-4 py-2.5 pl-10 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-colors"
+          />
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
+            🔍
+          </span>
+        </div>
+        <div className="flex gap-2" role="radiogroup" aria-label="알람 필터">
+          {([['all', '전체'], ['active', '활성'], ['inactive', '비활성']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={filter === value}
+              onClick={() => setFilter(value)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                filter === value
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {showCreate && (
         <AlarmCreateForm
           onSubmit={(params) => createMutation.mutate(params)}
@@ -122,9 +160,34 @@ export default function AlarmsPage() {
           <p className="text-[var(--color-text-secondary)] text-lg">설정된 알람이 없어요</p>
           <p className="text-[var(--color-text-tertiary)] text-sm mt-1">앱에서 알람을 추가해주세요</p>
         </div>
-      ) : (
+      ) : (() => {
+        const q = search.toLowerCase().trim();
+        const filtered = alarms.filter((a: Alarm) => {
+          if (filter === 'active' && !a.is_active) return false;
+          if (filter === 'inactive' && a.is_active) return false;
+          if (q) {
+            return (
+              a.time.includes(q) ||
+              (a.voice_name ?? '').toLowerCase().includes(q) ||
+              (a.message_text ?? '').toLowerCase().includes(q)
+            );
+          }
+          return true;
+        });
+        if (filtered.length === 0) {
+          return (
+            <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+              <p className="text-3xl mb-3">🔍</p>
+              <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+              <button onClick={() => { setSearch(''); setFilter('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+                필터 초기화
+              </button>
+            </div>
+          );
+        }
+        return (
         <div className="space-y-4">
-          {alarms.map((alarm: Alarm) =>
+          {filtered.map((alarm: Alarm) =>
             editingId === alarm.id ? (
               <AlarmEditInline
                 key={alarm.id}
@@ -188,7 +251,8 @@ export default function AlarmsPage() {
             ),
           )}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

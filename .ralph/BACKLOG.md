@@ -166,5 +166,12 @@
 - [x] 백엔드: 사용자 검색 API GET /api/user/search?q= (친구 추가 시 이메일 자동완성용)
 - [x] 웹: FriendsPage 친구 추가 시 이메일 자동완성 (검색 API 연동)
 
+## P18 - 자가 생성 항목 (15차)
+
+- [x] 백엔드: DB 인덱스 추가 (FK 컬럼, 자주 조회되는 컬럼에 CREATE INDEX IF NOT EXISTS)
+- [x] 웹: React ErrorBoundary 컴포넌트 추가 (앱 크래시 시 graceful fallback)
+- [x] 웹: renderPage() default case 추가 (잘못된 페이지 상태 → 대시보드 리다이렉트)
+- [x] 모바일: 홈탭 통계 카드에 전주 대비 트렌드 표시 (웹과 동일, trends API 활용)
+
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

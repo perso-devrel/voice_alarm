@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useDarkMode } from './hooks/useDarkMode';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -62,6 +63,8 @@ export default function App() {
         return <GiftsPage />;
       case 'settings':
         return <SettingsPage darkMode={darkMode} />;
+      default:
+        return <DashboardPage onNavigate={(p) => setPage(p as Page)} />;
     }
   };
 
@@ -123,15 +126,17 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto pb-20 md:pb-8">
-        <Suspense
-          fallback={
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]" />
-            </div>
-          }
-        >
-          {renderPage()}
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]" />
+              </div>
+            }
+          >
+            {renderPage()}
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* Bottom tab bar — mobile only */}
