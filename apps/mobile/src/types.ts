@@ -88,15 +88,24 @@ export interface LibraryItem {
   received_at: string;
 }
 
-export interface AxiosApiError {
-  response?: {
-    data?: {
-      error?: string;
-    };
-  };
+export interface Speaker {
+  speaker_id: string;
+  label: string;
+  segments: Array<{ start: number; end: number }>;
+  total_duration: number;
 }
 
 export function getApiErrorMessage(err: unknown, fallback: string): string {
-  const apiErr = err as AxiosApiError;
-  return apiErr?.response?.data?.error ?? fallback;
+  if (
+    err != null &&
+    typeof err === 'object' &&
+    'responseData' in err &&
+    err.responseData != null &&
+    typeof err.responseData === 'object' &&
+    'error' in err.responseData &&
+    typeof (err.responseData as Record<string, unknown>).error === 'string'
+  ) {
+    return (err.responseData as Record<string, unknown>).error as string;
+  }
+  return fallback;
 }

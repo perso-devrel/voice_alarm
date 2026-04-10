@@ -21,7 +21,7 @@ import {
 } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
-import type { AxiosApiError } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
 
 type Tab = 'friends' | 'pending';
 
@@ -50,8 +50,8 @@ export default function FriendsScreen() {
       Alert.alert('전송 완료', '친구 요청을 보냈습니다.');
       queryClient.invalidateQueries({ queryKey: ['friends-pending'] });
     },
-    onError: (err: AxiosApiError) => {
-      Alert.alert('오류', err.response?.data?.error || '친구 요청에 실패했습니다.');
+    onError: (err: unknown) => {
+      Alert.alert('오류', getApiErrorMessage(err, '친구 요청에 실패했습니다.'));
     },
   });
 

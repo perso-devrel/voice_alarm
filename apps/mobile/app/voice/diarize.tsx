@@ -15,14 +15,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { diarizeAudio, createVoiceClone } from '../../src/services/api';
-import type { AxiosApiError } from '../../src/types';
-
-interface Speaker {
-  speaker_id: string;
-  label: string;
-  segments: Array<{ start: number; end: number }>;
-  total_duration: number;
-}
+import { getApiErrorMessage } from '../../src/types';
+import type { Speaker } from '../../src/types';
 
 export default function DiarizeScreen() {
   const router = useRouter();
@@ -44,8 +38,8 @@ export default function DiarizeScreen() {
       setSpeakers(data);
       setStep('select');
     },
-    onError: (err: AxiosApiError) => {
-      Alert.alert('화자 분리 실패', err.response?.data?.error || '다시 시도해주세요.');
+    onError: (err: unknown) => {
+      Alert.alert('화자 분리 실패', getApiErrorMessage(err, '다시 시도해주세요.'));
     },
   });
 
@@ -70,8 +64,8 @@ export default function DiarizeScreen() {
         [{ text: '확인', onPress: () => router.back() }]
       );
     },
-    onError: (err: AxiosApiError) => {
-      Alert.alert('오류', err.response?.data?.error || '음성 클론 생성에 실패했습니다.');
+    onError: (err: unknown) => {
+      Alert.alert('오류', getApiErrorMessage(err, '음성 클론 생성에 실패했습니다.'));
     },
   });
 

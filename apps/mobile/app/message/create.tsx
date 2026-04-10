@@ -17,7 +17,8 @@ import { PRESET_CATEGORIES } from '../../src/constants/presets';
 import { getVoiceProfiles, generateTTS, getFriendList, sendGift } from '../../src/services/api';
 import { saveAudioLocally, playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
-import type { VoiceProfile, Friend, AxiosApiError } from '../../src/types';
+import type { VoiceProfile, Friend } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
 
 export default function CreateMessageScreen() {
   const router = useRouter();
@@ -60,8 +61,8 @@ export default function CreateMessageScreen() {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
-    onError: (err: AxiosApiError) => {
-      Alert.alert('TTS 생성 실패', err.response?.data?.error || '다시 시도해주세요.');
+    onError: (err: unknown) => {
+      Alert.alert('TTS 생성 실패', getApiErrorMessage(err, '다시 시도해주세요.'));
     },
   });
 
@@ -304,12 +305,11 @@ export default function CreateMessageScreen() {
                       });
                       Alert.alert('전송 완료', `${f.friend_name || f.friend_email}님에게 선물을 보냈습니다!`);
                     } catch (err: unknown) {
-                      const apiErr = err as AxiosApiError;
-                      Alert.alert('오류', apiErr.response?.data?.error || '선물 전송에 실패했습니다.');
+                      Alert.alert('오류', getApiErrorMessage(err, '선물 전송에 실패했습니다.'));
                     }
                   },
                 }));
-                buttons.push({ text: '취소', onPress: () => {} });
+                buttons.push({ text: '취소', onPress: async () => {} });
                 Alert.alert('선물하기', '누구에게 보낼까요?', buttons);
               } catch {
                 Alert.alert('오류', '친구 목록을 불러올 수 없습니다.');

@@ -55,8 +55,17 @@
 - [x] 웹 대시보드 `any` 타입 제거 (packages/web)
 - [x] 불필요한 의존성 점검 — web에 누락된 axios/@tanstack/react-query 추가, mobile에서 미사용 expo-image-picker/expo-sqlite 제거
 - [x] 코드 중복 제거 (api.ts 모바일/웹 공통 추출 검토) — 플랫폼별 차이로 공통 추출 불필요 판정
-- [ ] 모바일 앱 번들 크기 줄이기
+- [x] 모바일 앱 번들 크기 줄이기 — axios 제거 (native fetch 교체), 나머지 dep은 필수
+- [x] 모바일 앱 API 타입 안전성 복구 (api.ts unknown → 구체 타입, app.json 정리)
 - [x] 웹 로그아웃 버그 수정 (firebase_token → auth_token 키 불일치)
 
-## 자가 생성 가능 풀 (BACKLOG 고갈 시 여기서 뽑거나 새로 채움)
-- 테스트 보강, 문서, 리팩터, 관측성, 타입 강화, 접근성, i18n
+## P4 - 자가 생성 항목
+
+- [ ] i18n 인프라: 모바일 앱 다국어 기반 구축 (한국어 기본, 영어 지원) — CLAUDE.md 요구사항
+- [ ] 백엔드 유닛 테스트: friend/gift/alarm 라우트 핵심 로직 테스트 (vitest)
+- [ ] 웹 접근성: 키보드 네비게이션 + aria-label 보강
+- [ ] 모바일 오프라인 지원 강화: 캐시된 오디오 + 알람 목록 오프라인 표시
+- [ ] ESLint + Prettier 설정 통일 (모노레포 루트 + 패키지별)
+
+## 자가 생성 가능 풀 (위 목록 고갈 시)
+- 관측성 (로깅/에러 리포팅), 추가 리팩터, 성능 프로파일링

@@ -15,7 +15,8 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { getMessages, createAlarm, getFriendList } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
-import type { Friend, Message, AxiosApiError } from '../../src/types';
+import type { Friend, Message } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
@@ -50,8 +51,8 @@ export default function CreateAlarmScreen() {
         { text: '확인', onPress: () => router.back() },
       ]);
     },
-    onError: (err: AxiosApiError) => {
-      Alert.alert('오류', err.response?.data?.error || '알람 생성에 실패했습니다.');
+    onError: (err: unknown) => {
+      Alert.alert('오류', getApiErrorMessage(err, '알람 생성에 실패했습니다.'));
     },
   });
 
