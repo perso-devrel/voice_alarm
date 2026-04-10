@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getApiErrorMessage } from '../../src/types';
+import type { Gift } from '../../src/types';
 
 function SkeletonGiftCard() {
   const opacity = useRef(new Animated.Value(0.3)).current;
@@ -67,22 +68,56 @@ export default function ReceivedGiftsScreen() {
 
   const accept = useMutation({
     mutationFn: acceptGift,
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['gifts-received'] });
+      const previous = queryClient.getQueryData<Gift[]>(['gifts-received']);
+      queryClient.setQueryData<Gift[]>(['gifts-received'], (old) =>
+        old?.map((g) => (g.id === id ? { ...g, status: 'accepted' as const } : g)),
+      );
+      return { previous };
+    },
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      Alert.alert(t('giftReceived.acceptSuccessTitle'), t('giftReceived.acceptSuccess'));
+      const gift = queryClient.getQueryData<Gift[]>(['gifts-received'])?.find((g) => g.id === id);
+      Alert.alert(t('giftReceived.acceptSuccessTitle'), t('giftReceived.acceptSuccess'), [
+        { text: t('common.confirm'), style: 'cancel' },
+        ...(gift?.message_id
+          ? [
+              {
+                text: t('giftReceived.setAsAlarm'),
+                onPress: () =>
+                  router.push({ pathname: '/alarm/create', params: { message_id: gift.message_id } }),
+              },
+            ]
+          : []),
+      ]);
     },
-    onError: (err: unknown) => {
+    onError: (err: unknown, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['gifts-received'], context.previous);
+      }
       Alert.alert(t('common.error'), getApiErrorMessage(err, t('giftReceived.acceptError')));
     },
   });
 
   const reject = useMutation({
     mutationFn: rejectGift,
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['gifts-received'] });
+      const previous = queryClient.getQueryData<Gift[]>(['gifts-received']);
+      queryClient.setQueryData<Gift[]>(['gifts-received'], (old) =>
+        old?.map((g) => (g.id === id ? { ...g, status: 'rejected' as const } : g)),
+      );
+      return { previous };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
     },
-    onError: (err: unknown) => {
+    onError: (err: unknown, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['gifts-received'], context.previous);
+      }
       Alert.alert(t('common.error'), getApiErrorMessage(err, t('giftReceived.rejectError')));
     },
   });

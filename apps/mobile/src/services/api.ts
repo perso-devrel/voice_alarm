@@ -287,3 +287,7 @@ export async function toggleFavorite(id: string) {
   const data = await patch<{ is_favorite: boolean }>(`/library/${id}/favorite`);
   return data.is_favorite;
 }
+
+export async function deleteLibraryItem(id: string) {
+  return del<{ ok: boolean }>(`/library/${id}`);
+}

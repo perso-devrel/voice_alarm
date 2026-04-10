@@ -77,4 +77,25 @@ library.patch('/:id/favorite', async (c) => {
   return c.json({ is_favorite: newValue === 1 });
 });
 
+/** 라이브러리 항목 삭제 */
+library.delete('/:id', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid library item ID format' }, 400);
+  }
+
+  const result = await db.execute({
+    sql: 'DELETE FROM message_library WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
+
+  if (result.rowsAffected === 0) {
+    return c.json({ error: 'Library item not found' }, 404);
+  }
+
+  return c.json({ ok: true });
+});
+
 export default library;

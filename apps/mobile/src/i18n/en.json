@@ -109,7 +109,10 @@
     "favorites": "Favorites",
     "emptyAll": "No messages received yet",
     "emptyFavorites": "No favorite messages",
-    "favoriteError": "Failed to update favorite."
+    "favoriteError": "Failed to update favorite.",
+    "deleteTitle": "Delete message",
+    "deleteConfirm": "Remove this message from your library?",
+    "deleteError": "Failed to delete message."
   },
   "settings": {
     "title": "Settings",

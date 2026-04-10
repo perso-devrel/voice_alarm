@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Animated as RNAnimated,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { getLibrary, toggleFavorite } from '../../src/services/api';
+import { getLibrary, toggleFavorite, deleteLibraryItem } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { cacheLibrary, getCachedLibrary } from '../../src/services/offlineCache';
@@ -21,6 +23,7 @@ import { ErrorView } from '../../src/components/QueryStateView';
 import { MiniWaveformPlayer } from '../../src/components/MiniWaveformPlayer';
 import { Audio } from 'expo-av';
 import type { LibraryItem } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
 
 type FilterType = 'all' | 'favorite';
 
@@ -70,6 +73,45 @@ export default function LibraryScreen() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteLibraryItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library'] });
+    },
+    onError: (err: unknown) => {
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('library.deleteError')));
+    },
+  });
+
+  const handleDelete = (id: string) => {
+    Alert.alert(t('library.deleteTitle'), t('library.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => deleteMutation.mutate(id),
+      },
+    ]);
+  };
+
+  const renderDeleteAction = (
+    _progress: RNAnimated.AnimatedInterpolation<number>,
+    dragX: RNAnimated.AnimatedInterpolation<number>,
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, -50, 0],
+      outputRange: [1, 0.8, 0],
+      extrapolate: 'clamp',
+    });
+    return (
+      <View style={styles.swipeDeleteContainer}>
+        <RNAnimated.Text style={[styles.swipeDeleteText, { transform: [{ scale }] }]}>
+          {t('common.delete')}
+        </RNAnimated.Text>
+      </View>
+    );
+  };
+
   const handleMiniPlay = (messageId: string, sound: Audio.Sound) => {
     if (currentSound) {
       currentSound.unloadAsync();
@@ -101,47 +143,53 @@ export default function LibraryScreen() {
   const renderItem = ({ item }: { item: LibraryItem }) => {
     const isActive = currentPlayingId === item.message_id;
     return (
-      <View style={styles.messageCard}>
-        <View style={styles.messageLeft}>
-          <View style={styles.avatarSmall}>
-            <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
-          </View>
-          <View style={styles.messageContent}>
-            <View style={styles.messageHeader}>
-              <Text style={styles.voiceName}>{item.voice_name}</Text>
-              <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
+      <Swipeable
+        renderRightActions={renderDeleteAction}
+        onSwipeableOpen={() => handleDelete(item.id)}
+        overshootRight={false}
+      >
+        <View style={styles.messageCard}>
+          <View style={styles.messageLeft}>
+            <View style={styles.avatarSmall}>
+              <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
             </View>
-            <Text style={styles.messageText} numberOfLines={2}>
-              "{item.text}"
-            </Text>
-            <View style={styles.miniPlayerRow}>
-              <MiniWaveformPlayer
-                messageId={item.message_id}
-                isActive={isActive}
-                onPlay={handleMiniPlay}
-                onStop={handleMiniStop}
-              />
+            <View style={styles.messageContent}>
+              <View style={styles.messageHeader}>
+                <Text style={styles.voiceName}>{item.voice_name}</Text>
+                <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
+              </View>
+              <Text style={styles.messageText} numberOfLines={2}>
+                "{item.text}"
+              </Text>
+              <View style={styles.miniPlayerRow}>
+                <MiniWaveformPlayer
+                  messageId={item.message_id}
+                  isActive={isActive}
+                  onPlay={handleMiniPlay}
+                  onStop={handleMiniStop}
+                />
+              </View>
+              <Text style={styles.messageDate}>
+                {new Date(item.received_at).toLocaleDateString('ko-KR', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
             </View>
-            <Text style={styles.messageDate}>
-              {new Date(item.received_at).toLocaleDateString('ko-KR', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
           </View>
-        </View>
 
-        <View style={styles.messageActions}>
-          <TouchableOpacity
-            onPress={() => favoriteMutation.mutate(item.id)}
-            hitSlop={8}
-          >
-            <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
-          </TouchableOpacity>
+          <View style={styles.messageActions}>
+            <TouchableOpacity
+              onPress={() => favoriteMutation.mutate(item.id)}
+              hitSlop={8}
+            >
+              <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </Swipeable>
     );
   };
 
@@ -341,5 +389,18 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
     textAlign: 'center',
+  },
+  swipeDeleteContainer: {
+    backgroundColor: Colors.light.error,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
+  },
+  swipeDeleteText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: FontSize.md,
   },
 });

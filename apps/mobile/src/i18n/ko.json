@@ -109,7 +109,10 @@
     "favorites": "즐겨찾기",
     "emptyAll": "아직 받은 메시지가 없어요",
     "emptyFavorites": "즐겨찾기한 메시지가 없어요",
-    "favoriteError": "즐겨찾기 변경에 실패했어요."
+    "favoriteError": "즐겨찾기 변경에 실패했어요.",
+    "deleteTitle": "메시지 삭제",
+    "deleteConfirm": "이 메시지를 보관함에서 삭제하시겠어요?",
+    "deleteError": "메시지 삭제에 실패했어요."
   },
   "settings": {
     "title": "설정",
