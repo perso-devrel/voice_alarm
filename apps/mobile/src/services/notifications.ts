@@ -2,6 +2,10 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { Alarm } from '../types';
 
+const ALARM_CATEGORY = 'alarm';
+const SNOOZE_ACTION = 'snooze';
+const DISMISS_ACTION = 'dismiss';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -30,6 +34,19 @@ if (Platform.OS === 'android') {
   });
 }
 
+Notifications.setNotificationCategoryAsync(ALARM_CATEGORY, [
+  {
+    identifier: SNOOZE_ACTION,
+    buttonTitle: '😴 스누즈',
+    options: { opensAppToForeground: false },
+  },
+  {
+    identifier: DISMISS_ACTION,
+    buttonTitle: '✓ 끄기',
+    options: { opensAppToForeground: false },
+  },
+]);
+
 export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
@@ -46,6 +63,7 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
       text: alarm.message_text || '',
       voiceName: alarm.voice_name || '',
       category: alarm.category || '',
+      snoozeMinutes: alarm.snooze_minutes || 5,
     };
 
     if (repeatDays.length === 0) {

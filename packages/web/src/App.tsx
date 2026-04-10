@@ -62,11 +62,11 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[var(--color-bg)]">
-      {/* Sidebar */}
+    <div className="min-h-screen flex flex-col md:flex-row bg-[var(--color-bg)]">
+      {/* Sidebar — desktop only */}
       <nav
         aria-label="메인 메뉴"
-        className="w-64 bg-[var(--color-surface)] border-r border-[var(--color-border)] p-6 flex flex-col transition-colors duration-200"
+        className="hidden md:flex w-64 bg-[var(--color-surface)] border-r border-[var(--color-border)] p-6 flex-col transition-colors duration-200"
       >
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[var(--color-primary)]">VoiceAlarm</h1>
@@ -105,8 +105,20 @@ export default function App() {
         </div>
       </nav>
 
+      {/* Mobile header */}
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-[var(--color-surface)] border-b border-[var(--color-border)] transition-colors">
+        <h1 className="text-lg font-bold text-[var(--color-primary)]">VoiceAlarm</h1>
+        <button
+          onClick={handleLogout}
+          aria-label="로그아웃"
+          className="text-xs text-red-400 hover:text-red-500 transition-colors"
+        >
+          로그아웃
+        </button>
+      </header>
+
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto pb-20 md:pb-8">
         <Suspense
           fallback={
             <div className="flex items-center justify-center h-64">
@@ -117,6 +129,30 @@ export default function App() {
           {renderPage()}
         </Suspense>
       </main>
+
+      {/* Bottom tab bar — mobile only */}
+      <nav
+        aria-label="메인 메뉴"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex justify-around py-2 transition-colors z-50"
+      >
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.key}
+            onClick={() => setPage(item.key)}
+            aria-current={page === item.key ? 'page' : undefined}
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-xs transition-all ${
+              page === item.key
+                ? 'text-[var(--color-primary)] font-semibold'
+                : 'text-[var(--color-text-tertiary)]'
+            }`}
+          >
+            <span className="text-lg" aria-hidden="true">
+              {item.emoji}
+            </span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
