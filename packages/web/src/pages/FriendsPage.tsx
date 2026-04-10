@@ -35,7 +35,39 @@ export default function FriendsPage() {
 
   const acceptMutation = useMutation({
     mutationFn: acceptFriendRequest,
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['friends'] });
+      await queryClient.cancelQueries({ queryKey: ['friends-pending'] });
+
+      const prevFriends = queryClient.getQueryData<Friend[]>(['friends']);
+      const prevPending = queryClient.getQueryData<PendingFriendRequest[]>(['friends-pending']);
+
+      const accepted = prevPending?.find((p) => p.id === id);
+      if (accepted) {
+        queryClient.setQueryData<PendingFriendRequest[]>(
+          ['friends-pending'],
+          (old) => old?.filter((p) => p.id !== id) ?? [],
+        );
+        queryClient.setQueryData<Friend[]>(['friends'], (old) => [
+          ...(old ?? []),
+          {
+            id: accepted.id,
+            friend_id: accepted.requester_id ?? '',
+            friend_name: accepted.requester_name,
+            friend_email: accepted.requester_email,
+            status: 'accepted' as const,
+            created_at: accepted.created_at,
+          },
+        ]);
+      }
+
+      return { prevFriends, prevPending };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prevFriends) queryClient.setQueryData(['friends'], context.prevFriends);
+      if (context?.prevPending) queryClient.setQueryData(['friends-pending'], context.prevPending);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['friends-pending'] });
     },
@@ -43,7 +75,29 @@ export default function FriendsPage() {
 
   const removeMutation = useMutation({
     mutationFn: deleteFriend,
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['friends'] });
+      await queryClient.cancelQueries({ queryKey: ['friends-pending'] });
+
+      const prevFriends = queryClient.getQueryData<Friend[]>(['friends']);
+      const prevPending = queryClient.getQueryData<PendingFriendRequest[]>(['friends-pending']);
+
+      queryClient.setQueryData<Friend[]>(
+        ['friends'],
+        (old) => old?.filter((f) => f.id !== id) ?? [],
+      );
+      queryClient.setQueryData<PendingFriendRequest[]>(
+        ['friends-pending'],
+        (old) => old?.filter((p) => p.id !== id) ?? [],
+      );
+
+      return { prevFriends, prevPending };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prevFriends) queryClient.setQueryData(['friends'], context.prevFriends);
+      if (context?.prevPending) queryClient.setQueryData(['friends-pending'], context.prevPending);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['friends-pending'] });
     },

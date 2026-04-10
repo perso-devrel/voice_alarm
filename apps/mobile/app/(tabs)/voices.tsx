@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +30,7 @@ export default function VoicesScreen() {
     data: profiles,
     isLoading,
     isError,
+    isRefetching,
     refetch,
   } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -98,6 +101,10 @@ export default function VoicesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.header}>
         <Text style={styles.title}>{t('voices.title')}</Text>
         <Text style={styles.subtitle}>{t('voices.subtitle')}</Text>
@@ -160,6 +167,7 @@ export default function VoicesScreen() {
           />
         )}
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

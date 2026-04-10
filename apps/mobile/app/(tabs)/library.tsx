@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -41,6 +42,7 @@ export default function LibraryScreen() {
     data: items,
     isLoading,
     isError,
+    isRefetching,
     refetch,
   } = useQuery({
     queryKey: ['library', filter],
@@ -193,6 +195,7 @@ export default function LibraryScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         />
       )}
     </SafeAreaView>

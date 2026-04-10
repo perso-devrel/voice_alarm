@@ -8,6 +8,7 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -83,6 +84,7 @@ export default function AlarmsScreen() {
     data: alarms,
     isLoading,
     isError,
+    isRefetching,
     refetch,
   } = useQuery({
     queryKey: ['alarms'],
@@ -253,6 +255,7 @@ export default function AlarmsScreen() {
           renderItem={renderAlarm}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         />
       )}
     </SafeAreaView>

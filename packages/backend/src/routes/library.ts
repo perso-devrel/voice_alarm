@@ -8,30 +8,44 @@ const library = new Hono<AppEnv>();
 library.get('/', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
-  const filter = c.req.query('filter'); // 'favorite', 'voice:{id}', 'date:{yyyy-mm-dd}'
+  const filter = c.req.query('filter');
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '20', 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  let sql = `SELECT ml.*, m.text, m.category, m.created_at as message_created_at,
+  let whereClause = 'WHERE ml.user_id = ?';
+  const filterArgs: (string | number)[] = [userId];
+
+  if (filter === 'favorite') {
+    whereClause += ' AND ml.is_favorite = 1';
+  } else if (filter?.startsWith('voice:')) {
+    whereClause += ' AND m.voice_profile_id = ?';
+    filterArgs.push(filter.slice(6));
+  } else if (filter?.startsWith('date:')) {
+    whereClause += ' AND date(ml.received_at) = ?';
+    filterArgs.push(filter.slice(5));
+  }
+
+  const countSql = `SELECT COUNT(*) as total
+             FROM message_library ml
+             JOIN messages m ON ml.message_id = m.id
+             ${whereClause}`;
+
+  const dataSql = `SELECT ml.*, m.text, m.category, m.created_at as message_created_at,
              vp.name as voice_name, vp.avatar_url
              FROM message_library ml
              JOIN messages m ON ml.message_id = m.id
              JOIN voice_profiles vp ON m.voice_profile_id = vp.id
-             WHERE ml.user_id = ?`;
-  const args: (string | number)[] = [userId];
+             ${whereClause}
+             ORDER BY ml.received_at DESC
+             LIMIT ? OFFSET ?`;
 
-  if (filter === 'favorite') {
-    sql += ' AND ml.is_favorite = 1';
-  } else if (filter?.startsWith('voice:')) {
-    sql += ' AND m.voice_profile_id = ?';
-    args.push(filter.slice(6));
-  } else if (filter?.startsWith('date:')) {
-    sql += ' AND date(ml.received_at) = ?';
-    args.push(filter.slice(5));
-  }
+  const [countRes, result] = await Promise.all([
+    db.execute({ sql: countSql, args: filterArgs }),
+    db.execute({ sql: dataSql, args: [...filterArgs, limit, offset] }),
+  ]);
 
-  sql += ' ORDER BY ml.received_at DESC';
-
-  const result = await db.execute({ sql, args });
-  return c.json({ items: result.rows });
+  const total = Number(countRes.rows[0].total);
+  return c.json({ items: result.rows, total, limit, offset });
 });
 
 /** 즐겨찾기 토글 */

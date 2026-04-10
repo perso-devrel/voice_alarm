@@ -106,8 +106,9 @@
 ## P10 - 자가 생성 항목 (7차)
 
 - [x] 백엔드: voice/:id GET/DELETE에 UUID 형식 검증 추가 (잘못된 ID → 400 응답)
+- [x] 모바일: alarms/voices/library 탭에 pull-to-refresh (RefreshControl) 추가
+- [x] 백엔드: library 엔드포인트에 페이지네이션 추가 (limit/offset, 친구/선물과 동일 패턴)
 - [ ] 모바일: 친구 화면 새로고침 중 스켈레톤/딤 로딩 UX 개선
-- [ ] 백엔드: library 엔드포인트에 페이지네이션 추가 (limit/offset, 친구/선물과 동일 패턴)
 - [ ] 웹: FriendsPage에서 친구 요청 수락/거절 시 낙관적 업데이트 (optimistic update)
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
