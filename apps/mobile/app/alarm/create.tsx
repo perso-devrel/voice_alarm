@@ -22,14 +22,14 @@ import { getApiErrorMessage } from '../../src/types';
 export default function CreateAlarmScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { isAuthenticated, userId } = useAppStore();
+  const { isAuthenticated, userId, defaultSnoozeMinutes } = useAppStore();
   const { t } = useTranslation();
 
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
-  const [snooze, setSnooze] = useState(5);
+  const [snooze, setSnooze] = useState(defaultSnoozeMinutes);
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [targetName, setTargetName] = useState<string | null>(null);
 

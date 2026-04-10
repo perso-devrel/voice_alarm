@@ -64,6 +64,9 @@ interface AppState {
   // Onboarding
   hasCompletedOnboarding: boolean;
 
+  // Preferences
+  defaultSnoozeMinutes: number;
+
   // Actions
   setAuth: (token: string, userId: string) => void;
   clearAuth: () => void;
@@ -74,6 +77,7 @@ interface AppState {
   setPlaying: (id: string | null) => void;
   completeOnboarding: () => void;
   incrementTtsCount: () => void;
+  setDefaultSnoozeMinutes: (minutes: number) => void;
   loadPersistedState: () => Promise<void>;
 }
 
@@ -87,6 +91,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
   isPlaying: false,
   currentPlayingId: null,
   hasCompletedOnboarding: false,
+  defaultSnoozeMinutes: 5,
 
   setAuth: async (token, userId) => {
     await AsyncStorage.setItem('auth_token', token);
@@ -121,16 +126,23 @@ export const useAppStore = create<AppState>((set, _get) => ({
 
   incrementTtsCount: () => set((state) => ({ dailyTtsCount: state.dailyTtsCount + 1 })),
 
+  setDefaultSnoozeMinutes: async (minutes) => {
+    await AsyncStorage.setItem('default_snooze_minutes', String(minutes));
+    set({ defaultSnoozeMinutes: minutes });
+  },
+
   loadPersistedState: async () => {
     const token = await AsyncStorage.getItem('auth_token');
     const userId = await AsyncStorage.getItem('user_id');
     const onboarding = await AsyncStorage.getItem('onboarding_complete');
+    const snooze = await AsyncStorage.getItem('default_snooze_minutes');
 
     set({
       firebaseToken: token,
       userId: userId,
       isAuthenticated: !!token,
       hasCompletedOnboarding: onboarding === 'true',
+      defaultSnoozeMinutes: snooze ? parseInt(snooze, 10) : 5,
     });
   },
 }));

@@ -119,6 +119,8 @@
     "notifications": "Notifications",
     "alarmNotif": "Alarm notifications",
     "messageNotif": "Message notifications",
+    "defaultSnooze": "Default snooze",
+    "minutes": "min",
     "voice": "Voice",
     "voiceQuality": "Voice quality",
     "voiceQualityHigh": "High",
@@ -137,7 +139,9 @@
     "logoutConfirm": "Are you sure you want to log out?",
     "planFree": "Free",
     "planPlus": "Plus ($3.99/mo)",
-    "planFamily": "Family ($7.99/mo)"
+    "planFamily": "Family ($7.99/mo)",
+    "defaultSnooze": "Default snooze",
+    "minutes": "min"
   },
   "onboarding": {
     "skip": "Skip",

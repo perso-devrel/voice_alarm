@@ -99,18 +99,29 @@ friend.get('/list', async (c) => {
 friend.get('/pending', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '20', 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  const result = await db.execute({
-    sql: `SELECT f.id, f.user_a, f.created_at,
-            u.email as requester_email, u.name as requester_name, u.picture as requester_picture
-          FROM friendships f
-          JOIN users u ON u.google_id = f.user_a
-          WHERE f.user_b = ? AND f.status = 'pending'
-          ORDER BY f.created_at DESC`,
-    args: [userId],
-  });
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: `SELECT COUNT(*) as total FROM friendships
+            WHERE user_b = ? AND status = 'pending'`,
+      args: [userId],
+    }),
+    db.execute({
+      sql: `SELECT f.id, f.user_a, f.created_at,
+              u.email as requester_email, u.name as requester_name, u.picture as requester_picture
+            FROM friendships f
+            JOIN users u ON u.google_id = f.user_a
+            WHERE f.user_b = ? AND f.status = 'pending'
+            ORDER BY f.created_at DESC
+            LIMIT ? OFFSET ?`,
+      args: [userId, limit, offset],
+    }),
+  ]);
 
-  return c.json({ pending: result.rows });
+  const total = Number(countRes.rows[0].total);
+  return c.json({ pending: result.rows, total, limit, offset });
 });
 
 /** 친구 요청 수락 */

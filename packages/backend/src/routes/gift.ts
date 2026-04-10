@@ -78,38 +78,58 @@ gift.post('/', async (c) => {
 gift.get('/received', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '20', 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  const result = await db.execute({
-    sql: `SELECT g.*, m.text as message_text, m.audio_url, m.category,
-            u.email as sender_email, u.name as sender_name, u.picture as sender_picture
-          FROM gifts g
-          JOIN messages m ON g.message_id = m.id
-          JOIN users u ON u.google_id = g.sender_id
-          WHERE g.recipient_id = ?
-          ORDER BY g.created_at DESC`,
-    args: [userId],
-  });
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: 'SELECT COUNT(*) as total FROM gifts WHERE recipient_id = ?',
+      args: [userId],
+    }),
+    db.execute({
+      sql: `SELECT g.*, m.text as message_text, m.audio_url, m.category,
+              u.email as sender_email, u.name as sender_name, u.picture as sender_picture
+            FROM gifts g
+            JOIN messages m ON g.message_id = m.id
+            JOIN users u ON u.google_id = g.sender_id
+            WHERE g.recipient_id = ?
+            ORDER BY g.created_at DESC
+            LIMIT ? OFFSET ?`,
+      args: [userId, limit, offset],
+    }),
+  ]);
 
-  return c.json({ gifts: result.rows });
+  const total = Number(countRes.rows[0].total);
+  return c.json({ gifts: result.rows, total, limit, offset });
 });
 
 /** 보낸 선물 목록 */
 gift.get('/sent', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '20', 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  const result = await db.execute({
-    sql: `SELECT g.*, m.text as message_text, m.category,
-            u.email as recipient_email, u.name as recipient_name
-          FROM gifts g
-          JOIN messages m ON g.message_id = m.id
-          JOIN users u ON u.google_id = g.recipient_id
-          WHERE g.sender_id = ?
-          ORDER BY g.created_at DESC`,
-    args: [userId],
-  });
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: 'SELECT COUNT(*) as total FROM gifts WHERE sender_id = ?',
+      args: [userId],
+    }),
+    db.execute({
+      sql: `SELECT g.*, m.text as message_text, m.category,
+              u.email as recipient_email, u.name as recipient_name
+            FROM gifts g
+            JOIN messages m ON g.message_id = m.id
+            JOIN users u ON u.google_id = g.recipient_id
+            WHERE g.sender_id = ?
+            ORDER BY g.created_at DESC
+            LIMIT ? OFFSET ?`,
+      args: [userId, limit, offset],
+    }),
+  ]);
 
-  return c.json({ gifts: result.rows });
+  const total = Number(countRes.rows[0].total);
+  return c.json({ gifts: result.rows, total, limit, offset });
 });
 
 /** 선물 수락 */

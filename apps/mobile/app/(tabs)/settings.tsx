@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { getAudioCacheSize } from '../../src/services/audio';
 
 export default function SettingsScreen() {
-  const { plan, isAuthenticated, clearAuth } = useAppStore();
+  const { plan, isAuthenticated, clearAuth, defaultSnoozeMinutes, setDefaultSnoozeMinutes } = useAppStore();
   const [cacheSize, setCacheSize] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
   const { t } = useTranslation();
@@ -62,6 +62,31 @@ export default function SettingsScreen() {
               label={t('settings.messageNotif')}
               trailing={<Switch value={true} trackColor={{ true: Colors.light.primary }} />}
             />
+            <View style={settingStyles.row}>
+              <Text style={settingStyles.label}>{t('settings.defaultSnooze')}</Text>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[5, 10, 15].map((m) => (
+                  <TouchableOpacity
+                    key={m}
+                    onPress={() => setDefaultSnoozeMinutes(m)}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 4,
+                      borderRadius: 12,
+                      backgroundColor: defaultSnoozeMinutes === m ? Colors.light.primary : Colors.light.surfaceVariant,
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: FontSize.sm,
+                      fontWeight: '600',
+                      color: defaultSnoozeMinutes === m ? '#FFF' : Colors.light.textSecondary,
+                    }}>
+                      {m}{t('settings.minutes')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
           </View>
         </View>
 

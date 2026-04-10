@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile } from '../services/api';
+import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, generateTTS } from '../services/api';
 import type { VoiceProfile } from '../types';
 import { getApiErrorMessage } from '../types';
 
@@ -11,6 +11,8 @@ export default function VoicesPage() {
   const [uploadName, setUploadName] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const testAudioRef = useRef<HTMLAudioElement>(null);
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -32,6 +34,25 @@ export default function VoicesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] }),
   });
 
+  const handleTest = async (profileId: string) => {
+    setTestingId(profileId);
+    try {
+      const data = await generateTTS({
+        voice_profile_id: profileId,
+        text: '안녕하세요, 음성 테스트입니다.',
+        category: 'custom',
+      });
+      if (testAudioRef.current && data.audio_base64) {
+        testAudioRef.current.src = `data:audio/mp3;base64,${data.audio_base64}`;
+        testAudioRef.current.play();
+      }
+    } catch {
+      alert('음성 테스트에 실패했습니다.');
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
       ready: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -52,6 +73,7 @@ export default function VoicesPage() {
 
   return (
     <div>
+      <audio ref={testAudioRef} className="hidden" />
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-3xl font-bold text-[var(--color-text)]">음성 프로필</h2>
@@ -195,9 +217,11 @@ export default function VoicesPage() {
               <div className="flex gap-2">
                 <button
                   aria-label={`${profile.name} 음성 테스트`}
-                  className="text-sm text-[var(--color-primary)] font-medium hover:underline"
+                  className="text-sm text-[var(--color-primary)] font-medium hover:underline disabled:opacity-50"
+                  disabled={testingId === profile.id || profile.status !== 'ready'}
+                  onClick={() => handleTest(profile.id)}
                 >
-                  테스트
+                  {testingId === profile.id ? '생성 중...' : '테스트'}
                 </button>
                 <button
                   aria-label={`${profile.name} 프로필 삭제`}
