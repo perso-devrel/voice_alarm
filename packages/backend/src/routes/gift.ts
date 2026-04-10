@@ -82,11 +82,23 @@ gift.get('/received', async (c) => {
   const db = getDB(c.env);
   const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '20', 10) || 20, 1), 100);
   const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
+  const q = c.req.query('q')?.trim().toLowerCase();
+
+  let searchClause = '';
+  const searchArgs: string[] = [];
+  if (q) {
+    searchClause = ' AND (LOWER(u.name) LIKE ? OR LOWER(u.email) LIKE ? OR LOWER(m.text) LIKE ?)';
+    const pattern = `%${q}%`;
+    searchArgs.push(pattern, pattern, pattern);
+  }
 
   const [countRes, result] = await Promise.all([
     db.execute({
-      sql: 'SELECT COUNT(*) as total FROM gifts WHERE recipient_id = ?',
-      args: [userId],
+      sql: `SELECT COUNT(*) as total FROM gifts g
+            JOIN messages m ON g.message_id = m.id
+            JOIN users u ON u.google_id = g.sender_id
+            WHERE g.recipient_id = ?${searchClause}`,
+      args: [userId, ...searchArgs],
     }),
     db.execute({
       sql: `SELECT g.*, m.text as message_text, m.audio_url, m.category,
@@ -94,10 +106,10 @@ gift.get('/received', async (c) => {
             FROM gifts g
             JOIN messages m ON g.message_id = m.id
             JOIN users u ON u.google_id = g.sender_id
-            WHERE g.recipient_id = ?
+            WHERE g.recipient_id = ?${searchClause}
             ORDER BY g.created_at DESC
             LIMIT ? OFFSET ?`,
-      args: [userId, limit, offset],
+      args: [userId, ...searchArgs, limit, offset],
     }),
   ]);
 
@@ -111,11 +123,23 @@ gift.get('/sent', async (c) => {
   const db = getDB(c.env);
   const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '20', 10) || 20, 1), 100);
   const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
+  const q = c.req.query('q')?.trim().toLowerCase();
+
+  let searchClause = '';
+  const searchArgs: string[] = [];
+  if (q) {
+    searchClause = ' AND (LOWER(u.name) LIKE ? OR LOWER(u.email) LIKE ? OR LOWER(m.text) LIKE ?)';
+    const pattern = `%${q}%`;
+    searchArgs.push(pattern, pattern, pattern);
+  }
 
   const [countRes, result] = await Promise.all([
     db.execute({
-      sql: 'SELECT COUNT(*) as total FROM gifts WHERE sender_id = ?',
-      args: [userId],
+      sql: `SELECT COUNT(*) as total FROM gifts g
+            JOIN messages m ON g.message_id = m.id
+            JOIN users u ON u.google_id = g.recipient_id
+            WHERE g.sender_id = ?${searchClause}`,
+      args: [userId, ...searchArgs],
     }),
     db.execute({
       sql: `SELECT g.*, m.text as message_text, m.category,
@@ -123,10 +147,10 @@ gift.get('/sent', async (c) => {
             FROM gifts g
             JOIN messages m ON g.message_id = m.id
             JOIN users u ON u.google_id = g.recipient_id
-            WHERE g.sender_id = ?
+            WHERE g.sender_id = ?${searchClause}
             ORDER BY g.created_at DESC
             LIMIT ? OFFSET ?`,
-      args: [userId, limit, offset],
+      args: [userId, ...searchArgs, limit, offset],
     }),
   ]);
 

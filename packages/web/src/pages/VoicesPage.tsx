@@ -321,7 +321,7 @@ export default function VoicesPage() {
   );
 }
 
-function VoiceDetailModal({ profile, onClose }: { profile: VoiceProfile; onClose: () => void }) {
+export function VoiceDetailModal({ profile, onClose }: { profile: VoiceProfile; onClose: () => void }) {
   const { data: messages, isLoading: loadingMessages } = useQuery({
     queryKey: ['voiceMessages', profile.id],
     queryFn: () => getMessagesByVoice(profile.id),

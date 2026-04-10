@@ -107,6 +107,10 @@ export default function RootLayout() {
             options={{ headerShown: true, title: t('screen.alarmSetting'), presentation: 'modal' }}
           />
           <Stack.Screen
+            name="alarm/edit"
+            options={{ headerShown: true, title: t('alarmEdit.title'), presentation: 'modal' }}
+          />
+          <Stack.Screen
             name="message/create"
             options={{ headerShown: true, title: t('screen.writeMessage'), presentation: 'modal' }}
           />

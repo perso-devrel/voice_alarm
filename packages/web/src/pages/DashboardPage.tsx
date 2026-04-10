@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getStats, getRecentActivity } from '../services/api';
+import { getStats, getRecentActivity, getVoiceProfiles } from '../services/api';
 import type { Stats, Activity, WeekTrend } from '../services/api';
+import type { VoiceProfile } from '../types';
+import { VoiceDetailModal } from './VoicesPage';
 
 interface StatCardProps {
   emoji: string;
@@ -69,6 +72,13 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
     queryKey: ['recentActivity'],
     queryFn: getRecentActivity,
   });
+
+  const { data: voiceProfiles } = useQuery<VoiceProfile[]>({
+    queryKey: ['voiceProfiles'],
+    queryFn: getVoiceProfiles,
+  });
+
+  const [selectedVoice, setSelectedVoice] = useState<VoiceProfile | null>(null);
 
   return (
     <div>
@@ -204,10 +214,24 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
               return (
                 <div
                   key={activity.id}
-                  onClick={() => onNavigate(meta.page)}
+                  onClick={() => {
+                    if (activity.type === 'voice') {
+                      const profile = voiceProfiles?.find((v) => v.id === activity.id);
+                      if (profile) { setSelectedVoice(profile); return; }
+                    }
+                    onNavigate(meta.page);
+                  }}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') onNavigate(meta.page); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (activity.type === 'voice') {
+                        const profile = voiceProfiles?.find((v) => v.id === activity.id);
+                        if (profile) { setSelectedVoice(profile); return; }
+                      }
+                      onNavigate(meta.page);
+                    }
+                  }}
                   className="flex items-center gap-3 p-3 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] cursor-pointer hover:border-[var(--color-primary)] transition-colors"
                 >
                   <span className="text-xl">{meta.emoji}</span>
@@ -224,6 +248,10 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
           </div>
         )}
       </div>
+
+      {selectedVoice && (
+        <VoiceDetailModal profile={selectedVoice} onClose={() => setSelectedVoice(null)} />
+      )}
     </div>
   );
 }
