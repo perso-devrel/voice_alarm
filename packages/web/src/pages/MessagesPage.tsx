@@ -362,7 +362,12 @@ export default function MessagesPage() {
                     >
                       {msg.voice_name}
                     </button>
-                    <p className="text-[var(--color-text)]">"{msg.text}"</p>
+                    <button
+                      onClick={() => setDetailMessage(msg)}
+                      className="text-[var(--color-text)] text-left hover:text-[var(--color-primary)] transition-colors"
+                    >
+                      "{msg.text}"
+                    </button>
                     {msg.audio_url && <InlineAudioPlayer audioUrl={msg.audio_url} />}
                     <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
                       {new Date(msg.created_at).toLocaleDateString('ko-KR')}
@@ -406,6 +411,70 @@ export default function MessagesPage() {
             setDetailVoice(null);
           }}
         />
+      )}
+      {detailMessage && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setDetailMessage(null)}
+        >
+          <div
+            className="bg-[var(--color-bg)] rounded-2xl w-full max-w-md overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-semibold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1 rounded-full uppercase">
+                  {detailMessage.category}
+                </span>
+                <span className="text-xs text-[var(--color-text-tertiary)]">
+                  {new Date(detailMessage.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+              </div>
+              {detailMessage.voice_name && (
+                <button
+                  onClick={() => {
+                    const profile = voices?.find((v: VoiceProfile) => v.name === detailMessage.voice_name);
+                    if (profile) {
+                      setDetailMessage(null);
+                      setDetailVoice(profile);
+                    }
+                  }}
+                  className="flex items-center gap-2 mb-4 text-sm text-[var(--color-primary)] hover:underline"
+                >
+                  <span className="w-7 h-7 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center text-xs font-bold text-[var(--color-primary-dark)]">
+                    {detailMessage.voice_name.charAt(0)}
+                  </span>
+                  {detailMessage.voice_name}
+                </button>
+              )}
+              <div className="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] mb-4">
+                <p className="text-[var(--color-text)] leading-relaxed whitespace-pre-wrap">{detailMessage.text}</p>
+              </div>
+              {detailMessage.audio_url && <InlineAudioPlayer audioUrl={detailMessage.audio_url} />}
+            </div>
+            <div className="p-4 border-t border-[var(--color-border)] flex gap-2">
+              <button
+                onClick={() => {
+                  if (!friends?.length) {
+                    alert('먼저 친구를 추가해주세요.');
+                    return;
+                  }
+                  setGiftTarget(detailMessage);
+                  setDetailMessage(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 font-medium transition-colors"
+              >
+                🎁 선물하기
+              </button>
+              <button
+                onClick={() => setDetailMessage(null)}
+                className="flex-1 py-2.5 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors font-medium"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {giftTarget && (
         <div
