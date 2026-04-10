@@ -70,6 +70,28 @@ user.patch('/plan', async (c) => {
   return c.json({ success: true, plan: body.plan });
 });
 
+user.delete('/me', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const tables = [
+    'DELETE FROM alarms WHERE user_id = ?',
+    'DELETE FROM message_library WHERE user_id = ?',
+    'DELETE FROM messages WHERE user_id = ?',
+    'DELETE FROM voice_profiles WHERE user_id = ?',
+    "DELETE FROM friendships WHERE user_a = ? OR user_b = ?",
+    "DELETE FROM gifts WHERE sender_id = ? OR recipient_id = ?",
+    'DELETE FROM users WHERE google_id = ?',
+  ];
+
+  for (const sql of tables) {
+    const needsTwoArgs = sql.includes('OR');
+    await db.execute({ sql, args: needsTwoArgs ? [userId, userId] : [userId] });
+  }
+
+  return c.json({ success: true });
+});
+
 user.get('/search', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);

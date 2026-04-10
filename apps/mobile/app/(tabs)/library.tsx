@@ -25,6 +25,8 @@ import { MiniWaveformPlayer } from '../../src/components/MiniWaveformPlayer';
 import { Audio } from 'expo-av';
 import type { LibraryItem } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 type FilterType = 'all' | 'favorite';
 
@@ -50,6 +52,7 @@ export default function LibraryScreen() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const { t } = useTranslation();
+  const toast = useToast();
   const isConnected = useNetworkStatus();
   const [cachedItems, setCachedItems] = useState<LibraryItem[] | null>(null);
 
@@ -88,7 +91,7 @@ export default function LibraryScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
     onError: () => {
-      Alert.alert(t('common.error'), t('library.favoriteError'));
+      toast.show(t('library.favoriteError'));
     },
   });
 
@@ -98,7 +101,7 @@ export default function LibraryScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('library.deleteError')));
+      toast.show(getApiErrorMessage(err, t('library.deleteError')));
     },
   });
 
@@ -287,6 +290,7 @@ export default function LibraryScreen() {
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         />
       )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </SafeAreaView>
   );
 }

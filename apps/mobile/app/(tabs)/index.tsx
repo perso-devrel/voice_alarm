@@ -77,7 +77,11 @@ export default function HomeScreen() {
     enabled: isAuthenticated && isConnected,
   });
 
-  const { data: stats } = useQuery<Stats>({
+  const {
+    data: stats,
+    isError: statsError,
+    refetch: refetchStats,
+  } = useQuery<Stats>({
     queryKey: ['stats'],
     queryFn: getStats,
     enabled: isAuthenticated && isConnected,
@@ -168,6 +172,16 @@ export default function HomeScreen() {
         )}
 
         {/* 요약 통계 */}
+        {isAuthenticated && statsError && (
+          <TouchableOpacity
+            style={styles.statsErrorCard}
+            onPress={() => refetchStats()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.statsErrorText}>{t('common.loadError', '불러오기 실패')}</Text>
+            <Text style={styles.statsErrorRetry}>{t('common.retry', '다시 시도')}</Text>
+          </TouchableOpacity>
+        )}
         {isAuthenticated && stats && (
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
@@ -485,6 +499,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.lg,
+  },
+  statsErrorCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f8717133',
+  },
+  statsErrorText: {
+    fontSize: FontSize.sm,
+    color: '#f87171',
+    fontWeight: '600',
+  },
+  statsErrorRetry: {
+    fontSize: FontSize.xs,
+    color: Colors.light.primary,
+    marginTop: 4,
   },
   loginButton: {
     backgroundColor: Colors.light.primary,

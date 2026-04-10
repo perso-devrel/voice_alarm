@@ -27,6 +27,8 @@ import { cacheAlarms, getCachedAlarms } from '../../src/services/offlineCache';
 import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 function getNextFireMs(alarm: Alarm): number | null {
   if (!alarm.is_active) return null;
@@ -74,6 +76,7 @@ export default function AlarmsScreen() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const toast = useToast();
   const isConnected = useNetworkStatus();
   const [cachedAlarms, setCachedAlarms] = useState<Alarm[] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,7 +154,7 @@ export default function AlarmsScreen() {
       resyncNotifications();
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarms.toggleError')));
+      toast.show(getApiErrorMessage(err, t('alarms.toggleError')));
     },
   });
 
@@ -162,7 +165,7 @@ export default function AlarmsScreen() {
       resyncNotifications();
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarms.deleteError')));
+      toast.show(getApiErrorMessage(err, t('alarms.deleteError')));
     },
   });
 
@@ -312,6 +315,7 @@ export default function AlarmsScreen() {
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         />
       )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </SafeAreaView>
   );
 }

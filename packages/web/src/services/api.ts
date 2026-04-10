@@ -215,4 +215,8 @@ export async function getRecentActivity(): Promise<Activity[]> {
   return data.activities;
 }
 
+export async function deleteAccount() {
+  await api.delete('/user/me');
+}
+
 export default api;

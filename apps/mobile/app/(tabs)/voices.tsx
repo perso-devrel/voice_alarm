@@ -23,12 +23,15 @@ import { useAppStore } from '../../src/stores/useAppStore';
 import { ErrorView } from '../../src/components/QueryStateView';
 import type { VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function VoicesScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
 
   const {
@@ -56,7 +59,7 @@ export default function VoicesScreen() {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voices.deleteError')));
+      toast.show(getApiErrorMessage(err, t('voices.deleteError')));
     },
   });
 
@@ -219,6 +222,7 @@ export default function VoicesScreen() {
         )}
       </View>
       </ScrollView>
+      <Toast message={toast.message} opacity={toast.opacity} />
     </SafeAreaView>
   );
 }

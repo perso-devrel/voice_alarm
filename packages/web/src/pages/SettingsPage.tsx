@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getUserProfile } from '../services/api';
+import { getUserProfile, deleteAccount } from '../services/api';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -22,6 +23,22 @@ export default function SettingsPage({ darkMode }: Props) {
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
   });
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      localStorage.removeItem('auth_token');
+      window.location.reload();
+    } catch {
+      setDeleting(false);
+      alert('계정 삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
 
   const planLabels: Record<string, string> = {
     free: 'Free',
@@ -162,16 +179,67 @@ export default function SettingsPage({ darkMode }: Props) {
         </div>
       </div>
 
-      <button
-        aria-label="로그아웃"
-        className="w-full mt-6 py-3 text-red-400 font-medium hover:text-red-500 transition-colors"
-        onClick={() => {
-          localStorage.removeItem('auth_token');
-          window.location.reload();
-        }}
-      >
-        로그아웃
-      </button>
+      <div className="flex flex-col gap-3 mt-6">
+        <button
+          aria-label="로그아웃"
+          className="w-full py-3 text-red-400 font-medium hover:text-red-500 transition-colors"
+          onClick={() => {
+            localStorage.removeItem('auth_token');
+            window.location.reload();
+          }}
+        >
+          로그아웃
+        </button>
+        <button
+          aria-label="계정 삭제"
+          className="w-full py-3 text-red-300 text-sm hover:text-red-400 transition-colors"
+          onClick={() => setShowDeleteDialog(true)}
+        >
+          계정 삭제
+        </button>
+      </div>
+
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowDeleteDialog(false)}>
+          <div
+            className="bg-[var(--color-surface)] rounded-2xl p-6 max-w-md w-full mx-4 border border-[var(--color-border)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-red-500 mb-2">계정 삭제</h3>
+            <p className="text-[var(--color-text-secondary)] text-sm mb-4">
+              계정을 삭제하면 모든 음성 프로필, 메시지, 알람, 친구, 선물 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <p className="text-[var(--color-text)] text-sm mb-2">
+              확인하려면 아래에 <strong>"삭제"</strong>를 입력하세요.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="삭제"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text)] text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-red-400"
+            />
+            <div className="flex gap-3">
+              <button
+                className="flex-1 py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm hover:bg-[var(--color-surface-alt)] transition-colors"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteConfirmText('');
+                }}
+              >
+                취소
+              </button>
+              <button
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-600 transition-colors"
+                disabled={deleteConfirmText !== '삭제' || deleting}
+                onClick={handleDeleteAccount}
+              >
+                {deleting ? '삭제 중...' : '계정 영구 삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

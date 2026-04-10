@@ -28,6 +28,8 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { useAppStore } from '../../src/stores/useAppStore';
 import { getApiErrorMessage } from '../../src/types';
 import { ErrorView } from '../../src/components/QueryStateView';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 type Tab = 'friends' | 'pending';
 
@@ -76,6 +78,7 @@ export default function FriendsScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { t } = useTranslation();
+  const toast = useToast();
 
   const handleEmailChange = (text: string) => {
     setEmail(text);
@@ -119,11 +122,11 @@ export default function FriendsScreen() {
     mutationFn: (email: string) => sendFriendRequest(email),
     onSuccess: () => {
       setEmail('');
-      Alert.alert(t('friends.sendSuccessTitle'), t('friends.sendSuccess'));
+      toast.show(t('friends.sendSuccess'));
       queryClient.invalidateQueries({ queryKey: ['friends-pending'] });
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('friends.sendError')));
+      toast.show(getApiErrorMessage(err, t('friends.sendError')));
     },
   });
 
@@ -354,6 +357,8 @@ export default function FriendsScreen() {
           />
         </View>
       )}
+
+      <Toast message={toast.message} opacity={toast.opacity} />
     </SafeAreaView>
   );
 }
