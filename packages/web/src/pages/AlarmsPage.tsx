@@ -13,6 +13,7 @@ import {
 import type { Alarm, Message, VoiceProfile, PresetCategory } from '../types';
 import { AlarmSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
+import { VoiceDetailModal } from './VoicesPage';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -24,10 +25,16 @@ export default function AlarmsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<AlarmFilter>('all');
+  const [selectedVoice, setSelectedVoice] = useState<VoiceProfile | null>(null);
 
   const { data: alarms, isLoading } = useQuery({
     queryKey: ['alarms'],
     queryFn: getAlarms,
+  });
+
+  const { data: voiceProfiles } = useQuery({
+    queryKey: ['voiceProfiles'],
+    queryFn: getVoiceProfiles,
   });
 
   const toggleMutation = useMutation({
@@ -213,7 +220,14 @@ export default function AlarmsPage() {
                   <p className="text-4xl font-light text-[var(--color-text)]">{alarm.time}</p>
                   <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeat(alarm.repeat_days)}</p>
                   <div className="mt-2">
-                    <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {alarm.voice_name}</span>
+                    <span
+                      className="text-sm text-[var(--color-primary)] font-medium hover:underline cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const profile = voiceProfiles?.find((v: VoiceProfile) => v.name === alarm.voice_name);
+                        if (profile) setSelectedVoice(profile);
+                      }}
+                    >🗣️ {alarm.voice_name}</span>
                     <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">"{alarm.message_text}"</p>
                     {alarm.snooze_minutes > 0 && (
                       <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">스누즈 {alarm.snooze_minutes}분</p>
@@ -251,6 +265,10 @@ export default function AlarmsPage() {
             ),
           )}
         </div>
+      )}
+
+      {selectedVoice && (
+        <VoiceDetailModal profile={selectedVoice} onClose={() => setSelectedVoice(null)} />
       )}
     </div>
   );

@@ -149,7 +149,20 @@ friend.patch('/:id/accept', async (c) => {
     args: [id],
   });
 
-  return c.json({ success: true });
+  const updated = await db.execute({
+    sql: `SELECT f.id, f.user_a, f.user_b, f.status, f.created_at,
+                 u.name, u.email, u.picture
+          FROM friendships f
+          JOIN users u ON u.google_id = f.user_a
+          WHERE f.id = ?`,
+    args: [id],
+  });
+
+  const row = updated.rows[0];
+  return c.json({
+    success: true,
+    friendship: row,
+  });
 });
 
 /** 친구 삭제 / 요청 거절 */

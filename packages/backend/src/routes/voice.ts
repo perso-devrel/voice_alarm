@@ -14,15 +14,24 @@ voice.get('/', async (c) => {
   const db = getDB(c.env);
   const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
   const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
+  const status = c.req.query('status');
+
+  const validStatuses = ['ready', 'processing', 'failed'];
+  let statusClause = '';
+  const baseArgs: (string | number)[] = [userId];
+  if (status && validStatuses.includes(status)) {
+    statusClause = ' AND status = ?';
+    baseArgs.push(status);
+  }
 
   const [countRes, result] = await Promise.all([
     db.execute({
-      sql: 'SELECT COUNT(*) as total FROM voice_profiles WHERE user_id = ?',
-      args: [userId],
+      sql: `SELECT COUNT(*) as total FROM voice_profiles WHERE user_id = ?${statusClause}`,
+      args: baseArgs,
     }),
     db.execute({
-      sql: 'SELECT * FROM voice_profiles WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
-      args: [userId, limit, offset],
+      sql: `SELECT * FROM voice_profiles WHERE user_id = ?${statusClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      args: [...baseArgs, limit, offset],
     }),
   ]);
 

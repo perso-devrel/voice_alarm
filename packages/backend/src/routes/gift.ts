@@ -187,7 +187,13 @@ gift.patch('/:id/accept', async (c) => {
     args: [libId, userId, existing.rows[0].message_id],
   });
 
-  return c.json({ success: true });
+  const updated = await db.execute({
+    sql: `SELECT id, sender_id, recipient_id, message_id, status, note, created_at
+          FROM gifts WHERE id = ?`,
+    args: [id],
+  });
+
+  return c.json({ success: true, gift: updated.rows[0] });
 });
 
 /** 선물 거절 */
@@ -213,7 +219,13 @@ gift.patch('/:id/reject', async (c) => {
     args: [id],
   });
 
-  return c.json({ success: true });
+  const updated = await db.execute({
+    sql: `SELECT id, sender_id, recipient_id, message_id, status, note, created_at
+          FROM gifts WHERE id = ?`,
+    args: [id],
+  });
+
+  return c.json({ success: true, gift: updated.rows[0] });
 });
 
 export default gift;

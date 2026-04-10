@@ -7,12 +7,15 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { useAppStore } from '../../src/stores/useAppStore';
 import { getUserProfile } from '../../src/services/api';
 import { useState, useEffect } from 'react';
+import { Linking } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { getAudioCacheSize } from '../../src/services/audio';
 
 export default function SettingsScreen() {
   const { plan, isAuthenticated, clearAuth, defaultSnoozeMinutes, setDefaultSnoozeMinutes } = useAppStore();
   const [cacheSize, setCacheSize] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<string>('undetermined');
   const { t } = useTranslation();
 
   const { data: profile } = useQuery({
@@ -25,6 +28,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     getAudioCacheSize().then(setCacheSize);
+    Notifications.getPermissionsAsync().then(({ status }) => setNotifStatus(status));
   }, []);
 
   const formatBytes = (bytes: number) => {
@@ -71,6 +75,20 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
           <View style={styles.card}>
+            <SettingRow
+              label={t('settings.notifPermission', '알림 권한')}
+              value={notifStatus === 'granted' ? t('settings.permitted', '허용됨') : t('settings.notPermitted', '허용 안 됨')}
+              valueColor={notifStatus === 'granted' ? Colors.light.primary : Colors.light.error}
+              onPress={async () => {
+                if (notifStatus !== 'granted') {
+                  const { status } = await Notifications.requestPermissionsAsync();
+                  setNotifStatus(status);
+                  if (status !== 'granted') {
+                    Linking.openSettings();
+                  }
+                }
+              }}
+            />
             <SettingRow
               label={t('settings.alarmNotif')}
               trailing={<Switch value={true} trackColor={{ true: Colors.light.primary }} />}

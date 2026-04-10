@@ -273,7 +273,22 @@ alarm.patch('/:id', async (c) => {
     args,
   });
 
-  return c.json({ success: true });
+  const updated = await db.execute({
+    sql: `SELECT id, user_id, target_user_id, message_id, time, repeat_days,
+                 is_active, snooze_minutes, created_at, updated_at
+          FROM alarms WHERE id = ?`,
+    args: [id],
+  });
+
+  const row = updated.rows[0];
+  return c.json({
+    success: true,
+    alarm: {
+      ...row,
+      repeat_days: row.repeat_days ? JSON.parse(row.repeat_days as string) : [],
+      is_active: row.is_active === 1,
+    },
+  });
 });
 
 /** 알람 삭제 */
