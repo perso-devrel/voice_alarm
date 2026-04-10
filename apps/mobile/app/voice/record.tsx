@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import {
   requestMicPermission,
@@ -21,17 +22,11 @@ import {
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 
-const GUIDE_SENTENCES = [
-  '안녕하세요, 오늘 하루도 좋은 하루 되세요.',
-  '점심 잘 챙겨 먹고, 오후도 힘내세요.',
-  '오늘도 고생 많았어, 이제 푹 쉬어.',
-  '사랑해, 항상 건강하고 행복해.',
-  '내일도 좋은 일만 가득할 거야, 파이팅!',
-];
-
 export default function RecordScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const guideSentences = t('voiceRecord.sentences', { returnObjects: true }) as string[];
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -60,13 +55,13 @@ export default function RecordScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
       Alert.alert(
-        '음성 등록 완료!',
-        '음성 클론이 생성되고 있어요. 잠시 후 사용할 수 있습니다.',
-        [{ text: '확인', onPress: () => router.back() }]
+        t('voiceRecord.successTitle'),
+        t('voiceRecord.successDesc'),
+        [{ text: t('common.confirm'), onPress: () => router.back() }]
       );
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '음성 클론 생성에 실패했습니다.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceRecord.cloneError')));
     },
   });
 
@@ -88,7 +83,7 @@ export default function RecordScreen() {
         ])
       ).start();
     } catch (err) {
-      Alert.alert('오류', '녹음을 시작할 수 없습니다.');
+      Alert.alert(t('common.error'), t('voiceRecord.recordError'));
     }
   };
 
@@ -106,11 +101,11 @@ export default function RecordScreen() {
 
   const handleSubmit = () => {
     if (!recordedUri || !name.trim()) {
-      Alert.alert('입력 필요', '이름을 입력하고 녹음을 완료해주세요.');
+      Alert.alert(t('voiceRecord.inputRequiredTitle'), t('voiceRecord.inputRequired'));
       return;
     }
     if (duration < 10) {
-      Alert.alert('녹음 너무 짧음', '최소 10초 이상 녹음해주세요.');
+      Alert.alert(t('voiceRecord.tooShortTitle'), t('voiceRecord.tooShort'));
       return;
     }
     cloneMutation.mutate({ uri: recordedUri, name: name.trim() });
@@ -126,7 +121,7 @@ export default function RecordScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.permissionText}>
-          마이크 권한이 필요합니다.{'\n'}설정에서 마이크 접근을 허용해주세요.
+          {t('voiceRecord.permissionRequired')}
         </Text>
       </View>
     );
@@ -136,15 +131,15 @@ export default function RecordScreen() {
     <View style={styles.container}>
       {/* 가이드 문장 */}
       <View style={styles.guideSection}>
-        <Text style={styles.guideTitle}>아래 문장을 편안하게 읽어주세요</Text>
-        {GUIDE_SENTENCES.map((sentence, i) => (
+        <Text style={styles.guideTitle}>{t('voiceRecord.guideTitle')}</Text>
+        {guideSentences.map((sentence, i) => (
           <View key={i} style={styles.guideSentence}>
             <Text style={styles.guideNumber}>{i + 1}</Text>
             <Text style={styles.guideText}>{sentence}</Text>
           </View>
         ))}
         <Text style={styles.guideTip}>
-          💡 최소 10초, 권장 30초~1분 녹음해주세요
+          {t('voiceRecord.guideTip')}
         </Text>
       </View>
 
@@ -168,18 +163,18 @@ export default function RecordScreen() {
         </Animated.View>
 
         <Text style={styles.recordHint}>
-          {isRecording ? '녹음 중... 탭하여 중지' : '탭하여 녹음 시작'}
+          {isRecording ? t('voiceRecord.recording') : t('voiceRecord.tapToRecord')}
         </Text>
       </View>
 
       {/* 녹음 완료 후 */}
       {recordedUri && !isRecording && (
         <View style={styles.resultSection}>
-          <Text style={styles.resultTitle}>녹음 완료! ({formatTime(duration)})</Text>
+          <Text style={styles.resultTitle}>{t('voiceRecord.resultTitle', { time: formatTime(duration) })}</Text>
 
           <TextInput
             style={styles.nameInput}
-            placeholder="이름을 입력해주세요 (예: 엄마, 아빠)"
+            placeholder={t('voiceRecord.namePlaceholder')}
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.light.textTertiary}
@@ -213,7 +208,7 @@ export default function RecordScreen() {
             {cloneMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.submitText}>음성 등록하기</Text>
+              <Text style={styles.submitText}>{t('voiceRecord.submit')}</Text>
             )}
           </TouchableOpacity>
         </View>

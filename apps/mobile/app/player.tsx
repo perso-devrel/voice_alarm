@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../src/constants/theme';
 import { playAudio, getLocalAudioPath } from '../src/services/audio';
 import { useAppStore } from '../src/stores/useAppStore';
@@ -23,6 +24,7 @@ export default function PlayerScreen() {
     category: string;
   }>();
 
+  const { t } = useTranslation();
   const { setPlaying } = useAppStore();
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -125,10 +127,10 @@ export default function PlayerScreen() {
             style={styles.reactionButton}
             onPress={() => setReacted(true)}
           >
-            <Text style={styles.reactionText}>💝 고마워</Text>
+            <Text style={styles.reactionText}>{t('player.thanks')}</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={styles.reactedText}>💝 고마움을 전했어요</Text>
+          <Text style={styles.reactedText}>{t('player.thanked')}</Text>
         )}
       </View>
     </View>

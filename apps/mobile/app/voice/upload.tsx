@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
@@ -18,6 +19,7 @@ import { getApiErrorMessage } from '../../src/types';
 export default function UploadScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [name, setName] = useState('');
   const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
@@ -36,13 +38,13 @@ export default function UploadScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
       Alert.alert(
-        '음성 등록 완료!',
-        '음성 클론이 생성되고 있어요.',
-        [{ text: '확인', onPress: () => router.back() }]
+        t('voiceUpload.successTitle'),
+        t('voiceUpload.successDesc'),
+        [{ text: t('common.confirm'), onPress: () => router.back() }]
       );
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '업로드에 실패했습니다.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceUpload.uploadError')));
     },
   });
 
@@ -59,7 +61,7 @@ export default function UploadScreen() {
 
   const handleSubmit = () => {
     if (!selectedFile || !name.trim()) {
-      Alert.alert('입력 필요', '파일을 선택하고 이름을 입력해주세요.');
+      Alert.alert(t('voiceUpload.inputRequiredTitle'), t('voiceUpload.inputRequired'));
       return;
     }
     cloneMutation.mutate({ file: selectedFile, name: name.trim() });
@@ -69,15 +71,14 @@ export default function UploadScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.description}>
-          MP3, WAV, M4A, AAC 형식의 오디오 파일을 선택해주세요.{'\n'}
-          최소 10초 이상의 음성이 포함되어야 해요.
+          {t('voiceUpload.description')}
         </Text>
 
         {/* 파일 선택 */}
         <TouchableOpacity style={styles.pickButton} onPress={handlePickFile}>
           <Text style={styles.pickEmoji}>📁</Text>
           <Text style={styles.pickText}>
-            {selectedFile ? selectedFile.name : '오디오 파일 선택'}
+            {selectedFile ? selectedFile.name : t('voiceUpload.pickFile')}
           </Text>
         </TouchableOpacity>
 
@@ -93,7 +94,7 @@ export default function UploadScreen() {
         {/* 이름 입력 */}
         <TextInput
           style={styles.nameInput}
-          placeholder="이름을 입력해주세요 (예: 엄마, 아빠, 여자친구)"
+          placeholder={t('voiceUpload.namePlaceholder')}
           value={name}
           onChangeText={setName}
           placeholderTextColor={Colors.light.textTertiary}
@@ -128,7 +129,7 @@ export default function UploadScreen() {
           {cloneMutation.isPending ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.submitText}>음성 등록하기</Text>
+            <Text style={styles.submitText}>{t('voiceUpload.submit')}</Text>
           )}
         </TouchableOpacity>
       </View>

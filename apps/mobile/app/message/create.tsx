@@ -25,6 +25,7 @@ export default function CreateMessageScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isAuthenticated, incrementTtsCount } = useAppStore();
+  const { t } = useTranslation();
 
   const [tab, setTab] = useState<'preset' | 'custom'>('preset');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export default function CreateMessageScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
     onError: (err: unknown) => {
-      Alert.alert('TTS 생성 실패', getApiErrorMessage(err, '다시 시도해주세요.'));
+      Alert.alert(t('messageCreate.generateErrorTitle'), getApiErrorMessage(err, t('messageCreate.generateError')));
     },
   });
 
@@ -71,11 +72,11 @@ export default function CreateMessageScreen() {
 
   const handleGenerate = () => {
     if (!selectedVoiceId) {
-      Alert.alert('음성 선택', '음성 프로필을 선택해주세요.');
+      Alert.alert(t('messageCreate.selectVoiceTitle'), t('messageCreate.selectVoice'));
       return;
     }
     if (!messageText?.trim()) {
-      Alert.alert('메시지 입력', '메시지를 입력하거나 프리셋을 선택해주세요.');
+      Alert.alert(t('messageCreate.enterMessageTitle'), t('messageCreate.enterMessage'));
       return;
     }
 
@@ -109,14 +110,14 @@ export default function CreateMessageScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* 음성 프로필 선택 */}
-      <Text style={styles.sectionTitle}>누구의 목소리로?</Text>
+      <Text style={styles.sectionTitle}>{t('messageCreate.whoseVoice')}</Text>
       {readyProfiles.length === 0 ? (
         <TouchableOpacity
           style={styles.emptyVoice}
           onPress={() => router.push('/voice/record')}
         >
           <Text style={styles.emptyVoiceText}>
-            먼저 음성을 등록해주세요 →
+            {t('messageCreate.emptyVoice')}
           </Text>
         </TouchableOpacity>
       ) : (
@@ -151,7 +152,7 @@ export default function CreateMessageScreen() {
           onPress={() => setTab('preset')}
         >
           <Text style={[styles.tabText, tab === 'preset' && styles.tabTextActive]}>
-            프리셋 메시지
+            {t('messageCreate.presetTab')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -159,7 +160,7 @@ export default function CreateMessageScreen() {
           onPress={() => setTab('custom')}
         >
           <Text style={[styles.tabText, tab === 'custom' && styles.tabTextActive]}>
-            직접 입력
+            {t('messageCreate.customTab')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -229,9 +230,9 @@ export default function CreateMessageScreen() {
         <View style={styles.customSection}>
           <TextInput
             style={styles.customInput}
-            placeholder="메시지를 입력해주세요 (최대 200자)"
+            placeholder={t('messageCreate.customPlaceholder')}
             value={customText}
-            onChangeText={(t) => t.length <= 200 && setCustomText(t)}
+            onChangeText={(v) => v.length <= 200 && setCustomText(v)}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
@@ -253,37 +254,37 @@ export default function CreateMessageScreen() {
         {ttsMutation.isPending ? (
           <View style={styles.loadingRow}>
             <ActivityIndicator color="#FFF" />
-            <Text style={styles.generateText}> 음성 생성 중...</Text>
+            <Text style={styles.generateText}>{t('messageCreate.generating')}</Text>
           </View>
         ) : (
-          <Text style={styles.generateText}>🔊 음성 메시지 생성</Text>
+          <Text style={styles.generateText}>{t('messageCreate.generate')}</Text>
         )}
       </TouchableOpacity>
 
       {/* 생성 결과 */}
       {generatedAudioId && (
         <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>✅ 음성 메시지 생성 완료!</Text>
+          <Text style={styles.resultTitle}>{t('messageCreate.resultTitle')}</Text>
           <Text style={styles.resultMessage}>"{messageText}"</Text>
           <View style={styles.resultActions}>
             <TouchableOpacity style={styles.previewButton} onPress={handlePreview}>
               <Text style={styles.previewText}>
-                {currentSound ? '⏸️ 정지' : '▶️ 미리듣기'}
+                {currentSound ? t('messageCreate.stop') : t('messageCreate.preview')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.useButton}
               onPress={() => {
-                Alert.alert('저장 완료', '이 메시지로 알람을 설정하시겠어요?', [
-                  { text: '나중에', style: 'cancel' },
+                Alert.alert(t('messageCreate.savedTitle'), t('messageCreate.savedDesc'), [
+                  { text: t('messageCreate.later'), style: 'cancel' },
                   {
-                    text: '알람 설정',
+                    text: t('messageCreate.setAlarm'),
                     onPress: () => router.push('/alarm/create'),
                   },
                 ]);
               }}
             >
-              <Text style={styles.useText}>⏰ 알람에 사용</Text>
+              <Text style={styles.useText}>{t('messageCreate.useForAlarm')}</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity
@@ -292,7 +293,7 @@ export default function CreateMessageScreen() {
               try {
                 const friends = await getFriendList();
                 if (!friends || friends.length === 0) {
-                  Alert.alert('친구 없음', '먼저 친구를 추가해주세요.');
+                  Alert.alert(t('messageCreate.noFriendsTitle'), t('messageCreate.noFriends'));
                   return;
                 }
                 const buttons = friends.slice(0, 5).map((f: Friend) => ({
@@ -304,20 +305,20 @@ export default function CreateMessageScreen() {
                         message_id: generatedAudioId!,
                         note: messageText ?? undefined,
                       });
-                      Alert.alert('전송 완료', `${f.friend_name || f.friend_email}님에게 선물을 보냈습니다!`);
+                      Alert.alert(t('messageCreate.giftSentTitle'), t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }));
                     } catch (err: unknown) {
-                      Alert.alert('오류', getApiErrorMessage(err, '선물 전송에 실패했습니다.'));
+                      Alert.alert(t('common.error'), getApiErrorMessage(err, t('messageCreate.giftError')));
                     }
                   },
                 }));
-                buttons.push({ text: '취소', onPress: async () => {} });
-                Alert.alert('선물하기', '누구에게 보낼까요?', buttons);
+                buttons.push({ text: t('common.cancel'), onPress: async () => {} });
+                Alert.alert(t('messageCreate.giftTitle'), t('messageCreate.giftWho'), buttons);
               } catch {
-                Alert.alert('오류', '친구 목록을 불러올 수 없습니다.');
+                Alert.alert(t('common.error'), t('messageCreate.friendListError'));
               }
             }}
           >
-            <Text style={styles.giftText}>🎁 친구에게 선물하기</Text>
+            <Text style={styles.giftText}>{t('messageCreate.gift')}</Text>
           </TouchableOpacity>
         </View>
       )}

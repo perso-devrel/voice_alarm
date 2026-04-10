@@ -32,9 +32,9 @@ export default function SettingsScreen() {
 
   const getPlanLabel = () => {
     const labels: Record<string, string> = {
-      free: 'Free',
-      plus: 'Plus ($3.99/월)',
-      family: 'Family ($7.99/월)',
+      free: t('settings.planFree'),
+      plus: t('settings.planPlus'),
+      family: t('settings.planFamily'),
     };
     return labels[plan] || plan;
   };

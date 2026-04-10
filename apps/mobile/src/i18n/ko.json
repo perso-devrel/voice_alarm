@@ -133,7 +133,10 @@
     "terms": "이용약관",
     "privacy": "개인정보처리방침",
     "openSource": "오픈소스 라이선스",
-    "logoutConfirm": "정말 로그아웃하시겠어요?"
+    "logoutConfirm": "정말 로그아웃하시겠어요?",
+    "planFree": "Free",
+    "planPlus": "Plus ($3.99/월)",
+    "planFamily": "Family ($7.99/월)"
   },
   "onboarding": {
     "skip": "건너뛰기",

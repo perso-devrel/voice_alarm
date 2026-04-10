@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getApiErrorMessage } from '../../src/types';
 
 export default function ReceivedGiftsScreen() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['gifts-received'],
@@ -27,10 +29,10 @@ export default function ReceivedGiftsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      Alert.alert('수락 완료', '메시지가 보관함에 추가되었습니다.');
+      Alert.alert(t('giftReceived.acceptSuccessTitle'), t('giftReceived.acceptSuccess'));
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '수락에 실패했습니다.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('giftReceived.acceptError')));
     },
   });
 
@@ -40,7 +42,7 @@ export default function ReceivedGiftsScreen() {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '거절에 실패했습니다.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('giftReceived.rejectError')));
     },
   });
 
@@ -53,9 +55,9 @@ export default function ReceivedGiftsScreen() {
   }
 
   const statusLabel = (status: string) => {
-    if (status === 'accepted') return '수락됨';
-    if (status === 'rejected') return '거절됨';
-    return '대기 중';
+    if (status === 'accepted') return t('giftReceived.statusAccepted');
+    if (status === 'rejected') return t('giftReceived.statusRejected');
+    return t('giftReceived.statusPending');
   };
 
   return (
@@ -68,14 +70,14 @@ export default function ReceivedGiftsScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🎁</Text>
-            <Text style={styles.emptyText}>받은 선물이 없습니다</Text>
+            <Text style={styles.emptyText}>{t('giftReceived.emptyText')}</Text>
           </View>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.header}>
               <View style={styles.senderInfo}>
-                <Text style={styles.senderName}>{item.sender_name || '알 수 없음'}</Text>
+                <Text style={styles.senderName}>{item.sender_name || t('giftReceived.unknown')}</Text>
                 <Text style={styles.senderEmail}>{item.sender_email}</Text>
               </View>
               <Text style={[
@@ -103,19 +105,19 @@ export default function ReceivedGiftsScreen() {
                   onPress={() => accept.mutate(item.id)}
                   disabled={accept.isPending}
                 >
-                  <Text style={styles.acceptBtnText}>수락</Text>
+                  <Text style={styles.acceptBtnText}>{t('common.accept')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.rejectBtn}
                   onPress={() =>
-                    Alert.alert('선물 거절', '이 선물을 거절하시겠습니까?', [
-                      { text: '취소', style: 'cancel' },
-                      { text: '거절', style: 'destructive', onPress: () => reject.mutate(item.id) },
+                    Alert.alert(t('giftReceived.rejectTitle'), t('giftReceived.rejectConfirm'), [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      { text: t('common.reject'), style: 'destructive', onPress: () => reject.mutate(item.id) },
                     ])
                   }
                   disabled={reject.isPending}
                 >
-                  <Text style={styles.rejectBtnText}>거절</Text>
+                  <Text style={styles.rejectBtnText}>{t('common.reject')}</Text>
                 </TouchableOpacity>
               </View>
             )}

@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { diarizeAudio, createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
@@ -21,6 +22,7 @@ import type { Speaker } from '../../src/types';
 export default function DiarizeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [selectedSpeaker, setSelectedSpeaker] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function DiarizeScreen() {
       setStep('select');
     },
     onError: (err: unknown) => {
-      Alert.alert('화자 분리 실패', getApiErrorMessage(err, '다시 시도해주세요.'));
+      Alert.alert(t('voiceDiarize.analyzeErrorTitle'), getApiErrorMessage(err, t('voiceDiarize.analyzeError')));
     },
   });
 
@@ -59,13 +61,13 @@ export default function DiarizeScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
       Alert.alert(
-        '음성 등록 완료!',
-        '선택한 화자의 음성 클론이 생성되고 있어요.',
-        [{ text: '확인', onPress: () => router.back() }]
+        t('voiceDiarize.successTitle'),
+        t('voiceDiarize.successDesc'),
+        [{ text: t('common.confirm'), onPress: () => router.back() }]
       );
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '음성 클론 생성에 실패했습니다.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceDiarize.cloneError')));
     },
   });
 
@@ -92,7 +94,7 @@ export default function DiarizeScreen() {
 
   const handleSubmit = () => {
     if (!name.trim()) {
-      Alert.alert('이름 입력', '음성 프로필 이름을 입력해주세요.');
+      Alert.alert(t('voiceDiarize.nameRequiredTitle'), t('voiceDiarize.nameRequired'));
       return;
     }
     cloneMutation.mutate({ name: name.trim() });
@@ -101,7 +103,7 @@ export default function DiarizeScreen() {
   const formatDuration = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
-    return `${m}분 ${s}초`;
+    return t('voiceDiarize.minSec', { min: m, sec: s });
   };
 
   return (
@@ -111,18 +113,16 @@ export default function DiarizeScreen() {
         <>
           <View style={styles.stepHeader}>
             <Text style={styles.stepBadge}>STEP 1</Text>
-            <Text style={styles.stepTitle}>통화 녹음 업로드</Text>
+            <Text style={styles.stepTitle}>{t('voiceDiarize.step1Title')}</Text>
             <Text style={styles.stepDesc}>
-              통화 녹음 파일을 올려주세요.{'\n'}
-              2명 이상의 화자가 포함된 녹음을 분석하여{'\n'}
-              원하는 사람의 목소리만 추출할 수 있어요.
+              {t('voiceDiarize.step1Desc')}
             </Text>
           </View>
 
           <TouchableOpacity style={styles.pickButton} onPress={handlePickFile}>
             <Text style={styles.pickEmoji}>📞</Text>
             <Text style={styles.pickText}>
-              {selectedFile ? selectedFile.name : '통화 녹음 파일 선택'}
+              {selectedFile ? selectedFile.name : t('voiceDiarize.pickFile')}
             </Text>
           </TouchableOpacity>
 
@@ -135,10 +135,10 @@ export default function DiarizeScreen() {
               {diarizeMutation.isPending ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator color="#FFF" />
-                  <Text style={styles.analyzeText}> 화자 분리 중...</Text>
+                  <Text style={styles.analyzeText}>{t('voiceDiarize.analyzing')}</Text>
                 </View>
               ) : (
-                <Text style={styles.analyzeText}>화자 분리 시작</Text>
+                <Text style={styles.analyzeText}>{t('voiceDiarize.analyze')}</Text>
               )}
             </TouchableOpacity>
           )}
@@ -150,10 +150,9 @@ export default function DiarizeScreen() {
         <>
           <View style={styles.stepHeader}>
             <Text style={styles.stepBadge}>STEP 2</Text>
-            <Text style={styles.stepTitle}>화자 선택</Text>
+            <Text style={styles.stepTitle}>{t('voiceDiarize.step2Title')}</Text>
             <Text style={styles.stepDesc}>
-              {speakers.length}명의 화자가 감지되었어요.{'\n'}
-              저장할 목소리를 선택해주세요.
+              {t('voiceDiarize.step2Desc', { count: speakers.length })}
             </Text>
           </View>
 
@@ -172,15 +171,15 @@ export default function DiarizeScreen() {
                 </Text>
               </View>
               <View style={styles.speakerInfo}>
-                <Text style={styles.speakerLabel}>화자 {index + 1}</Text>
+                <Text style={styles.speakerLabel}>{t('voiceDiarize.speaker', { index: index + 1 })}</Text>
                 <Text style={styles.speakerDuration}>
-                  총 발화 시간: {formatDuration(speaker.total_duration)}
+                  {t('voiceDiarize.totalDuration', { duration: formatDuration(speaker.total_duration) })}
                 </Text>
                 <Text style={styles.speakerSegments}>
-                  {speaker.segments.length}개 구간
+                  {t('voiceDiarize.segments', { count: speaker.segments.length })}
                 </Text>
               </View>
-              <Text style={styles.speakerPlay}>▶️ 미리듣기</Text>
+              <Text style={styles.speakerPlay}>{t('voiceDiarize.preview')}</Text>
             </TouchableOpacity>
           ))}
 
@@ -188,7 +187,7 @@ export default function DiarizeScreen() {
             style={styles.backButton}
             onPress={() => setStep('upload')}
           >
-            <Text style={styles.backText}>← 다시 선택</Text>
+            <Text style={styles.backText}>{t('voiceDiarize.back')}</Text>
           </TouchableOpacity>
         </>
       )}
@@ -198,15 +197,15 @@ export default function DiarizeScreen() {
         <>
           <View style={styles.stepHeader}>
             <Text style={styles.stepBadge}>STEP 3</Text>
-            <Text style={styles.stepTitle}>이름 지정</Text>
+            <Text style={styles.stepTitle}>{t('voiceDiarize.step3Title')}</Text>
             <Text style={styles.stepDesc}>
-              이 목소리에 이름을 붙여주세요
+              {t('voiceDiarize.step3Desc')}
             </Text>
           </View>
 
           <TextInput
             style={styles.nameInput}
-            placeholder="예: 엄마, 아빠, 여자친구"
+            placeholder={t('voiceDiarize.namePlaceholder')}
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.light.textTertiary}
@@ -221,7 +220,7 @@ export default function DiarizeScreen() {
             {cloneMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.submitText}>이 목소리 등록하기</Text>
+              <Text style={styles.submitText}>{t('voiceDiarize.submit')}</Text>
             )}
           </TouchableOpacity>
 
@@ -229,7 +228,7 @@ export default function DiarizeScreen() {
             style={styles.backButton}
             onPress={() => setStep('select')}
           >
-            <Text style={styles.backText}>← 다른 화자 선택</Text>
+            <Text style={styles.backText}>{t('voiceDiarize.backToSelect')}</Text>
           </TouchableOpacity>
         </>
       )}

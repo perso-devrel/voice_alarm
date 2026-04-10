@@ -133,7 +133,10 @@
     "terms": "Terms of service",
     "privacy": "Privacy policy",
     "openSource": "Open source licenses",
-    "logoutConfirm": "Are you sure you want to log out?"
+    "logoutConfirm": "Are you sure you want to log out?",
+    "planFree": "Free",
+    "planPlus": "Plus ($3.99/mo)",
+    "planFamily": "Family ($7.99/mo)"
   },
   "onboarding": {
     "skip": "Skip",
