@@ -13,6 +13,7 @@ import {
 import type { VoiceProfile, Message, PresetCategory, Friend } from '../types';
 import { getApiErrorMessage } from '../types';
 import { InlineAudioPlayer } from '../components/InlineAudioPlayer';
+import { VoiceDetailModal } from './VoicesPage';
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   morning: '🌅',
@@ -38,6 +39,8 @@ export default function MessagesPage() {
   const [giftTarget, setGiftTarget] = useState<Message | null>(null);
   const [giftSending, setGiftSending] = useState(false);
   const [giftNote, setGiftNote] = useState('');
+  const [detailVoice, setDetailVoice] = useState<VoiceProfile | null>(null);
+  const [detailMessage, setDetailMessage] = useState<Message | null>(null);
 
   const { data: voices } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -350,7 +353,15 @@ export default function MessagesPage() {
                 >
                   <span className="text-2xl">{CATEGORY_EMOJIS[msg.category] || '💌'}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--color-primary)]">{msg.voice_name}</p>
+                    <button
+                      onClick={() => {
+                        const profile = voices?.find((v: VoiceProfile) => v.name === msg.voice_name);
+                        if (profile) setDetailVoice(profile);
+                      }}
+                      className="text-sm font-medium text-[var(--color-primary)] hover:underline text-left"
+                    >
+                      {msg.voice_name}
+                    </button>
                     <p className="text-[var(--color-text)]">"{msg.text}"</p>
                     {msg.audio_url && <InlineAudioPlayer audioUrl={msg.audio_url} />}
                     <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
@@ -384,6 +395,17 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
+      )}
+      {detailVoice && (
+        <VoiceDetailModal
+          profile={detailVoice}
+          onClose={() => setDetailVoice(null)}
+          onCreateMessage={() => {
+            setSelectedVoice(detailVoice.id);
+            setTab('create');
+            setDetailVoice(null);
+          }}
+        />
       )}
       {giftTarget && (
         <div

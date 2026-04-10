@@ -230,10 +230,32 @@
 
 ## P27 - 자가 생성 항목 (23차)
 
-- [ ] 웹: MessagesPage에서 음성 프로필 이름 클릭 시 상세 모달 열기
-- [ ] 백엔드: GET /api/message에 voice_profile_id 필터 추가 (특정 음성의 메시지만 조회)
-- [ ] 모바일: 음성 프로필 상세에서 "이 음성으로 메시지 만들기" 바로가기 버튼
-- [ ] 웹: 설정 페이지에 테마 선택 (라이트/다크/시스템) 영구 저장
+- [x] 백엔드: PATCH 엔드포인트 응답 개선 — alarm/friend/gift 업데이트 시 변경된 객체 반환
+- [x] 웹: MessagesPage에서 음성 프로필 이름 클릭 시 상세 모달 열기
+- [x] 백엔드: GET /api/message에 voice_profile_id 필터 추가 (특정 음성의 메시지만 조회) — 이미 구현 확인
+- [x] 모바일: 음성 프로필 상세에서 "이 음성으로 메시지 만들기" 바로가기 버튼
+- [x] 웹: 설정 페이지에 테마 선택 (라이트/다크/시스템) 영구 저장 — 이미 구현 확인 (useDarkMode hook + localStorage)
+
+## P28 - 자가 생성 항목 (24차)
+
+- [x] 웹: VoiceDetailModal에 "이 음성으로 메시지 만들기" 액션 버튼 추가 (모바일과 동일 기능)
+- [x] 모바일: 선물 보내기 완료 후 성공 토스트 (Alert → Animated 토스트 배너, 3초 자동 소멸)
+- [x] 백엔드: GET /api/friend/list에 q= 검색 쿼리 파라미터 추가 (이름/이메일 검색)
+- [x] 모바일: 홈 탭에 받은 선물 미수락 배지 표시 (pending gifts count) — 이미 구현 확인 (stats.gifts.receivedPending)
+
+## P29 - 자가 생성 항목 (25차)
+
+- [x] 모바일: 선물 받은 화면(gift/received) 에러 핸들러 Alert → 토스트 교체 + 거절 성공 토스트 추가
+- [x] 웹: GiftsPage 선물 보내기 성공 시 토스트/배너 알림 — 이미 구현 확인 (showToast)
+- [x] 백엔드: GET /api/alarm에 voice_profile_id 필터 추가 — 이미 구현 확인 (count 쿼리 JOIN 포함)
+- [x] 모바일: 메시지 라이브러리에서 메시지 탭 시 상세 화면 (message/[id].tsx, _layout 등록, library 탭 연동)
+
+## P30 - 자가 생성 항목 (26차)
+
+- [ ] 웹: 메시지 상세 모달 (MessagesPage에서 메시지 클릭 시 텍스트 전문 + 재생 + 알람 설정)
+- [ ] 모바일: 알람 목록에서 알람 탭 시 편집 화면으로 이동 (현재 스와이프만 가능)
+- [ ] 백엔드: GET /api/gift/received, /sent에 페이지네이션 total 정확도 개선 (JOIN 포함 count)
+- [ ] 모바일: 홈 탭 "다음 알람" 카드에 메시지 미리보기 텍스트 표시
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

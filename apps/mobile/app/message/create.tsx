@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +25,7 @@ import { getApiErrorMessage } from '../../src/types';
 
 export default function CreateMessageScreen() {
   const router = useRouter();
+  const { voice_id } = useLocalSearchParams<{ voice_id?: string }>();
   const queryClient = useQueryClient();
   const { isAuthenticated, incrementTtsCount } = useAppStore();
   const { t } = useTranslation();
@@ -32,13 +34,31 @@ export default function CreateMessageScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [customText, setCustomText] = useState('');
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(voice_id ?? null);
   const [generatedAudioId, setGeneratedAudioId] = useState<string | null>(null);
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const [giftModalVisible, setGiftModalVisible] = useState(false);
   const [giftFriends, setGiftFriends] = useState<Friend[]>([]);
   const [giftNote, setGiftNote] = useState('');
   const [giftSending, setGiftSending] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastMessage(msg);
+    Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    toastTimer.current = setTimeout(() => {
+      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+        setToastMessage(null);
+      });
+    }, 3000);
+  }, [toastOpacity]);
+
+  useEffect(() => {
+    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
+  }, []);
 
   const { data: voiceProfiles } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -329,10 +349,7 @@ export default function CreateMessageScreen() {
                         note: giftNote.trim() || undefined,
                       });
                       setGiftModalVisible(false);
-                      Alert.alert(
-                        t('messageCreate.giftSentTitle'),
-                        t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }),
-                      );
+                      showToast(t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }));
                     } catch (err: unknown) {
                       Alert.alert(
                         t('common.error'),
@@ -364,6 +381,11 @@ export default function CreateMessageScreen() {
           </View>
         </View>
       </Modal>
+      {toastMessage && (
+        <Animated.View style={[styles.toast, { opacity: toastOpacity }]} pointerEvents="none">
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </Animated.View>
+      )}
     </ScrollView>
   );
 }
@@ -685,6 +707,22 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
+    fontWeight: '600',
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 40,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    backgroundColor: Colors.light.primaryDark,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    alignItems: 'center',
+  },
+  toastText: {
+    color: '#fff',
+    fontSize: FontSize.md,
     fontWeight: '600',
   },
 });

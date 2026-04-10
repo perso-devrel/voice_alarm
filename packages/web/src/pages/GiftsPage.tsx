@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getReceivedGifts, getSentGifts, acceptGift, rejectGift } from '../services/api';
 import type { Gift } from '../types';
@@ -9,6 +9,18 @@ export default function GiftsPage() {
   const [tab, setTab] = useState<'received' | 'sent'>('received');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
+  }, []);
 
   const { data: received, isLoading: loadingReceived } = useQuery({
     queryKey: ['gifts-received'],
@@ -33,6 +45,9 @@ export default function GiftsPage() {
     onError: (_err, _id, context) => {
       if (context?.prev) queryClient.setQueryData(['gifts-received'], context.prev);
     },
+    onSuccess: () => {
+      showToast('선물을 수락했습니다');
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
@@ -51,6 +66,9 @@ export default function GiftsPage() {
     },
     onError: (_err, _id, context) => {
       if (context?.prev) queryClient.setQueryData(['gifts-received'], context.prev);
+    },
+    onSuccess: () => {
+      showToast('선물을 거절했습니다');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
@@ -257,6 +275,12 @@ export default function GiftsPage() {
             ))}
           </div>
         ))}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[var(--color-primary-dark)] text-white px-6 py-3 rounded-xl shadow-lg font-medium text-sm z-50 animate-fade-in">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ alarm.get('/', async (c) => {
   const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
   const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
   const isActiveParam = c.req.query('is_active');
+  const voiceProfileId = c.req.query('voice_profile_id');
 
   let whereClause = 'WHERE (a.user_id = ? OR a.target_user_id = ?)';
   const whereArgs: (string | number)[] = [userId, userId];
@@ -22,9 +23,16 @@ alarm.get('/', async (c) => {
     whereArgs.push(isActiveParam === 'true' ? 1 : 0);
   }
 
+  if (voiceProfileId) {
+    whereClause += ' AND m.voice_profile_id = ?';
+    whereArgs.push(voiceProfileId);
+  }
+
   const [countRes, result] = await Promise.all([
     db.execute({
-      sql: `SELECT COUNT(*) as total FROM alarms a ${whereClause}`,
+      sql: `SELECT COUNT(*) as total FROM alarms a
+            JOIN messages m ON a.message_id = m.id
+            ${whereClause}`,
       args: whereArgs,
     }),
     db.execute({

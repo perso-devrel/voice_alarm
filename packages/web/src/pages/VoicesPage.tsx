@@ -321,7 +321,7 @@ export default function VoicesPage() {
   );
 }
 
-export function VoiceDetailModal({ profile, onClose }: { profile: VoiceProfile; onClose: () => void }) {
+export function VoiceDetailModal({ profile, onClose, onCreateMessage }: { profile: VoiceProfile; onClose: () => void; onCreateMessage?: () => void }) {
   const { data: messages, isLoading: loadingMessages } = useQuery({
     queryKey: ['voiceMessages', profile.id],
     queryFn: () => getMessagesByVoice(profile.id),
@@ -411,10 +411,18 @@ export function VoiceDetailModal({ profile, onClose }: { profile: VoiceProfile; 
           )}
         </div>
 
-        <div className="p-4 border-t border-[var(--color-border)]">
+        <div className="p-4 border-t border-[var(--color-border)] flex gap-2">
+          {onCreateMessage && profile.status === 'ready' && (
+            <button
+              onClick={onCreateMessage}
+              className="flex-1 py-2.5 rounded-xl bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity font-medium"
+            >
+              이 음성으로 메시지 만들기
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors font-medium"
+            className={`${onCreateMessage && profile.status === 'ready' ? 'flex-1' : 'w-full'} py-2.5 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors font-medium`}
           >
             닫기
           </button>

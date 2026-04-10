@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
@@ -41,6 +42,7 @@ const CATEGORIES = [
 ] as const;
 
 export default function LibraryScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { setPlaying, currentPlayingId } = useAppStore();
@@ -165,7 +167,11 @@ export default function LibraryScreen() {
         onSwipeableOpen={() => handleDelete(item.id)}
         overshootRight={false}
       >
-        <View style={styles.messageCard}>
+        <TouchableOpacity
+          style={styles.messageCard}
+          onPress={() => router.push(`/message/${item.message_id}`)}
+          activeOpacity={0.7}
+        >
           <View style={styles.messageLeft}>
             <View style={styles.avatarSmall}>
               <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
@@ -205,7 +211,7 @@ export default function LibraryScreen() {
               <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Swipeable>
     );
   };

@@ -325,7 +325,8 @@
     "alarmList": "Alarms using this voice",
     "active": "Active",
     "inactive": "Inactive",
-    "empty": "No messages or alarms with this voice"
+    "empty": "No messages or alarms with this voice",
+    "createMessage": "Create message with this voice"
   },
   "player": {
     "thanks": "💝 Thank you",
@@ -338,5 +339,12 @@
   "login": {
     "google": "Continue with Google",
     "apple": "Continue with Apple"
+  },
+  "messageDetail": {
+    "notFound": "Message not found",
+    "play": "Play",
+    "stop": "Stop",
+    "useForAlarm": "Set as alarm",
+    "createAnother": "Create new message with same voice"
   }
 }

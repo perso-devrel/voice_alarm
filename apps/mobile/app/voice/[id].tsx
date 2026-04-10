@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import type { Message, Alarm, VoiceProfile } from '../../src/types';
 
 export default function VoiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
 
@@ -58,6 +59,14 @@ export default function VoiceDetailScreen() {
               <Text style={styles.statLabel}>{t('voiceDetail.alarms')}</Text>
             </View>
           </View>
+          {profile.status === 'ready' && (
+            <TouchableOpacity
+              style={styles.createMessageBtn}
+              onPress={() => router.push(`/message/create?voice_id=${id}`)}
+            >
+              <Text style={styles.createMessageText}>{t('voiceDetail.createMessage')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -214,6 +223,18 @@ const styles = StyleSheet.create({
   },
   inactive: {
     color: Colors.light.error,
+  },
+  createMessageBtn: {
+    marginTop: Spacing.md,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+  },
+  createMessageText: {
+    color: '#fff',
+    fontSize: FontSize.md,
+    fontWeight: '600',
   },
   empty: {
     alignItems: 'center',
