@@ -164,22 +164,35 @@ tts.get('/messages', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const category = c.req.query('category');
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  let sql = `SELECT m.*, vp.name as voice_name
-             FROM messages m
-             JOIN voice_profiles vp ON m.voice_profile_id = vp.id
-             WHERE m.user_id = ?`;
-  const args: (string | number)[] = [userId];
+  let whereClause = 'WHERE m.user_id = ?';
+  const filterArgs: (string | number)[] = [userId];
 
   if (category) {
-    sql += ' AND m.category = ?';
-    args.push(category);
+    whereClause += ' AND m.category = ?';
+    filterArgs.push(category);
   }
 
-  sql += ' ORDER BY m.created_at DESC';
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: `SELECT COUNT(*) as total FROM messages m ${whereClause}`,
+      args: filterArgs,
+    }),
+    db.execute({
+      sql: `SELECT m.*, vp.name as voice_name
+            FROM messages m
+            JOIN voice_profiles vp ON m.voice_profile_id = vp.id
+            ${whereClause}
+            ORDER BY m.created_at DESC
+            LIMIT ? OFFSET ?`,
+      args: [...filterArgs, limit, offset],
+    }),
+  ]);
 
-  const result = await db.execute({ sql, args });
-  return c.json({ messages: result.rows });
+  const total = Number(countRes.rows[0].total);
+  return c.json({ messages: result.rows, total, limit, offset });
 });
 
 /** 메시지 삭제 */

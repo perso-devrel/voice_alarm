@@ -178,7 +178,10 @@
     "emptyVoice": "Register a voice first →",
     "presetCategory": "Category",
     "generatePreset": "🔊 Generate this message",
-    "ttsError": "Failed to generate voice."
+    "ttsError": "Failed to generate voice.",
+    "noMessages": "No voice messages yet",
+    "noMessagesDesc": "Create one yourself, or use presets below for a quick start!",
+    "goCreate": "Create message"
   },
   "messageCreate": {
     "whoseVoice": "Whose voice?",

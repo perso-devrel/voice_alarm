@@ -178,7 +178,10 @@
     "emptyVoice": "먼저 음성을 등록해주세요 →",
     "presetCategory": "카테고리",
     "generatePreset": "🔊 이 메시지로 생성",
-    "ttsError": "음성 생성에 실패했습니다."
+    "ttsError": "음성 생성에 실패했습니다.",
+    "noMessages": "아직 음성 메시지가 없어요",
+    "noMessagesDesc": "직접 만들거나, 아래 프리셋으로 빠르게 생성해보세요!",
+    "goCreate": "메시지 만들기"
   },
   "messageCreate": {
     "whoseVoice": "누구의 목소리로?",

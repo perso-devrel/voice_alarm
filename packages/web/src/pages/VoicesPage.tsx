@@ -31,7 +31,22 @@ export default function VoicesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteVoiceProfile,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] }),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['voiceProfiles'] });
+      const previous = queryClient.getQueryData<VoiceProfile[]>(['voiceProfiles']);
+      queryClient.setQueryData<VoiceProfile[]>(['voiceProfiles'], (old) =>
+        old ? old.filter((p) => p.id !== id) : [],
+      );
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['voiceProfiles'], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
+    },
   });
 
   const handleTest = async (profileId: string) => {

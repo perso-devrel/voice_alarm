@@ -1,11 +1,23 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAlarms, updateAlarm, deleteAlarm } from '../services/api';
-import type { Alarm } from '../types';
+import {
+  getAlarms,
+  updateAlarm,
+  deleteAlarm,
+  createAlarm,
+  getMessages,
+  getVoiceProfiles,
+  getPresets,
+  generateTTS,
+} from '../services/api';
+import type { Alarm, Message, VoiceProfile, PresetCategory } from '../types';
+import { getApiErrorMessage } from '../types';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function AlarmsPage() {
   const queryClient = useQueryClient();
+  const [showCreate, setShowCreate] = useState(false);
 
   const { data: alarms, isLoading } = useQuery({
     queryKey: ['alarms'],
@@ -49,6 +61,14 @@ export default function AlarmsPage() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
   });
 
+  const createMutation = useMutation({
+    mutationFn: createAlarm,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alarms'] });
+      setShowCreate(false);
+    },
+  });
+
   const formatRepeat = (days: string) => {
     const parsed: number[] = JSON.parse(days || '[]');
     if (parsed.length === 0) return '한 번만';
@@ -60,10 +80,28 @@ export default function AlarmsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-[var(--color-text)]">알람 설정</h2>
-        <p className="text-[var(--color-text-secondary)] mt-1">웹에서 알람을 관리하고 앱에 동기화하세요</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-[var(--color-text)]">알람 설정</h2>
+          <p className="text-[var(--color-text-secondary)] mt-1">웹에서 알람을 관리하고 앱에 동기화하세요</p>
+        </div>
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          aria-expanded={showCreate}
+          className="bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-colors"
+        >
+          + 알람 추가
+        </button>
       </div>
+
+      {showCreate && (
+        <AlarmCreateForm
+          onSubmit={(params) => createMutation.mutate(params)}
+          onCancel={() => setShowCreate(false)}
+          isPending={createMutation.isPending}
+          error={createMutation.isError ? getApiErrorMessage(createMutation.error, '알람 생성 실패') : null}
+        />
+      )}
 
       {isLoading ? (
         <div role="status" aria-live="polite" className="text-center py-12 text-[var(--color-text-tertiary)]">

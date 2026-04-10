@@ -258,7 +258,7 @@ export default function CreateAlarmScreen() {
 
       {/* 메시지 선택 */}
       <Text style={styles.sectionTitle}>{t('alarmCreate.message')}</Text>
-      {messages && messages.length > 0 && (
+      {messages && messages.length > 0 ? (
         <View style={styles.messageList}>
           {messages.map((msg: Message) => (
             <TouchableOpacity
@@ -278,6 +278,20 @@ export default function CreateAlarmScreen() {
               {selectedMessageId === msg.id && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
+        </View>
+      ) : (
+        <View style={styles.emptyMessageBox}>
+          <Text style={styles.emptyMessageEmoji}>💬</Text>
+          <Text style={styles.emptyMessageTitle}>{t('alarmCreate.noMessages')}</Text>
+          <Text style={styles.emptyMessageDesc}>{t('alarmCreate.noMessagesDesc')}</Text>
+          <View style={styles.emptyMessageActions}>
+            <TouchableOpacity
+              style={styles.emptyMessageBtn}
+              onPress={() => router.push('/message/create')}
+            >
+              <Text style={styles.emptyMessageBtnText}>{t('alarmCreate.goCreate')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -512,6 +526,47 @@ const styles = StyleSheet.create({
   },
   emptyMessageText: {
     color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  emptyMessageBox: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderStyle: 'dashed',
+  },
+  emptyMessageEmoji: {
+    fontSize: 40,
+    marginBottom: Spacing.sm,
+  },
+  emptyMessageTitle: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: Spacing.xs,
+  },
+  emptyMessageDesc: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  emptyMessageActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  emptyMessageBtn: {
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+  },
+  emptyMessageBtnText: {
+    color: '#FFF',
+    fontSize: FontSize.sm,
     fontWeight: '600',
   },
   messageList: {

@@ -265,15 +265,7 @@ export default function CreateMessageScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.useButton}
-              onPress={() => {
-                Alert.alert(t('messageCreate.savedTitle'), t('messageCreate.savedDesc'), [
-                  { text: t('messageCreate.later'), style: 'cancel' },
-                  {
-                    text: t('messageCreate.setAlarm'),
-                    onPress: () => router.push('/alarm/create'),
-                  },
-                ]);
-              }}
+              onPress={() => router.push(`/alarm/create?message_id=${generatedAudioId}`)}
             >
               <Text style={styles.useText}>{t('messageCreate.useForAlarm')}</Text>
             </TouchableOpacity>
