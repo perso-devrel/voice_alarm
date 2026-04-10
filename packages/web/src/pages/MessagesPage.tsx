@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVoiceProfiles, getMessages, getPresets, generateTTS, getFriendList, sendGift } from '../services/api';
+import type { VoiceProfile, Message, PresetCategory, Friend } from '../types';
+import { getApiErrorMessage } from '../types';
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   morning: '🌅', lunch: '🍽️', afternoon: '☕',
@@ -29,7 +31,7 @@ export default function MessagesPage() {
     queryFn: getPresets,
   });
 
-  const readyVoices = voices?.filter((v: any) => v.status === 'ready') || [];
+  const readyVoices = voices?.filter((v: VoiceProfile) => v.status === 'ready') || [];
 
   const ttsMutation = useMutation({
     mutationFn: generateTTS,
@@ -88,7 +90,7 @@ export default function MessagesPage() {
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">누구의 목소리로?</label>
             <div className="flex gap-2 flex-wrap">
-              {readyVoices.map((v: any) => (
+              {readyVoices.map((v: VoiceProfile) => (
                 <button
                   key={v.id}
                   onClick={() => setSelectedVoice(v.id)}
@@ -112,7 +114,7 @@ export default function MessagesPage() {
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">프리셋 메시지</label>
               <div className="flex gap-2 flex-wrap mb-3">
-                {presets.map((cat: any) => (
+                {presets.map((cat: PresetCategory) => (
                   <button
                     key={cat.category}
                     onClick={() => setCategory(cat.category)}
@@ -128,7 +130,7 @@ export default function MessagesPage() {
               </div>
               <div className="grid gap-2">
                 {presets
-                  .find((p: any) => p.category === category)
+                  .find((p: PresetCategory) => p.category === category)
                   ?.messages.map((msg: string, i: number) => (
                     <button
                       key={i}
@@ -173,7 +175,7 @@ export default function MessagesPage() {
           )}
           {ttsMutation.isError && (
             <p className="text-red-500 text-sm mt-3">
-              오류: {(ttsMutation.error as any)?.response?.data?.error || '생성 실패'}
+              오류: {getApiErrorMessage(ttsMutation.error, '생성 실패')}
             </p>
           )}
         </div>
@@ -189,7 +191,7 @@ export default function MessagesPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {messages.map((msg: any) => (
+              {messages.map((msg: Message) => (
                 <div key={msg.id} className="bg-white rounded-xl p-4 border border-[#F2E8E5] flex items-center gap-4">
                   <span className="text-2xl">{CATEGORY_EMOJIS[msg.category] || '💌'}</span>
                   <div className="flex-1">
@@ -208,13 +210,13 @@ export default function MessagesPage() {
                           return;
                         }
                         const name = prompt(
-                          `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: any) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`
+                          `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: Friend) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`
                         );
                         if (!name) return;
                         await sendGift({ recipient_email: name, message_id: msg.id });
                         alert('선물을 보냈습니다!');
-                      } catch (err: any) {
-                        alert(err.response?.data?.error || '선물 전송 실패');
+                      } catch (err: unknown) {
+                        alert(getApiErrorMessage(err, '선물 전송 실패'));
                       }
                     }}
                     className="px-3 py-1.5 text-sm border border-[#FF6B8A] text-[#FF6B8A] rounded-lg hover:bg-[#FFF0ED] transition-colors"

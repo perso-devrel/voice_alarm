@@ -144,7 +144,7 @@ export default function VoicesPage() {
 
           {cloneMutation.isError && (
             <p className="text-red-500 text-sm mt-2">
-              오류: {(cloneMutation.error as any)?.response?.data?.error || '업로드 실패'}
+              오류: {getApiErrorMessage(cloneMutation.error, '업로드 실패')}
             </p>
           )}
         </div>
@@ -161,7 +161,7 @@ export default function VoicesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {profiles.map((profile: any) => (
+          {profiles.map((profile: VoiceProfile) => (
             <div key={profile.id} className="bg-white rounded-2xl p-5 border border-[#F2E8E5] shadow-sm">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-[#FFB4A8] flex items-center justify-center text-xl font-bold text-[#E05A47]">

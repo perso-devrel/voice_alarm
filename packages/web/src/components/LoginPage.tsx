@@ -1,5 +1,14 @@
 import { useEffect, useRef } from 'react';
 
+declare const google: {
+  accounts: {
+    id: {
+      initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
+      renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
+    };
+  };
+} | undefined;
+
 // Google Cloud Console에서 생성한 Web Client ID
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 
@@ -17,14 +26,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      (window as any).google?.accounts.id.initialize({
+      google?.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response: { credential: string }) => {
           onLogin(response.credential);
         },
       });
       if (googleButtonRef.current) {
-        (window as any).google?.accounts.id.renderButton(
+        google?.accounts.id.renderButton(
           googleButtonRef.current,
           {
             type: 'standard',

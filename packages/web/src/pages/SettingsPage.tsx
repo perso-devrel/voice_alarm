@@ -96,7 +96,7 @@ export default function SettingsPage() {
       <button
         className="w-full mt-6 py-3 text-red-400 font-medium hover:text-red-500 transition-colors"
         onClick={() => {
-          localStorage.removeItem('firebase_token');
+          localStorage.removeItem('auth_token');
           window.location.reload();
         }}
       >

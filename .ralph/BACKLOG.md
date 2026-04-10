@@ -52,10 +52,11 @@
 
 - [x] TypeScript strict 모드 위반 (any) 점검 — 백엔드 완료 (0 any), 모바일/웹은 별도
 - [x] 모바일 앱 `any` 타입 제거 (apps/mobile)
-- [ ] 웹 대시보드 `any` 타입 제거 (packages/web)
-- [ ] 불필요한 의존성 점검
+- [x] 웹 대시보드 `any` 타입 제거 (packages/web)
+- [x] 불필요한 의존성 점검 — web에 누락된 axios/@tanstack/react-query 추가, mobile에서 미사용 expo-image-picker/expo-sqlite 제거
+- [x] 코드 중복 제거 (api.ts 모바일/웹 공통 추출 검토) — 플랫폼별 차이로 공통 추출 불필요 판정
 - [ ] 모바일 앱 번들 크기 줄이기
-- [ ] 코드 중복 제거 (api.ts 모바일/웹 공통 추출 검토)
+- [x] 웹 로그아웃 버그 수정 (firebase_token → auth_token 키 불일치)
 
 ## 자가 생성 가능 풀 (BACKLOG 고갈 시 여기서 뽑거나 새로 채움)
 - 테스트 보강, 문서, 리팩터, 관측성, 타입 강화, 접근성, i18n
