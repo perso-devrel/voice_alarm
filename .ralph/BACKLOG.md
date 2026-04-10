@@ -71,9 +71,16 @@
 ## P5 - 자가 생성 항목 (2차)
 
 - [x] 관측성: 백엔드 구조화된 로깅 미들웨어 + 글로벌 에러 핸들러
-- [ ] 성능: 웹 대시보드 코드 스플리팅 (React.lazy + Suspense)
-- [ ] 보안: API rate limiting 미들웨어 (Cloudflare Workers 환경)
-- [ ] 모바일: 푸시 알림 기반 알람 트리거 (expo-notifications 통합)
+- [x] 성능: 웹 대시보드 코드 스플리팅 (React.lazy + Suspense)
+- [x] 보안: API rate limiting 미들웨어 (Cloudflare Workers 환경)
+- [x] 모바일: 푸시 알림 기반 알람 트리거 (expo-notifications 통합)
+
+## P6 - 자가 생성 항목 (3차)
+
+- [ ] 모바일: 알람 알림 탭 시 플레이어 화면으로 이동 (deep link 처리)
+- [ ] 백엔드: 헬스체크에 DB 연결 상태 포함
+- [ ] 모바일: 알람 생성/수정/삭제 시 즉시 알림 재동기화
+- [ ] 웹: 다크모드 지원 (prefers-color-scheme + 수동 토글)
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

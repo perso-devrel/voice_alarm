@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import VoicesPage from './pages/VoicesPage';
-import MessagesPage from './pages/MessagesPage';
-import AlarmsPage from './pages/AlarmsPage';
-import SettingsPage from './pages/SettingsPage';
-import FriendsPage from './pages/FriendsPage';
-import GiftsPage from './pages/GiftsPage';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
+
+const VoicesPage = lazy(() => import('./pages/VoicesPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const AlarmsPage = lazy(() => import('./pages/AlarmsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const FriendsPage = lazy(() => import('./pages/FriendsPage'));
+const GiftsPage = lazy(() => import('./pages/GiftsPage'));
 
 type Page = 'voices' | 'messages' | 'alarms' | 'friends' | 'gifts' | 'settings';
 
@@ -103,7 +104,17 @@ export default function App() {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">{renderPage()}</main>
+      <main className="flex-1 p-8 overflow-y-auto">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7F6B]" />
+            </div>
+          }
+        >
+          {renderPage()}
+        </Suspense>
+      </main>
     </div>
   );
 }

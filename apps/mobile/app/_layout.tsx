@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../src/stores/useAppStore';
 import { setupAudioSession, ensureAudioDir } from '../src/services/audio';
+import { requestNotificationPermissions } from '../src/services/notifications';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import '../src/i18n';
 
@@ -26,6 +27,7 @@ export default function RootLayout() {
     loadPersistedState();
     setupAudioSession();
     ensureAudioDir();
+    requestNotificationPermissions();
   }, []);
 
   return (

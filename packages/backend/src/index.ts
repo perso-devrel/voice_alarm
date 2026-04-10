@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import type { Env, AppEnv } from './types';
 import { authMiddleware } from './middleware/auth';
 import { loggerMiddleware } from './middleware/logger';
+import { rateLimitMiddleware } from './middleware/rateLimit';
 import { initDB } from './lib/db';
 import voiceRoutes from './routes/voice';
 import ttsRoutes from './routes/tts';
@@ -16,6 +17,9 @@ const app = new Hono<{ Bindings: Env }>();
 
 // Structured request logging
 app.use('*', loggerMiddleware);
+
+// Rate limiting (per-isolate sliding window, 60 req/min)
+app.use('*', rateLimitMiddleware);
 
 // CORS
 app.use(
@@ -128,6 +132,7 @@ app.get('/api/tts/presets', async (c) => {
 // 인증이 필요한 라우트들
 const api = new Hono<AppEnv>();
 api.use('*', authMiddleware);
+api.use('*', rateLimitMiddleware);
 api.route('/voice', voiceRoutes);
 api.route('/tts', ttsRoutes);
 api.route('/alarm', alarmRoutes);

@@ -20,6 +20,7 @@ import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { ErrorView } from '../../src/components/QueryStateView';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { cacheAlarms, getCachedAlarms } from '../../src/services/offlineCache';
+import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 
@@ -50,6 +51,7 @@ export default function AlarmsScreen() {
     if (alarms && alarms.length > 0) {
       cacheAlarms(alarms);
       setCachedAlarms(alarms);
+      syncAlarmNotifications(alarms);
     }
   }, [alarms]);
 
