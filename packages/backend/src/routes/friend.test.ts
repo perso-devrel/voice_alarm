@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMockDB, createTestApp, jsonReq, type MockDB } from '../test-helper';
 
+const U1 = '00000000-0000-0000-0000-000000000001';
+
 let mockDB: MockDB;
 vi.mock('../lib/db', () => ({
   getDB: () => mockDB,
@@ -47,7 +49,7 @@ describe('friend routes', () => {
     it('returns 409 when already friends', async () => {
       mockDB.execute
         .mockResolvedValueOnce({ rows: [{ google_id: 'other-id', email: 'o@e.com', name: 'O' }] })
-        .mockResolvedValueOnce({ rows: [{ id: 'f1', status: 'accepted' }] });
+        .mockResolvedValueOnce({ rows: [{ id: U1, status: 'accepted' }] });
       const res = await app.request('/friend', jsonReq('POST', '/friend', { email: 'o@e.com' }));
       expect(res.status).toBe(409);
     });
@@ -55,7 +57,7 @@ describe('friend routes', () => {
     it('returns 409 when request already pending', async () => {
       mockDB.execute
         .mockResolvedValueOnce({ rows: [{ google_id: 'other-id', email: 'o@e.com', name: 'O' }] })
-        .mockResolvedValueOnce({ rows: [{ id: 'f1', status: 'pending' }] });
+        .mockResolvedValueOnce({ rows: [{ id: U1, status: 'pending' }] });
       const res = await app.request('/friend', jsonReq('POST', '/friend', { email: 'o@e.com' }));
       expect(res.status).toBe(409);
     });
@@ -77,9 +79,11 @@ describe('friend routes', () => {
 
   describe('GET /friend/list — accepted friends', () => {
     it('returns friends list', async () => {
-      mockDB.execute.mockResolvedValueOnce({
-        rows: [{ id: 'f1', friend_email: 'a@b.com', friend_name: 'A' }],
-      });
+      mockDB.execute
+        .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+        .mockResolvedValueOnce({
+          rows: [{ id: U1, friend_email: 'a@b.com', friend_name: 'A' }],
+        });
       const res = await app.request('/friend/list', { method: 'GET' });
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -89,9 +93,11 @@ describe('friend routes', () => {
 
   describe('GET /friend/pending — pending requests', () => {
     it('returns pending requests', async () => {
-      mockDB.execute.mockResolvedValueOnce({
-        rows: [{ id: 'f1', requester_email: 'a@b.com' }],
-      });
+      mockDB.execute
+        .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+        .mockResolvedValueOnce({
+          rows: [{ id: U1, requester_email: 'a@b.com' }],
+        });
       const res = await app.request('/friend/pending', { method: 'GET' });
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -102,15 +108,16 @@ describe('friend routes', () => {
   describe('PATCH /friend/:id/accept', () => {
     it('returns 404 when request not found', async () => {
       mockDB.execute.mockResolvedValueOnce({ rows: [] });
-      const res = await app.request('/friend/f1/accept', { method: 'PATCH' });
+      const res = await app.request(`/friend/${U1}/accept`, { method: 'PATCH' });
       expect(res.status).toBe(404);
     });
 
     it('accepts pending request', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ id: 'f1' }] })
-        .mockResolvedValueOnce({ rowsAffected: 1 });
-      const res = await app.request('/friend/f1/accept', { method: 'PATCH' });
+        .mockResolvedValueOnce({ rows: [{ id: U1 }] })
+        .mockResolvedValueOnce({ rowsAffected: 1 })
+        .mockResolvedValueOnce({ rows: [{ id: U1, user_a: 'other', user_b: 'test-user-id', status: 'accepted' }] });
+      const res = await app.request(`/friend/${U1}/accept`, { method: 'PATCH' });
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.success).toBe(true);
@@ -120,13 +127,13 @@ describe('friend routes', () => {
   describe('DELETE /friend/:id', () => {
     it('returns 404 when not found', async () => {
       mockDB.execute.mockResolvedValueOnce({ rows: [], rowsAffected: 0 });
-      const res = await app.request('/friend/f1', { method: 'DELETE' });
+      const res = await app.request(`/friend/${U1}`, { method: 'DELETE' });
       expect(res.status).toBe(404);
     });
 
     it('deletes friendship', async () => {
       mockDB.execute.mockResolvedValueOnce({ rowsAffected: 1 });
-      const res = await app.request('/friend/f1', { method: 'DELETE' });
+      const res = await app.request(`/friend/${U1}`, { method: 'DELETE' });
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.success).toBe(true);

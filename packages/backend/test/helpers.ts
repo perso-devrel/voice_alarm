@@ -49,3 +49,14 @@ export function jsonReq(method: string, path: string, body?: Record<string, unkn
   if (body) init.body = JSON.stringify(body);
   return new Request(`http://localhost${path}`, init);
 }
+
+export const ID = {
+  alarm: '00000000-0000-4000-8000-000000000001',
+  alarm404: '00000000-0000-4000-8000-0000000000ff',
+  message: '10000000-0000-4000-8000-000000000001',
+  messageBad: '10000000-0000-4000-8000-0000000000ff',
+  friendship: '20000000-0000-4000-8000-000000000001',
+  friendship404: '20000000-0000-4000-8000-0000000000ff',
+  gift: '30000000-0000-4000-8000-000000000001',
+  gift404: '30000000-0000-4000-8000-0000000000ff',
+};

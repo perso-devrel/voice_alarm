@@ -270,7 +270,13 @@
 - [x] 백엔드: DELETE /api/voice/:id에서 연관 메시지 존재 시 409 + force=true 경고 응답
 - [x] 모바일: 친구 상세 화면에서 선물 보내기 바로가기 버튼 추가
 - [x] 백엔드: stats.test.ts 신규 (stats 라우트 테스트)
-- [ ] 백엔드: 기존 테스트 실패 수정 (gift.test.ts 등 mock 불일치)
+- [x] 백엔드: 기존 테스트 실패 수정 (gift.test.ts 등 mock 불일치) — UUID/페이지네이션/PATCH응답 mock 업데이트, 118 tests all pass
+
+## P33 - 자가 생성 항목 (테스트 커버리지 확장)
+
+- [x] 백엔드: voice.test.ts 신규 (14개 테스트 — 목록/상세/통계/삭제 + UUID검증/409경고/force삭제)
+- [x] 백엔드: tts.test.ts 신규 (17개 테스트 — generate 검증/제한/404, messages 목록/삭제/409, presets)
+- [ ] 백엔드: library.test.ts 추가 테스트 (test/ 디렉토리에 이미 존재하나 src/routes/ 쪽 없음)
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

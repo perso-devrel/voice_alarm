@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import type { AppEnv } from '../src/types';
-import { createMockDB, fakeAuthMiddleware, jsonReq } from './helpers';
+import { createMockDB, fakeAuthMiddleware, jsonReq, ID } from './helpers';
 
 const mockDB = createMockDB();
 
@@ -24,7 +24,8 @@ beforeEach(() => {
 
 describe('GET /alarm — 알람 목록', () => {
   it('빈 목록 반환', async () => {
-    mockDB.pushResult([]);
+    mockDB.pushResult([{ total: 0 }]); // count
+    mockDB.pushResult([]); // data
     const app = buildApp();
     const res = await app.request(jsonReq('GET', '/alarm'));
     expect(res.status).toBe(200);
@@ -33,9 +34,10 @@ describe('GET /alarm — 알람 목록', () => {
   });
 
   it('알람 목록 반환', async () => {
+    mockDB.pushResult([{ total: 1 }]); // count
     mockDB.pushResult([
       {
-        id: 'a-1',
+        id: ID.alarm,
         time: '07:00',
         is_active: 1,
         message_text: '좋은 아침!',
@@ -61,26 +63,26 @@ describe('POST /alarm — 알람 생성', () => {
 
   it('time 누락이면 400', async () => {
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1' }));
+    const res = await app.request(jsonReq('POST', '/alarm', { message_id: ID.message }));
     expect(res.status).toBe(400);
   });
 
   it('잘못된 time 형식이면 400', async () => {
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '7pm' }));
+    const res = await app.request(jsonReq('POST', '/alarm', { message_id: ID.message, time: '7pm' }));
     expect(res.status).toBe(400);
   });
 
   it('시간 범위 초과 (25:00) 면 400', async () => {
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '25:00' }));
+    const res = await app.request(jsonReq('POST', '/alarm', { message_id: ID.message, time: '25:00' }));
     expect(res.status).toBe(400);
   });
 
   it('잘못된 repeat_days 면 400', async () => {
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', repeat_days: [7] }),
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00', repeat_days: [7] }),
     );
     expect(res.status).toBe(400);
   });
@@ -88,7 +90,7 @@ describe('POST /alarm — 알람 생성', () => {
   it('snooze_minutes 범위 초과면 400', async () => {
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', snooze_minutes: 60 }),
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00', snooze_minutes: 60 }),
     );
     expect(res.status).toBe(400);
   });
@@ -97,17 +99,16 @@ describe('POST /alarm — 알람 생성', () => {
     mockDB.pushResult([]); // friendship check
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', target_user_id: 'user-2' }),
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00', target_user_id: 'user-2' }),
     );
     expect(res.status).toBe(403);
   });
 
   it('무료 플랜 알람 2개 초과면 403', async () => {
-    // No target_user_id, skip friendship check
     mockDB.pushResult([{ plan: 'free' }]); // user plan
     mockDB.pushResult([{ count: 2 }]); // alarm count
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00' }));
+    const res = await app.request(jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00' }));
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.error).toContain('무료 플랜');
@@ -118,18 +119,18 @@ describe('POST /alarm — 알람 생성', () => {
     mockDB.pushResult([]); // message lookup
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/alarm', { message_id: 'm-bad', time: '07:00' }),
+      jsonReq('POST', '/alarm', { message_id: ID.messageBad, time: '07:00' }),
     );
     expect(res.status).toBe(404);
   });
 
   it('정상 생성이면 201', async () => {
     mockDB.pushResult([{ plan: 'plus' }]); // user plan
-    mockDB.pushResult([{ id: 'm-1' }]); // message exists
+    mockDB.pushResult([{ id: ID.message }]); // message exists
     mockDB.pushResult([], 1); // insert alarm
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', repeat_days: [1, 3, 5] }),
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00', repeat_days: [1, 3, 5] }),
     );
     expect(res.status).toBe(201);
     const body = await res.json();
@@ -138,13 +139,13 @@ describe('POST /alarm — 알람 생성', () => {
   });
 
   it('target_user_id 있고 친구이면 201', async () => {
-    mockDB.pushResult([{ id: 'f-1' }]); // friendship exists
+    mockDB.pushResult([{ id: ID.friendship }]); // friendship exists
     mockDB.pushResult([{ plan: 'plus' }]); // target user plan
-    mockDB.pushResult([{ id: 'm-1' }]); // message exists
+    mockDB.pushResult([{ id: ID.message }]); // message exists
     mockDB.pushResult([], 1); // insert
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '08:00', target_user_id: 'user-2' }),
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '08:00', target_user_id: 'user-2' }),
     );
     expect(res.status).toBe(201);
   });
@@ -154,30 +155,31 @@ describe('PATCH /alarm/:id — 알람 수정', () => {
   it('소유하지 않은 알람이면 404', async () => {
     mockDB.pushResult([]);
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/alarm/a-999', { time: '08:00' }));
+    const res = await app.request(jsonReq('PATCH', `/alarm/${ID.alarm404}`, { time: '08:00' }));
     expect(res.status).toBe(404);
   });
 
   it('업데이트 필드가 없으면 400', async () => {
-    mockDB.pushResult([{ id: 'a-1' }]);
+    mockDB.pushResult([{ id: ID.alarm }]);
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/alarm/a-1', {}));
+    const res = await app.request(jsonReq('PATCH', `/alarm/${ID.alarm}`, {}));
     expect(res.status).toBe(400);
   });
 
   it('잘못된 time 형식이면 400', async () => {
-    mockDB.pushResult([{ id: 'a-1' }]);
+    mockDB.pushResult([{ id: ID.alarm }]);
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/alarm/a-1', { time: 'bad' }));
+    const res = await app.request(jsonReq('PATCH', `/alarm/${ID.alarm}`, { time: 'bad' }));
     expect(res.status).toBe(400);
   });
 
   it('정상 수정', async () => {
-    mockDB.pushResult([{ id: 'a-1' }]); // existing
+    mockDB.pushResult([{ id: ID.alarm }]); // existing
     mockDB.pushResult([], 1); // update
+    mockDB.pushResult([{ id: ID.alarm, time: '09:30', is_active: 0, snooze_minutes: 5, repeat_days: '[]' }]); // select updated
     const app = buildApp();
     const res = await app.request(
-      jsonReq('PATCH', '/alarm/a-1', { time: '09:30', is_active: false }),
+      jsonReq('PATCH', `/alarm/${ID.alarm}`, { time: '09:30', is_active: false }),
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -189,14 +191,14 @@ describe('DELETE /alarm/:id — 알람 삭제', () => {
   it('존재하지 않으면 404', async () => {
     mockDB.pushResult([], 0);
     const app = buildApp();
-    const res = await app.request(jsonReq('DELETE', '/alarm/a-999'));
+    const res = await app.request(jsonReq('DELETE', `/alarm/${ID.alarm404}`));
     expect(res.status).toBe(404);
   });
 
   it('정상 삭제', async () => {
     mockDB.pushResult([], 1);
     const app = buildApp();
-    const res = await app.request(jsonReq('DELETE', '/alarm/a-1'));
+    const res = await app.request(jsonReq('DELETE', `/alarm/${ID.alarm}`));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);

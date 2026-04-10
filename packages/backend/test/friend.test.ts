@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import type { AppEnv } from '../src/types';
-import { createMockDB, fakeAuthMiddleware, jsonReq } from './helpers';
+import { createMockDB, fakeAuthMiddleware, jsonReq, ID } from './helpers';
 
 const mockDB = createMockDB();
 
@@ -53,7 +53,7 @@ describe('POST /friend — 친구 요청', () => {
 
   it('이미 친구이면 409', async () => {
     mockDB.pushResult([{ google_id: 'user-2', email: 'b@test.com', name: 'B' }]);
-    mockDB.pushResult([{ id: 'f-1', status: 'accepted' }]);
+    mockDB.pushResult([{ id: ID.friendship, status: 'accepted' }]);
     const app = buildApp();
     const res = await app.request(jsonReq('POST', '/friend', { email: 'b@test.com' }));
     expect(res.status).toBe(409);
@@ -61,7 +61,7 @@ describe('POST /friend — 친구 요청', () => {
 
   it('이미 대기 중이면 409', async () => {
     mockDB.pushResult([{ google_id: 'user-2', email: 'b@test.com', name: 'B' }]);
-    mockDB.pushResult([{ id: 'f-1', status: 'pending' }]);
+    mockDB.pushResult([{ id: ID.friendship, status: 'pending' }]);
     const app = buildApp();
     const res = await app.request(jsonReq('POST', '/friend', { email: 'b@test.com' }));
     expect(res.status).toBe(409);
@@ -83,7 +83,8 @@ describe('POST /friend — 친구 요청', () => {
 
 describe('GET /friend/list — 친구 목록', () => {
   it('빈 목록 반환', async () => {
-    mockDB.pushResult([]);
+    mockDB.pushResult([{ total: 0 }]); // count
+    mockDB.pushResult([]); // data
     const app = buildApp();
     const res = await app.request(jsonReq('GET', '/friend/list'));
     expect(res.status).toBe(200);
@@ -92,9 +93,10 @@ describe('GET /friend/list — 친구 목록', () => {
   });
 
   it('친구 목록 반환', async () => {
+    mockDB.pushResult([{ total: 1 }]); // count
     mockDB.pushResult([
       {
-        id: 'f-1',
+        id: ID.friendship,
         user_a: 'user-1',
         user_b: 'user-2',
         friend_email: 'b@test.com',
@@ -114,9 +116,10 @@ describe('GET /friend/list — 친구 목록', () => {
 
 describe('GET /friend/pending — 대기 중인 요청', () => {
   it('대기 중인 요청 반환', async () => {
+    mockDB.pushResult([{ total: 1 }]); // count
     mockDB.pushResult([
       {
-        id: 'f-1',
+        id: ID.friendship,
         user_a: 'user-2',
         requester_email: 'b@test.com',
         requester_name: 'B',
@@ -136,15 +139,16 @@ describe('PATCH /friend/:id/accept — 수락', () => {
   it('존재하지 않는 요청이면 404', async () => {
     mockDB.pushResult([]);
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/friend/f-999/accept'));
+    const res = await app.request(jsonReq('PATCH', `/friend/${ID.friendship404}/accept`));
     expect(res.status).toBe(404);
   });
 
   it('정상 수락이면 success', async () => {
-    mockDB.pushResult([{ id: 'f-1' }]); // existing pending
+    mockDB.pushResult([{ id: ID.friendship }]); // existing pending
     mockDB.pushResult([], 1); // update
+    mockDB.pushResult([{ id: ID.friendship, user_a: 'user-2', user_b: 'user-1', status: 'accepted' }]); // select updated
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/friend/f-1/accept'));
+    const res = await app.request(jsonReq('PATCH', `/friend/${ID.friendship}/accept`));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -155,14 +159,14 @@ describe('DELETE /friend/:id — 삭제', () => {
   it('존재하지 않는 친구관계면 404', async () => {
     mockDB.pushResult([], 0);
     const app = buildApp();
-    const res = await app.request(jsonReq('DELETE', '/friend/f-999'));
+    const res = await app.request(jsonReq('DELETE', `/friend/${ID.friendship404}`));
     expect(res.status).toBe(404);
   });
 
   it('정상 삭제', async () => {
     mockDB.pushResult([], 1);
     const app = buildApp();
-    const res = await app.request(jsonReq('DELETE', '/friend/f-1'));
+    const res = await app.request(jsonReq('DELETE', `/friend/${ID.friendship}`));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);

@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMockDB, createTestApp, jsonReq, type MockDB } from '../test-helper';
 
+const U1 = '00000000-0000-0000-0000-000000000001';
+const U2 = '00000000-0000-0000-0000-000000000002';
+
 let mockDB: MockDB;
 vi.mock('../lib/db', () => ({
   getDB: () => mockDB,
@@ -22,7 +25,7 @@ describe('gift routes', () => {
         '/gift',
         jsonReq('POST', '/gift', {
           recipient_email: 'bad',
-          message_id: 'm1',
+          message_id: U1,
         }),
       );
       expect(res.status).toBe(400);
@@ -43,7 +46,7 @@ describe('gift routes', () => {
         '/gift',
         jsonReq('POST', '/gift', {
           recipient_email: 'a@b.com',
-          message_id: 'm1',
+          message_id: U1,
           note: 'x'.repeat(201),
         }),
       );
@@ -56,7 +59,7 @@ describe('gift routes', () => {
         '/gift',
         jsonReq('POST', '/gift', {
           recipient_email: 'a@b.com',
-          message_id: 'm1',
+          message_id: U1,
         }),
       );
       expect(res.status).toBe(404);
@@ -70,7 +73,7 @@ describe('gift routes', () => {
         '/gift',
         jsonReq('POST', '/gift', {
           recipient_email: 'a@b.com',
-          message_id: 'm1',
+          message_id: U1,
         }),
       );
       expect(res.status).toBe(400);
@@ -78,13 +81,13 @@ describe('gift routes', () => {
 
     it('returns 403 when not friends', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ google_id: 'other-id' }] }) // recipient lookup
-        .mockResolvedValueOnce({ rows: [] }); // areFriends check
+        .mockResolvedValueOnce({ rows: [{ google_id: 'other-id' }] })
+        .mockResolvedValueOnce({ rows: [] });
       const res = await app.request(
         '/gift',
         jsonReq('POST', '/gift', {
           recipient_email: 'a@b.com',
-          message_id: 'm1',
+          message_id: U1,
         }),
       );
       expect(res.status).toBe(403);
@@ -93,13 +96,13 @@ describe('gift routes', () => {
     it('returns 404 when message not owned', async () => {
       mockDB.execute
         .mockResolvedValueOnce({ rows: [{ google_id: 'other-id' }] })
-        .mockResolvedValueOnce({ rows: [{ id: 'f1' }] }) // areFriends
-        .mockResolvedValueOnce({ rows: [] }); // message check
+        .mockResolvedValueOnce({ rows: [{ id: U2 }] })
+        .mockResolvedValueOnce({ rows: [] });
       const res = await app.request(
         '/gift',
         jsonReq('POST', '/gift', {
           recipient_email: 'a@b.com',
-          message_id: 'm1',
+          message_id: U1,
         }),
       );
       expect(res.status).toBe(404);
@@ -108,14 +111,14 @@ describe('gift routes', () => {
     it('creates gift and returns 201', async () => {
       mockDB.execute
         .mockResolvedValueOnce({ rows: [{ google_id: 'other-id' }] })
-        .mockResolvedValueOnce({ rows: [{ id: 'f1' }] })
-        .mockResolvedValueOnce({ rows: [{ id: 'm1' }] })
+        .mockResolvedValueOnce({ rows: [{ id: U2 }] })
+        .mockResolvedValueOnce({ rows: [{ id: U1 }] })
         .mockResolvedValueOnce({ rowsAffected: 1 });
       const res = await app.request(
         '/gift',
         jsonReq('POST', '/gift', {
           recipient_email: 'a@b.com',
-          message_id: 'm1',
+          message_id: U1,
           note: 'hello!',
         }),
       );
@@ -127,9 +130,11 @@ describe('gift routes', () => {
 
   describe('GET /gift/received', () => {
     it('returns received gifts', async () => {
-      mockDB.execute.mockResolvedValueOnce({
-        rows: [{ id: 'g1', sender_email: 'a@b.com', message_text: 'hi' }],
-      });
+      mockDB.execute
+        .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+        .mockResolvedValueOnce({
+          rows: [{ id: U1, sender_email: 'a@b.com', message_text: 'hi' }],
+        });
       const res = await app.request('/gift/received', { method: 'GET' });
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -139,9 +144,11 @@ describe('gift routes', () => {
 
   describe('GET /gift/sent', () => {
     it('returns sent gifts', async () => {
-      mockDB.execute.mockResolvedValueOnce({
-        rows: [{ id: 'g1', recipient_email: 'a@b.com' }],
-      });
+      mockDB.execute
+        .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+        .mockResolvedValueOnce({
+          rows: [{ id: U1, recipient_email: 'a@b.com' }],
+        });
       const res = await app.request('/gift/sent', { method: 'GET' });
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -152,33 +159,35 @@ describe('gift routes', () => {
   describe('PATCH /gift/:id/accept', () => {
     it('returns 404 for non-existent gift', async () => {
       mockDB.execute.mockResolvedValueOnce({ rows: [] });
-      const res = await app.request('/gift/g1/accept', { method: 'PATCH' });
+      const res = await app.request(`/gift/${U1}/accept`, { method: 'PATCH' });
       expect(res.status).toBe(404);
     });
 
     it('accepts gift and adds to library', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ id: 'g1', message_id: 'm1' }] })
-        .mockResolvedValueOnce({ rowsAffected: 1 }) // update status
-        .mockResolvedValueOnce({ rowsAffected: 1 }); // insert library
-      const res = await app.request('/gift/g1/accept', { method: 'PATCH' });
+        .mockResolvedValueOnce({ rows: [{ id: U1, message_id: U2 }] })
+        .mockResolvedValueOnce({ rowsAffected: 1 })
+        .mockResolvedValueOnce({ rowsAffected: 1 })
+        .mockResolvedValueOnce({ rows: [{ id: U1, status: 'accepted', message_id: U2 }] });
+      const res = await app.request(`/gift/${U1}/accept`, { method: 'PATCH' });
       expect(res.status).toBe(200);
-      expect(mockDB.execute).toHaveBeenCalledTimes(3);
+      expect(mockDB.execute).toHaveBeenCalledTimes(4);
     });
   });
 
   describe('PATCH /gift/:id/reject', () => {
     it('returns 404 for non-existent gift', async () => {
       mockDB.execute.mockResolvedValueOnce({ rows: [] });
-      const res = await app.request('/gift/g1/reject', { method: 'PATCH' });
+      const res = await app.request(`/gift/${U1}/reject`, { method: 'PATCH' });
       expect(res.status).toBe(404);
     });
 
     it('rejects gift', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ id: 'g1' }] })
-        .mockResolvedValueOnce({ rowsAffected: 1 });
-      const res = await app.request('/gift/g1/reject', { method: 'PATCH' });
+        .mockResolvedValueOnce({ rows: [{ id: U1 }] })
+        .mockResolvedValueOnce({ rowsAffected: 1 })
+        .mockResolvedValueOnce({ rows: [{ id: U1, status: 'rejected' }] });
+      const res = await app.request(`/gift/${U1}/reject`, { method: 'PATCH' });
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.success).toBe(true);

@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMockDB, createTestApp, jsonReq, type MockDB } from '../test-helper';
 
+const U1 = '00000000-0000-0000-0000-000000000001';
+const U2 = '00000000-0000-0000-0000-000000000002';
+
 let mockDB: MockDB;
 vi.mock('../lib/db', () => ({
   getDB: () => mockDB,
@@ -18,9 +21,11 @@ describe('alarm routes', () => {
 
   describe('GET /alarm — list alarms', () => {
     it('returns alarms', async () => {
-      mockDB.execute.mockResolvedValueOnce({
-        rows: [{ id: 'a1', time: '07:00', message_text: 'hi' }],
-      });
+      mockDB.execute
+        .mockResolvedValueOnce({ rows: [{ total: 1 }] })
+        .mockResolvedValueOnce({
+          rows: [{ id: U1, time: '07:00', message_text: 'hi' }],
+        });
       const res = await app.request('/alarm', { method: 'GET' });
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -38,7 +43,7 @@ describe('alarm routes', () => {
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '7:00',
         }),
       );
@@ -49,7 +54,7 @@ describe('alarm routes', () => {
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '25:00',
         }),
       );
@@ -60,7 +65,7 @@ describe('alarm routes', () => {
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '07:00',
           repeat_days: [7],
         }),
@@ -72,7 +77,7 @@ describe('alarm routes', () => {
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '07:00',
           snooze_minutes: 31,
         }),
@@ -81,11 +86,11 @@ describe('alarm routes', () => {
     });
 
     it('returns 403 when target_user_id is not a friend', async () => {
-      mockDB.execute.mockResolvedValueOnce({ rows: [] }); // friendship check
+      mockDB.execute.mockResolvedValueOnce({ rows: [] });
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '07:00',
           target_user_id: 'stranger',
         }),
@@ -94,14 +99,13 @@ describe('alarm routes', () => {
     });
 
     it('returns 403 when free plan alarm limit reached', async () => {
-      // no target_user_id → skip friendship check
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ plan: 'free' }] }) // user plan
-        .mockResolvedValueOnce({ rows: [{ count: 2 }] }); // alarm count
+        .mockResolvedValueOnce({ rows: [{ plan: 'free' }] })
+        .mockResolvedValueOnce({ rows: [{ count: 2 }] });
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '07:00',
         }),
       );
@@ -113,11 +117,11 @@ describe('alarm routes', () => {
     it('returns 404 when message not found', async () => {
       mockDB.execute
         .mockResolvedValueOnce({ rows: [{ plan: 'plus' }] })
-        .mockResolvedValueOnce({ rows: [] }); // message check
+        .mockResolvedValueOnce({ rows: [] });
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '07:00',
         }),
       );
@@ -126,13 +130,13 @@ describe('alarm routes', () => {
 
     it('creates alarm and returns 201', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ plan: 'plus' }] }) // user plan
-        .mockResolvedValueOnce({ rows: [{ id: 'm1' }] }) // message check
-        .mockResolvedValueOnce({ rowsAffected: 1 }); // insert
+        .mockResolvedValueOnce({ rows: [{ plan: 'plus' }] })
+        .mockResolvedValueOnce({ rows: [{ id: U1 }] })
+        .mockResolvedValueOnce({ rowsAffected: 1 });
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '07:30',
           repeat_days: [1, 3, 5],
         }),
@@ -144,14 +148,14 @@ describe('alarm routes', () => {
 
     it('creates alarm for friend (cross-user)', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ id: 'f1' }] }) // friendship check
-        .mockResolvedValueOnce({ rows: [{ plan: 'plus' }] }) // target user plan
-        .mockResolvedValueOnce({ rows: [{ id: 'm1' }] }) // message check
-        .mockResolvedValueOnce({ rowsAffected: 1 }); // insert
+        .mockResolvedValueOnce({ rows: [{ id: U2 }] })
+        .mockResolvedValueOnce({ rows: [{ plan: 'plus' }] })
+        .mockResolvedValueOnce({ rows: [{ id: U1 }] })
+        .mockResolvedValueOnce({ rowsAffected: 1 });
       const res = await app.request(
         '/alarm',
         jsonReq('POST', '/alarm', {
-          message_id: 'm1',
+          message_id: U1,
           time: '08:00',
           target_user_id: 'friend-id',
         }),
@@ -163,29 +167,30 @@ describe('alarm routes', () => {
   describe('PATCH /alarm/:id — update alarm', () => {
     it('returns 404 when alarm not owned', async () => {
       mockDB.execute.mockResolvedValueOnce({ rows: [] });
-      const res = await app.request('/alarm/a1', jsonReq('PATCH', '/alarm/a1', { time: '08:00' }));
+      const res = await app.request(`/alarm/${U1}`, jsonReq('PATCH', `/alarm/${U1}`, { time: '08:00' }));
       expect(res.status).toBe(404);
     });
 
     it('returns 400 for invalid time on update', async () => {
-      mockDB.execute.mockResolvedValueOnce({ rows: [{ id: 'a1' }] });
-      const res = await app.request('/alarm/a1', jsonReq('PATCH', '/alarm/a1', { time: 'bad' }));
+      mockDB.execute.mockResolvedValueOnce({ rows: [{ id: U1 }] });
+      const res = await app.request(`/alarm/${U1}`, jsonReq('PATCH', `/alarm/${U1}`, { time: 'bad' }));
       expect(res.status).toBe(400);
     });
 
     it('returns 400 when no fields to update', async () => {
-      mockDB.execute.mockResolvedValueOnce({ rows: [{ id: 'a1' }] });
-      const res = await app.request('/alarm/a1', jsonReq('PATCH', '/alarm/a1', {}));
+      mockDB.execute.mockResolvedValueOnce({ rows: [{ id: U1 }] });
+      const res = await app.request(`/alarm/${U1}`, jsonReq('PATCH', `/alarm/${U1}`, {}));
       expect(res.status).toBe(400);
     });
 
     it('updates alarm fields', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ id: 'a1' }] })
-        .mockResolvedValueOnce({ rowsAffected: 1 });
+        .mockResolvedValueOnce({ rows: [{ id: U1 }] })
+        .mockResolvedValueOnce({ rowsAffected: 1 })
+        .mockResolvedValueOnce({ rows: [{ id: U1, time: '09:00', is_active: 0, snooze_minutes: 10, repeat_days: '[]' }] });
       const res = await app.request(
-        '/alarm/a1',
-        jsonReq('PATCH', '/alarm/a1', {
+        `/alarm/${U1}`,
+        jsonReq('PATCH', `/alarm/${U1}`, {
           time: '09:00',
           is_active: false,
           snooze_minutes: 10,
@@ -200,13 +205,13 @@ describe('alarm routes', () => {
   describe('DELETE /alarm/:id', () => {
     it('returns 404 when not found', async () => {
       mockDB.execute.mockResolvedValueOnce({ rowsAffected: 0 });
-      const res = await app.request('/alarm/a1', { method: 'DELETE' });
+      const res = await app.request(`/alarm/${U1}`, { method: 'DELETE' });
       expect(res.status).toBe(404);
     });
 
     it('deletes alarm', async () => {
       mockDB.execute.mockResolvedValueOnce({ rowsAffected: 1 });
-      const res = await app.request('/alarm/a1', { method: 'DELETE' });
+      const res = await app.request(`/alarm/${U1}`, { method: 'DELETE' });
       expect(res.status).toBe(200);
     });
   });

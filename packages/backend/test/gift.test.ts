@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import type { AppEnv } from '../src/types';
-import { createMockDB, fakeAuthMiddleware, jsonReq } from './helpers';
+import { createMockDB, fakeAuthMiddleware, jsonReq, ID } from './helpers';
 
 const mockDB = createMockDB();
 
@@ -25,7 +25,7 @@ beforeEach(() => {
 describe('POST /gift — 선물 보내기', () => {
   it('이메일 누락이면 400', async () => {
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/gift', { message_id: 'm-1' }));
+    const res = await app.request(jsonReq('POST', '/gift', { message_id: ID.message }));
     expect(res.status).toBe(400);
   });
 
@@ -40,7 +40,7 @@ describe('POST /gift — 선물 보내기', () => {
     const res = await app.request(
       jsonReq('POST', '/gift', {
         recipient_email: 'b@test.com',
-        message_id: 'm-1',
+        message_id: ID.message,
         note: 'x'.repeat(201),
       }),
     );
@@ -51,7 +51,7 @@ describe('POST /gift — 선물 보내기', () => {
     mockDB.pushResult([]); // recipient lookup
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/gift', { recipient_email: 'nobody@test.com', message_id: 'm-1' }),
+      jsonReq('POST', '/gift', { recipient_email: 'nobody@test.com', message_id: ID.message }),
     );
     expect(res.status).toBe(404);
   });
@@ -60,7 +60,7 @@ describe('POST /gift — 선물 보내기', () => {
     mockDB.pushResult([{ google_id: 'user-1' }]);
     const app = buildApp('user-1');
     const res = await app.request(
-      jsonReq('POST', '/gift', { recipient_email: 'me@test.com', message_id: 'm-1' }),
+      jsonReq('POST', '/gift', { recipient_email: 'me@test.com', message_id: ID.message }),
     );
     expect(res.status).toBe(400);
   });
@@ -70,41 +70,42 @@ describe('POST /gift — 선물 보내기', () => {
     mockDB.pushResult([]); // areFriends returns false
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-1' }),
+      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: ID.message }),
     );
     expect(res.status).toBe(403);
   });
 
   it('메시지가 존재하지 않으면 404', async () => {
     mockDB.pushResult([{ google_id: 'user-2' }]); // recipient
-    mockDB.pushResult([{ id: 'f-1' }]); // areFriends
+    mockDB.pushResult([{ id: ID.friendship }]); // areFriends
     mockDB.pushResult([]); // message lookup
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-bad' }),
+      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: ID.messageBad }),
     );
     expect(res.status).toBe(404);
   });
 
   it('정상 선물이면 201', async () => {
     mockDB.pushResult([{ google_id: 'user-2' }]); // recipient
-    mockDB.pushResult([{ id: 'f-1' }]); // areFriends
-    mockDB.pushResult([{ id: 'm-1' }]); // message exists
+    mockDB.pushResult([{ id: ID.friendship }]); // areFriends
+    mockDB.pushResult([{ id: ID.message }]); // message exists
     mockDB.pushResult([], 1); // insert gift
     const app = buildApp();
     const res = await app.request(
-      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-1' }),
+      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: ID.message }),
     );
     expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.gift.status).toBe('pending');
-    expect(body.gift.message_id).toBe('m-1');
+    expect(body.gift.message_id).toBe(ID.message);
   });
 });
 
 describe('GET /gift/received — 받은 선물', () => {
   it('빈 목록 반환', async () => {
-    mockDB.pushResult([]);
+    mockDB.pushResult([{ total: 0 }]); // count
+    mockDB.pushResult([]); // data
     const app = buildApp();
     const res = await app.request(jsonReq('GET', '/gift/received'));
     expect(res.status).toBe(200);
@@ -115,7 +116,8 @@ describe('GET /gift/received — 받은 선물', () => {
 
 describe('GET /gift/sent — 보낸 선물', () => {
   it('빈 목록 반환', async () => {
-    mockDB.pushResult([]);
+    mockDB.pushResult([{ total: 0 }]); // count
+    mockDB.pushResult([]); // data
     const app = buildApp();
     const res = await app.request(jsonReq('GET', '/gift/sent'));
     expect(res.status).toBe(200);
@@ -128,16 +130,17 @@ describe('PATCH /gift/:id/accept — 수락', () => {
   it('존재하지 않으면 404', async () => {
     mockDB.pushResult([]);
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/gift/g-999/accept'));
+    const res = await app.request(jsonReq('PATCH', `/gift/${ID.gift404}/accept`));
     expect(res.status).toBe(404);
   });
 
   it('정상 수락 — 라이브러리에도 추가', async () => {
-    mockDB.pushResult([{ id: 'g-1', message_id: 'm-1' }]); // existing pending
+    mockDB.pushResult([{ id: ID.gift, message_id: ID.message }]); // existing pending
     mockDB.pushResult([], 1); // update gift status
     mockDB.pushResult([], 1); // insert message_library
+    mockDB.pushResult([{ id: ID.gift, status: 'accepted', message_id: ID.message }]); // select updated
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/gift/g-1/accept'));
+    const res = await app.request(jsonReq('PATCH', `/gift/${ID.gift}/accept`));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -150,15 +153,16 @@ describe('PATCH /gift/:id/reject — 거절', () => {
   it('존재하지 않으면 404', async () => {
     mockDB.pushResult([]);
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/gift/g-999/reject'));
+    const res = await app.request(jsonReq('PATCH', `/gift/${ID.gift404}/reject`));
     expect(res.status).toBe(404);
   });
 
   it('정상 거절', async () => {
-    mockDB.pushResult([{ id: 'g-1' }]);
-    mockDB.pushResult([], 1);
+    mockDB.pushResult([{ id: ID.gift }]); // existing pending
+    mockDB.pushResult([], 1); // update
+    mockDB.pushResult([{ id: ID.gift, status: 'rejected' }]); // select updated
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/gift/g-1/reject'));
+    const res = await app.request(jsonReq('PATCH', `/gift/${ID.gift}/reject`));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
