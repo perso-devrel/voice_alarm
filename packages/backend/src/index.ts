@@ -8,6 +8,8 @@ import ttsRoutes from './routes/tts';
 import alarmRoutes from './routes/alarm';
 import userRoutes from './routes/user';
 import libraryRoutes from './routes/library';
+import friendRoutes from './routes/friend';
+import giftRoutes from './routes/gift';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -63,6 +65,8 @@ api.route('/tts', ttsRoutes);
 api.route('/alarm', alarmRoutes);
 api.route('/user', userRoutes);
 api.route('/library', libraryRoutes);
+api.route('/friend', friendRoutes);
+api.route('/gift', giftRoutes);
 
 app.route('/api', api);
 

@@ -73,6 +73,10 @@ voice.post('/clone', async (c) => {
     return c.json({ error: 'audio file and name are required' }, 400);
   }
 
+  if (provider !== 'perso' && provider !== 'elevenlabs') {
+    return c.json({ error: 'provider must be "perso" or "elevenlabs"' }, 400);
+  }
+
   const audioBuffer = await audioFile.arrayBuffer();
   const profileId = crypto.randomUUID();
 

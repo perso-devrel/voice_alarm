@@ -14,13 +14,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getVoiceProfiles, deleteVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { ErrorView } from '../../src/components/QueryStateView';
 
 export default function VoicesScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
 
-  const { data: profiles, isLoading } = useQuery({
+  const { data: profiles, isLoading, isError, refetch } = useQuery({
     queryKey: ['voiceProfiles'],
     queryFn: getVoiceProfiles,
     enabled: isAuthenticated,
@@ -30,6 +31,9 @@ export default function VoicesScreen() {
     mutationFn: deleteVoiceProfile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
+    },
+    onError: (err: any) => {
+      Alert.alert('오류', err.response?.data?.error ?? '음성 프로필 삭제에 실패했어요.');
     },
   });
 
@@ -142,6 +146,8 @@ export default function VoicesScreen() {
         </Text>
         {isLoading ? (
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
+        ) : isError ? (
+          <ErrorView onRetry={refetch} />
         ) : profiles?.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🎵</Text>

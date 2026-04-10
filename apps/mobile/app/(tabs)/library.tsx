@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { getLibrary, toggleFavorite } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { ErrorView } from '../../src/components/QueryStateView';
 import { Audio } from 'expo-av';
 
 type FilterType = 'all' | 'favorite';
@@ -24,7 +26,7 @@ export default function LibraryScreen() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
 
-  const { data: items, isLoading } = useQuery({
+  const { data: items, isLoading, isError, refetch } = useQuery({
     queryKey: ['library', filter],
     queryFn: () => getLibrary(filter === 'favorite' ? 'favorite' : undefined),
     enabled: isAuthenticated,
@@ -34,6 +36,9 @@ export default function LibraryScreen() {
     mutationFn: toggleFavorite,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['library'] });
+    },
+    onError: () => {
+      Alert.alert('오류', '즐겨찾기 변경에 실패했어요.');
     },
   });
 
@@ -154,6 +159,8 @@ export default function LibraryScreen() {
 
       {isLoading ? (
         <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
+      ) : isError ? (
+        <ErrorView onRetry={refetch} />
       ) : items?.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>📭</Text>

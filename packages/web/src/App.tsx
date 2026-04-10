@@ -3,14 +3,18 @@ import VoicesPage from './pages/VoicesPage';
 import MessagesPage from './pages/MessagesPage';
 import AlarmsPage from './pages/AlarmsPage';
 import SettingsPage from './pages/SettingsPage';
+import FriendsPage from './pages/FriendsPage';
+import GiftsPage from './pages/GiftsPage';
 import LoginPage from './components/LoginPage';
 
-type Page = 'voices' | 'messages' | 'alarms' | 'settings';
+type Page = 'voices' | 'messages' | 'alarms' | 'friends' | 'gifts' | 'settings';
 
 const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
   { key: 'voices', label: '음성 관리', emoji: '🎙️' },
   { key: 'messages', label: '메시지', emoji: '💌' },
   { key: 'alarms', label: '알람 설정', emoji: '⏰' },
+  { key: 'friends', label: '친구', emoji: '👥' },
+  { key: 'gifts', label: '선물', emoji: '🎁' },
   { key: 'settings', label: '설정', emoji: '⚙️' },
 ];
 
@@ -42,6 +46,8 @@ export default function App() {
       case 'voices': return <VoicesPage />;
       case 'messages': return <MessagesPage />;
       case 'alarms': return <AlarmsPage />;
+      case 'friends': return <FriendsPage />;
+      case 'gifts': return <GiftsPage />;
       case 'settings': return <SettingsPage />;
     }
   };

@@ -13,23 +13,31 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
-import { getMessages, createAlarm } from '../../src/services/api';
+import { getMessages, createAlarm, getFriendList } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const { isAuthenticated, userId } = useAppStore();
 
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [snooze, setSnooze] = useState(5);
+  const [targetUserId, setTargetUserId] = useState<string | null>(null);
+  const [targetName, setTargetName] = useState<string | null>(null);
 
   const { data: messages } = useQuery({
     queryKey: ['messages'],
     queryFn: () => getMessages(),
+    enabled: isAuthenticated,
+  });
+
+  const { data: friends } = useQuery({
+    queryKey: ['friends'],
+    queryFn: getFriendList,
     enabled: isAuthenticated,
   });
 
@@ -64,6 +72,7 @@ export default function CreateAlarmScreen() {
       time,
       repeat_days: repeatDays,
       snooze_minutes: snooze,
+      ...(targetUserId ? { target_user_id: targetUserId } : {}),
     });
   };
 
@@ -75,6 +84,42 @@ export default function CreateAlarmScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* 누구에게? */}
+      {friends && friends.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>누구에게?</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.targetRow}>
+            <TouchableOpacity
+              style={[styles.targetChip, !targetUserId && styles.targetChipActive]}
+              onPress={() => { setTargetUserId(null); setTargetName(null); }}
+            >
+              <Text style={[styles.targetText, !targetUserId && styles.targetTextActive]}>나</Text>
+            </TouchableOpacity>
+            {friends.map((f: any) => {
+              const friendId = f.user_a === userId ? f.user_b : f.user_a;
+              const isSelected = targetUserId === friendId;
+              return (
+                <TouchableOpacity
+                  key={f.id}
+                  style={[styles.targetChip, isSelected && styles.targetChipActive]}
+                  onPress={() => {
+                    setTargetUserId(isSelected ? null : friendId);
+                    setTargetName(isSelected ? null : (f.friend_name || f.friend_email));
+                  }}
+                >
+                  <Text style={[styles.targetText, isSelected && styles.targetTextActive]}>
+                    {f.friend_name || f.friend_email?.split('@')[0] || '?'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          {targetName && (
+            <Text style={styles.targetHint}>{targetName}님에게 알람을 설정합니다</Text>
+          )}
+        </>
+      )}
+
       {/* 시간 선택 */}
       <Text style={styles.sectionTitle}>시간</Text>
       <View style={styles.timePickerContainer}>
@@ -387,5 +432,35 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: FontSize.lg,
     fontWeight: '700',
+  },
+  targetRow: {
+    marginBottom: Spacing.sm,
+  },
+  targetChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginRight: Spacing.sm,
+  },
+  targetChipActive: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  targetText: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    fontWeight: '600',
+  },
+  targetTextActive: {
+    color: '#FFF',
+  },
+  targetHint: {
+    fontSize: FontSize.sm,
+    color: Colors.light.accent,
+    fontWeight: '500',
+    marginBottom: Spacing.sm,
   },
 });

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVoiceProfiles, getMessages, getPresets, generateTTS } from '../services/api';
+import { getVoiceProfiles, getMessages, getPresets, generateTTS, getFriendList, sendGift } from '../services/api';
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   morning: '🌅', lunch: '🍽️', afternoon: '☕',
@@ -199,6 +199,28 @@ export default function MessagesPage() {
                       {new Date(msg.created_at).toLocaleDateString('ko-KR')}
                     </p>
                   </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const friends = await getFriendList();
+                        if (!friends?.length) {
+                          alert('먼저 친구를 추가해주세요.');
+                          return;
+                        }
+                        const name = prompt(
+                          `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: any) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`
+                        );
+                        if (!name) return;
+                        await sendGift({ recipient_email: name, message_id: msg.id });
+                        alert('선물을 보냈습니다!');
+                      } catch (err: any) {
+                        alert(err.response?.data?.error || '선물 전송 실패');
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm border border-[#FF6B8A] text-[#FF6B8A] rounded-lg hover:bg-[#FFF0ED] transition-colors"
+                  >
+                    🎁 선물
+                  </button>
                 </div>
               ))}
             </div>

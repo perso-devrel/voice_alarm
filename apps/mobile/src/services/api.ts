@@ -117,6 +117,7 @@ export async function createAlarm(params: {
   time: string;
   repeat_days?: number[];
   snooze_minutes?: number;
+  target_user_id?: string;
 }) {
   const { data } = await api.post('/alarm', params);
   return data.alarm;
@@ -134,6 +135,60 @@ export async function updateAlarm(id: string, params: {
 
 export async function deleteAlarm(id: string) {
   await api.delete(`/alarm/${id}`);
+}
+
+// ===== Friend API =====
+
+export async function sendFriendRequest(email: string) {
+  const { data } = await api.post('/friend', { email });
+  return data.friendship;
+}
+
+export async function getFriendList() {
+  const { data } = await api.get('/friend/list');
+  return data.friends;
+}
+
+export async function getPendingRequests() {
+  const { data } = await api.get('/friend/pending');
+  return data.pending;
+}
+
+export async function acceptFriendRequest(id: string) {
+  await api.patch(`/friend/${id}/accept`);
+}
+
+export async function deleteFriend(id: string) {
+  await api.delete(`/friend/${id}`);
+}
+
+// ===== Gift API =====
+
+export async function sendGift(params: {
+  recipient_email: string;
+  message_id: string;
+  note?: string;
+}) {
+  const { data } = await api.post('/gift', params);
+  return data.gift;
+}
+
+export async function getReceivedGifts() {
+  const { data } = await api.get('/gift/received');
+  return data.gifts;
+}
+
+export async function getSentGifts() {
+  const { data } = await api.get('/gift/sent');
+  return data.gifts;
+}
+
+export async function acceptGift(id: string) {
+  await api.patch(`/gift/${id}/accept`);
+}
+
+export async function rejectGift(id: string) {
+  await api.patch(`/gift/${id}/reject`);
 }
 
 // ===== User API =====

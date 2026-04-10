@@ -16,13 +16,14 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { getAlarms, updateAlarm, deleteAlarm } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
+import { ErrorView } from '../../src/components/QueryStateView';
 
 export default function AlarmsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
 
-  const { data: alarms, isLoading } = useQuery({
+  const { data: alarms, isLoading, isError, refetch } = useQuery({
     queryKey: ['alarms'],
     queryFn: getAlarms,
     enabled: isAuthenticated,
@@ -32,11 +33,17 @@ export default function AlarmsScreen() {
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
       updateAlarm(id, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
+    onError: (err: any) => {
+      Alert.alert('오류', err.response?.data?.error ?? '알람 상태 변경에 실패했어요.');
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAlarm,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
+    onError: (err: any) => {
+      Alert.alert('오류', err.response?.data?.error ?? '알람 삭제에 실패했어요.');
+    },
   });
 
   const handleDelete = (id: string) => {
@@ -109,6 +116,8 @@ export default function AlarmsScreen() {
 
       {isLoading ? (
         <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
+      ) : isError ? (
+        <ErrorView onRetry={refetch} />
       ) : alarms?.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>⏰</Text>

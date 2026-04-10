@@ -7,6 +7,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     home: '🏠',
     voices: '🎙️',
     alarms: '⏰',
+    friends: '👥',
     library: '📚',
     settings: '⚙️',
   };
@@ -47,6 +48,13 @@ export default function TabLayout() {
         options={{
           title: '알람',
           tabBarIcon: ({ focused }) => <TabIcon name="alarms" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: '친구',
+          tabBarIcon: ({ focused }) => <TabIcon name="friends" focused={focused} />,
         }}
       />
       <Tabs.Screen

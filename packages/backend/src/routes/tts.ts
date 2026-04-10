@@ -28,6 +28,11 @@ tts.post('/generate', async (c) => {
     return c.json({ error: 'Text must be 200 characters or less' }, 400);
   }
 
+  const validCategories = ['morning', 'lunch', 'afternoon', 'evening', 'night', 'cheer', 'love', 'health', 'custom'];
+  if (body.category && !validCategories.includes(body.category)) {
+    return c.json({ error: `Invalid category. Must be one of: ${validCategories.join(', ')}` }, 400);
+  }
+
   // 사용량 체크
   const user = await db.execute({
     sql: 'SELECT * FROM users WHERE google_id = ?',

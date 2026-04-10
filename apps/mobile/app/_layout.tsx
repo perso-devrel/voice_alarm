@@ -58,6 +58,10 @@ export default function RootLayout() {
             options={{ headerShown: true, title: '메시지 작성', presentation: 'modal' }}
           />
           <Stack.Screen
+            name="gift/received"
+            options={{ headerShown: true, title: '받은 선물', presentation: 'modal' }}
+          />
+          <Stack.Screen
             name="player"
             options={{ presentation: 'transparentModal', animation: 'fade' }}
           />

@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { PRESET_CATEGORIES } from '../../src/constants/presets';
-import { getVoiceProfiles, generateTTS } from '../../src/services/api';
+import { getVoiceProfiles, generateTTS, getFriendList, sendGift } from '../../src/services/api';
 import { saveAudioLocally, playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
 
@@ -283,6 +283,39 @@ export default function CreateMessageScreen() {
               <Text style={styles.useText}>⏰ 알람에 사용</Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            style={styles.giftButton}
+            onPress={async () => {
+              try {
+                const friends = await getFriendList();
+                if (!friends || friends.length === 0) {
+                  Alert.alert('친구 없음', '먼저 친구를 추가해주세요.');
+                  return;
+                }
+                const buttons = friends.slice(0, 5).map((f: any) => ({
+                  text: f.friend_name || f.friend_email,
+                  onPress: async () => {
+                    try {
+                      await sendGift({
+                        recipient_email: f.friend_email,
+                        message_id: generatedAudioId!,
+                        note: messageText ?? undefined,
+                      });
+                      Alert.alert('전송 완료', `${f.friend_name || f.friend_email}님에게 선물을 보냈습니다!`);
+                    } catch (err: any) {
+                      Alert.alert('오류', err.response?.data?.error || '선물 전송에 실패했습니다.');
+                    }
+                  },
+                }));
+                buttons.push({ text: '취소', onPress: () => {} });
+                Alert.alert('선물하기', '누구에게 보낼까요?', buttons);
+              } catch {
+                Alert.alert('오류', '친구 목록을 불러올 수 없습니다.');
+              }
+            }}
+          >
+            <Text style={styles.giftText}>🎁 친구에게 선물하기</Text>
+          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
@@ -513,5 +546,18 @@ const styles = StyleSheet.create({
   useText: {
     color: '#FFF',
     fontWeight: '600',
+  },
+  giftButton: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.accent,
+    padding: Spacing.sm + 2,
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+  },
+  giftText: {
+    color: Colors.light.accent,
+    fontWeight: '600',
+    fontSize: FontSize.md,
   },
 });

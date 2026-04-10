@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -115,6 +116,10 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>소중한 사람의 목소리가 기다리고 있어요</Text>
         </View>
 
+        {isAuthenticated && (alarmsLoading || messagesLoading) && !refreshing && (
+          <ActivityIndicator color={Colors.light.primary} style={{ marginVertical: Spacing.lg }} />
+        )}
+
         {/* 다음 알람 카드 */}
         <TouchableOpacity
           style={styles.nextAlarmCard}
@@ -191,6 +196,20 @@ export default function HomeScreen() {
             >
               <Text style={styles.actionEmoji}>⏰</Text>
               <Text style={styles.actionLabel}>알람 추가</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push('/gift/received')}
+            >
+              <Text style={styles.actionEmoji}>🎁</Text>
+              <Text style={styles.actionLabel}>받은 선물</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push('/(tabs)/friends')}
+            >
+              <Text style={styles.actionEmoji}>👥</Text>
+              <Text style={styles.actionLabel}>친구 관리</Text>
             </TouchableOpacity>
           </View>
         </View>

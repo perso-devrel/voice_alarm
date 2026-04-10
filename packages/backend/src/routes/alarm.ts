@@ -10,13 +10,15 @@ alarm.get('/', async (c) => {
   const db = getDB(c.env);
 
   const result = await db.execute({
-    sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name
+    sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name,
+            creator.email as creator_email, creator.name as creator_name
           FROM alarms a
           JOIN messages m ON a.message_id = m.id
           JOIN voice_profiles vp ON m.voice_profile_id = vp.id
-          WHERE a.user_id = ?
+          LEFT JOIN users creator ON creator.google_id = a.user_id
+          WHERE a.user_id = ? OR a.target_user_id = ?
           ORDER BY a.time ASC`,
-    args: [userId],
+    args: [userId, userId],
   });
 
   return c.json({ alarms: result.rows });
@@ -32,34 +34,59 @@ alarm.post('/', async (c) => {
     time: string; // HH:mm
     repeat_days?: number[];
     snooze_minutes?: number;
+    target_user_id?: string;
   }>();
 
   if (!body.message_id || !body.time) {
     return c.json({ error: 'message_id and time are required' }, 400);
   }
 
-  // HH:mm 형식 검증
   if (!/^\d{2}:\d{2}$/.test(body.time)) {
     return c.json({ error: 'time must be in HH:mm format' }, 400);
   }
 
-  // 무료 플랜 알람 개수 제한
+  const [h, m] = body.time.split(':').map(Number);
+  if (h < 0 || h > 23 || m < 0 || m > 59) {
+    return c.json({ error: 'Invalid time value' }, 400);
+  }
+
+  if (body.repeat_days && (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))) {
+    return c.json({ error: 'repeat_days must be an array of numbers 0-6' }, 400);
+  }
+
+  if (body.snooze_minutes !== undefined && (body.snooze_minutes < 1 || body.snooze_minutes > 30)) {
+    return c.json({ error: 'snooze_minutes must be between 1 and 30' }, 400);
+  }
+
+  if (body.target_user_id && body.target_user_id !== userId) {
+    const friendship = await db.execute({
+      sql: `SELECT id FROM friendships
+            WHERE ((user_a = ? AND user_b = ?) OR (user_a = ? AND user_b = ?))
+              AND status = 'accepted'`,
+      args: [userId, body.target_user_id, body.target_user_id, userId],
+    });
+    if (friendship.rows.length === 0) {
+      return c.json({ error: '친구 관계인 사용자에게만 알람을 설정할 수 있습니다.' }, 403);
+    }
+  }
+
+  const alarmOwner = body.target_user_id || userId;
+
   const user = await db.execute({
     sql: 'SELECT plan FROM users WHERE google_id = ?',
-    args: [userId],
+    args: [alarmOwner],
   });
 
   if (user.rows.length > 0 && user.rows[0].plan === 'free') {
     const alarmCount = await db.execute({
-      sql: 'SELECT COUNT(*) as count FROM alarms WHERE user_id = ?',
-      args: [userId],
+      sql: "SELECT COUNT(*) as count FROM alarms WHERE user_id = ? OR target_user_id = ?",
+      args: [alarmOwner, alarmOwner],
     });
     if (Number(alarmCount.rows[0].count) >= 2) {
       return c.json({ error: '무료 플랜은 최대 2개의 알람만 설정 가능합니다.' }, 403);
     }
   }
 
-  // 메시지 소유 확인
   const msg = await db.execute({
     sql: 'SELECT id FROM messages WHERE id = ? AND user_id = ?',
     args: [body.message_id, userId],
@@ -70,11 +97,12 @@ alarm.post('/', async (c) => {
 
   const alarmId = crypto.randomUUID();
   await db.execute({
-    sql: `INSERT INTO alarms (id, user_id, message_id, time, repeat_days, snooze_minutes)
-          VALUES (?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO alarms (id, user_id, target_user_id, message_id, time, repeat_days, snooze_minutes)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
     args: [
       alarmId,
       userId,
+      body.target_user_id ?? null,
       body.message_id,
       body.time,
       JSON.stringify(body.repeat_days ?? []),
@@ -106,6 +134,24 @@ alarm.patch('/:id', async (c) => {
   });
   if (existing.rows.length === 0) {
     return c.json({ error: 'Alarm not found' }, 404);
+  }
+
+  if (body.time !== undefined) {
+    if (!/^\d{2}:\d{2}$/.test(body.time)) {
+      return c.json({ error: 'time must be in HH:mm format' }, 400);
+    }
+    const [h, m] = body.time.split(':').map(Number);
+    if (h < 0 || h > 23 || m < 0 || m > 59) {
+      return c.json({ error: 'Invalid time value' }, 400);
+    }
+  }
+
+  if (body.repeat_days !== undefined && (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))) {
+    return c.json({ error: 'repeat_days must be an array of numbers 0-6' }, 400);
+  }
+
+  if (body.snooze_minutes !== undefined && (body.snooze_minutes < 1 || body.snooze_minutes > 30)) {
+    return c.json({ error: 'snooze_minutes must be between 1 and 30' }, 400);
   }
 
   const updates: string[] = [];

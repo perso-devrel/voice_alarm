@@ -53,6 +53,7 @@ export async function initDB(env: Env) {
     `CREATE TABLE IF NOT EXISTS alarms (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
+      target_user_id TEXT,
       message_id TEXT NOT NULL REFERENCES messages(id),
       time TEXT NOT NULL,
       repeat_days TEXT DEFAULT '[]',
@@ -67,6 +68,22 @@ export async function initDB(env: Env) {
       message_id TEXT NOT NULL REFERENCES messages(id),
       is_favorite INTEGER DEFAULT 0,
       received_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS friendships (
+      id TEXT PRIMARY KEY,
+      user_a TEXT NOT NULL,
+      user_b TEXT NOT NULL,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','accepted','blocked')),
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS gifts (
+      id TEXT PRIMARY KEY,
+      sender_id TEXT NOT NULL,
+      recipient_id TEXT NOT NULL,
+      message_id TEXT NOT NULL REFERENCES messages(id),
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','accepted','rejected')),
+      note TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
     )`,
   ]);
 }

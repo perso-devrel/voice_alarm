@@ -33,6 +33,7 @@ export interface Message {
 export interface Alarm {
   id: string;
   user_id: string;
+  target_user_id: string | null;
   message_id: string;
   time: string; // HH:mm
   repeat_days: string; // JSON array: [0,1,2,3,4,5,6] (0=Sun)
@@ -49,5 +50,23 @@ export interface UserProfile {
   plan: 'free' | 'plus' | 'family';
   daily_tts_count: number;
   daily_tts_reset_at: string;
+  created_at: string;
+}
+
+export interface Friendship {
+  id: string;
+  user_a: string;
+  user_b: string;
+  status: 'pending' | 'accepted' | 'blocked';
+  created_at: string;
+}
+
+export interface Gift {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  message_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  note: string | null;
   created_at: string;
 }
