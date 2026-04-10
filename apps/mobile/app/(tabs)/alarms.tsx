@@ -9,7 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Animated as RNAnimated,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -170,46 +172,70 @@ export default function AlarmsScreen() {
     return days.map((d) => DAYS_OF_WEEK[d]).join(', ');
   };
 
+  const renderDeleteAction = (
+    _progress: RNAnimated.AnimatedInterpolation<number>,
+    dragX: RNAnimated.AnimatedInterpolation<number>,
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, -50, 0],
+      outputRange: [1, 0.8, 0],
+      extrapolate: 'clamp',
+    });
+    return (
+      <View style={styles.swipeDeleteContainer}>
+        <RNAnimated.Text style={[styles.swipeDeleteText, { transform: [{ scale }] }]}>
+          {t('common.delete')}
+        </RNAnimated.Text>
+      </View>
+    );
+  };
+
   const renderAlarm = ({ item }: { item: Alarm }) => {
     const repeatDays = JSON.parse(item.repeat_days || '[]');
     void tick;
     const nextFireMs = getNextFireMs(item);
     const perAlarmCountdown = nextFireMs !== null ? formatCountdown(nextFireMs) : null;
     return (
-      <TouchableOpacity
-        style={[styles.alarmCard, !item.is_active && styles.alarmCardInactive]}
-        onLongPress={() => handleDelete(item.id)}
-        activeOpacity={0.8}
+      <Swipeable
+        renderRightActions={renderDeleteAction}
+        onSwipeableOpen={() => handleDelete(item.id)}
+        overshootRight={false}
       >
-        <View style={styles.alarmLeft}>
-          <Text style={[styles.alarmTime, !item.is_active && styles.textInactive]}>
-            {item.time}
-          </Text>
-          <View style={styles.alarmSubRow}>
-            <Text style={[styles.alarmRepeat, !item.is_active && styles.textInactive]}>
-              {formatRepeatDays(repeatDays)}
+        <TouchableOpacity
+          style={[styles.alarmCard, !item.is_active && styles.alarmCardInactive]}
+          onLongPress={() => handleDelete(item.id)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.alarmLeft}>
+            <Text style={[styles.alarmTime, !item.is_active && styles.textInactive]}>
+              {item.time}
             </Text>
-            {perAlarmCountdown && (
-              <Text style={styles.alarmCountdown}>{perAlarmCountdown}</Text>
-            )}
+            <View style={styles.alarmSubRow}>
+              <Text style={[styles.alarmRepeat, !item.is_active && styles.textInactive]}>
+                {formatRepeatDays(repeatDays)}
+              </Text>
+              {perAlarmCountdown && (
+                <Text style={styles.alarmCountdown}>{perAlarmCountdown}</Text>
+              )}
+            </View>
+            <View style={styles.alarmMeta}>
+              <Text style={styles.alarmVoice}>🗣️ {item.voice_name}</Text>
+              <Text style={styles.alarmMessage} numberOfLines={1}>
+                "{item.message_text}"
+              </Text>
+            </View>
           </View>
-          <View style={styles.alarmMeta}>
-            <Text style={styles.alarmVoice}>🗣️ {item.voice_name}</Text>
-            <Text style={styles.alarmMessage} numberOfLines={1}>
-              "{item.message_text}"
-            </Text>
-          </View>
-        </View>
-        <Switch
-          value={!!item.is_active}
-          onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
-          trackColor={{
-            false: Colors.light.border,
-            true: Colors.light.primaryLight,
-          }}
-          thumbColor={item.is_active ? Colors.light.primary : '#f4f3f4'}
-        />
-      </TouchableOpacity>
+          <Switch
+            value={!!item.is_active}
+            onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
+            trackColor={{
+              false: Colors.light.border,
+              true: Colors.light.primaryLight,
+            }}
+            thumbColor={item.is_active ? Colors.light.primary : '#f4f3f4'}
+          />
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -415,5 +441,18 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: FontSize.lg,
     fontWeight: '700',
+  },
+  swipeDeleteContainer: {
+    backgroundColor: Colors.light.error,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+  },
+  swipeDeleteText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: FontSize.md,
   },
 });

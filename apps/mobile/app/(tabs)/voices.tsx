@@ -8,7 +8,9 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  Animated as RNAnimated,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -72,30 +74,54 @@ export default function VoicesScreen() {
     }
   };
 
+  const renderDeleteAction = (
+    _progress: RNAnimated.AnimatedInterpolation<number>,
+    dragX: RNAnimated.AnimatedInterpolation<number>,
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, -50, 0],
+      outputRange: [1, 0.8, 0],
+      extrapolate: 'clamp',
+    });
+    return (
+      <View style={styles.swipeDeleteContainer}>
+        <RNAnimated.Text style={[styles.swipeDeleteText, { transform: [{ scale }] }]}>
+          {t('common.delete')}
+        </RNAnimated.Text>
+      </View>
+    );
+  };
+
   const renderProfile = ({ item }: { item: VoiceProfile }) => {
     const badge = getStatusBadge(item.status);
     return (
-      <View style={styles.profileCard}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
-        </View>
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{item.name}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: badge.color + '20' }]}>
-            <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
-            <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+      <Swipeable
+        renderRightActions={renderDeleteAction}
+        onSwipeableOpen={() => handleDelete(item.id, item.name)}
+        overshootRight={false}
+      >
+        <View style={styles.profileCard}>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
           </View>
-          <Text style={styles.profileDate}>
-            {new Date(item.created_at).toLocaleDateString('ko-KR')}
-          </Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{item.name}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: badge.color + '20' }]}>
+              <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
+              <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+            </View>
+            <Text style={styles.profileDate}>
+              {new Date(item.created_at).toLocaleDateString('ko-KR')}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDelete(item.id, item.name)}
+          >
+            <Text style={styles.deleteText}>{t('common.delete')}</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDelete(item.id, item.name)}
-        >
-          <Text style={styles.deleteText}>{t('common.delete')}</Text>
-        </TouchableOpacity>
-      </View>
+      </Swipeable>
     );
   };
 
@@ -308,5 +334,18 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  swipeDeleteContainer: {
+    backgroundColor: Colors.light.error,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
+  },
+  swipeDeleteText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: FontSize.md,
   },
 });
