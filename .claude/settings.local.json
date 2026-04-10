@@ -6,7 +6,11 @@
       "Bash(npm init:*)",
       "Bash(chmod +x .ralph/run.sh .ralph/watchdog.sh .ralph/summary.sh)",
       "Bash(git config:*)",
-      "Bash(git -c user.email=dev@voicealarm.local -c 'user.name=VoiceAlarm Dev' commit -m 'chore: initial snapshot before Ralph harness gas:*)"
+      "Bash(git -c user.email=dev@voicealarm.local -c 'user.name=VoiceAlarm Dev' commit -m 'chore: initial snapshot before Ralph harness gas:*)",
+      "Bash(git checkout:*)",
+      "Bash(git remote:*)",
+      "Read(//c/Users/EST/.claude/projects/c--Users-EST-Desktop-alarm/memory/**)",
+      "Bash(git -c user.email=dev@voicealarm.local -c 'user.name=VoiceAlarm Dev' commit -m 'feat\\(ralph\\): set up Ralph Loop autonomous harness + GitHub Actions auto-deploy:*)"
     ]
   }
 }
