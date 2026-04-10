@@ -55,7 +55,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
-      <nav className="w-64 bg-white border-r border-[#F2E8E5] p-6 flex flex-col">
+      <nav aria-label="메인 메뉴" className="w-64 bg-white border-r border-[#F2E8E5] p-6 flex flex-col">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#FF7F6B]">VoiceAlarm</h1>
           <p className="text-sm text-gray-400 mt-1">음성 관리 대시보드</p>
@@ -66,13 +66,14 @@ export default function App() {
             <button
               key={item.key}
               onClick={() => setPage(item.key)}
+              aria-current={page === item.key ? 'page' : undefined}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                 page === item.key
                   ? 'bg-[#FFF0ED] text-[#FF7F6B] font-semibold'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <span className="text-xl">{item.emoji}</span>
+              <span className="text-xl" aria-hidden="true">{item.emoji}</span>
               <span>{item.label}</span>
             </button>
           ))}
@@ -81,6 +82,7 @@ export default function App() {
         <div className="mt-auto pt-6 border-t border-[#F2E8E5]">
           <button
             onClick={handleLogout}
+            aria-label="로그아웃"
             className="text-xs text-red-400 hover:text-red-500 transition-colors"
           >
             로그아웃

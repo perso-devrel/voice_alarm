@@ -69,7 +69,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
           {/* Client ID 미설정 시 안내 */}
           {!GOOGLE_CLIENT_ID && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
+            <div role="alert" className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
               <p className="font-semibold mb-1">Google Client ID 필요</p>
               <p>
                 <code>packages/web/src/components/LoginPage.tsx</code>에서<br />

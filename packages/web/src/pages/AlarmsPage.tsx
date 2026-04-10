@@ -40,7 +40,7 @@ export default function AlarmsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-gray-400">로딩 중...</div>
+        <div role="status" aria-live="polite" className="text-center py-12 text-gray-400">로딩 중...</div>
       ) : !alarms?.length ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
           <p className="text-5xl mb-4">⏰</p>
@@ -71,6 +71,7 @@ export default function AlarmsPage() {
                     type="checkbox"
                     checked={!!alarm.is_active}
                     onChange={() => toggleMutation.mutate({ id: alarm.id, is_active: !alarm.is_active })}
+                    aria-label={`${alarm.time} 알람 ${alarm.is_active ? '비활성화' : '활성화'}`}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-[#FF7F6B] rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#FF7F6B] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
@@ -82,6 +83,7 @@ export default function AlarmsPage() {
                       deleteMutation.mutate(alarm.id);
                     }
                   }}
+                  aria-label={`${alarm.time} 알람 삭제`}
                   className="text-sm text-red-400 hover:text-red-500"
                 >
                   삭제

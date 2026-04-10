@@ -56,6 +56,7 @@ export default function SettingsPage() {
           ].map((tier) => (
             <div
               key={tier.plan}
+              aria-current={profile?.user?.plan === tier.plan ? 'true' : undefined}
               className={`rounded-xl p-4 border-2 transition-colors ${
                 profile?.user?.plan === tier.plan
                   ? 'border-[#FF7F6B] bg-[#FFF5F3]'
@@ -78,13 +79,13 @@ export default function SettingsPage() {
       <div className="bg-white rounded-2xl p-6 border border-[#F2E8E5]">
         <h3 className="text-lg font-semibold mb-4">정보</h3>
         <div className="space-y-2">
-          <button className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button aria-label="이용약관 보기" className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
             이용약관
           </button>
-          <button className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button aria-label="개인정보처리방침 보기" className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
             개인정보처리방침
           </button>
-          <button className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button aria-label="오픈소스 라이선스 보기" className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
             오픈소스 라이선스
           </button>
           <div className="pt-2 border-t border-gray-100">
@@ -94,6 +95,7 @@ export default function SettingsPage() {
       </div>
 
       <button
+        aria-label="로그아웃"
         className="w-full mt-6 py-3 text-red-400 font-medium hover:text-red-500 transition-colors"
         onClick={() => {
           localStorage.removeItem('auth_token');

@@ -59,6 +59,7 @@ export default function VoicesPage() {
         </div>
         <button
           onClick={() => setShowUpload(!showUpload)}
+          aria-expanded={showUpload}
           className="bg-[#FF7F6B] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#E05A47] transition-colors"
         >
           + 음성 등록
@@ -86,6 +87,7 @@ export default function VoicesPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setProvider('perso')}
+                  aria-pressed={provider === 'perso'}
                   className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
                     provider === 'perso'
                       ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
@@ -96,6 +98,7 @@ export default function VoicesPage() {
                 </button>
                 <button
                   onClick={() => setProvider('elevenlabs')}
+                  aria-pressed={provider === 'elevenlabs'}
                   className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
                     provider === 'elevenlabs'
                       ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
@@ -109,8 +112,12 @@ export default function VoicesPage() {
           </div>
 
           <div
-            className="border-2 border-dashed border-[#FFB4A8] rounded-xl p-8 text-center cursor-pointer hover:bg-[#FFF5F3] transition-colors mb-4"
+            role="button"
+            tabIndex={0}
+            aria-label={uploadFile ? `선택된 파일: ${uploadFile.name}` : '오디오 파일 선택'}
+            className="border-2 border-dashed border-[#FFB4A8] rounded-xl p-8 text-center cursor-pointer hover:bg-[#FFF5F3] focus:outline-none focus:ring-2 focus:ring-[#FF7F6B] transition-colors mb-4"
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
           >
             <input
               ref={fileInputRef}
@@ -119,7 +126,7 @@ export default function VoicesPage() {
               className="hidden"
               onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
             />
-            <p className="text-4xl mb-2">📁</p>
+            <p className="text-4xl mb-2" aria-hidden="true">📁</p>
             <p className="text-gray-600 font-medium">
               {uploadFile ? uploadFile.name : '오디오 파일을 선택하세요'}
             </p>
@@ -152,7 +159,7 @@ export default function VoicesPage() {
 
       {/* 프로필 목록 */}
       {isLoading ? (
-        <div className="text-center py-12 text-gray-400">로딩 중...</div>
+        <div role="status" className="text-center py-12 text-gray-400">로딩 중...</div>
       ) : !profiles?.length ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
           <p className="text-5xl mb-4">🎵</p>
@@ -176,10 +183,14 @@ export default function VoicesPage() {
                 {new Date(profile.created_at).toLocaleDateString('ko-KR')}
               </p>
               <div className="flex gap-2">
-                <button className="text-sm text-[#FF7F6B] font-medium hover:underline">
+                <button
+                  aria-label={`${profile.name} 음성 테스트`}
+                  className="text-sm text-[#FF7F6B] font-medium hover:underline"
+                >
                   테스트
                 </button>
                 <button
+                  aria-label={`${profile.name} 프로필 삭제`}
                   className="text-sm text-red-400 font-medium hover:underline ml-auto"
                   onClick={() => {
                     if (confirm(`"${profile.name}" 프로필을 삭제하시겠어요?`)) {

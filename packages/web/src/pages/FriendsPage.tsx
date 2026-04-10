@@ -63,6 +63,7 @@ export default function FriendsPage() {
         <input
           type="email"
           placeholder="이메일로 친구 추가"
+          aria-label="친구 이메일 주소"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && email.trim() && sendMutation.mutate(email.trim())}
@@ -79,17 +80,19 @@ export default function FriendsPage() {
       </div>
 
       {sendMutation.isError && (
-        <p className="text-red-500 text-sm mb-4">
+        <p role="alert" className="text-red-500 text-sm mb-4">
           {getApiErrorMessage(sendMutation.error, '친구 요청에 실패했습니다.')}
         </p>
       )}
       {sendMutation.isSuccess && (
-        <p className="text-green-500 text-sm mb-4">친구 요청을 보냈습니다!</p>
+        <p role="status" className="text-green-500 text-sm mb-4">친구 요청을 보냈습니다!</p>
       )}
 
       {/* 탭 */}
-      <div className="flex gap-2 mb-6">
+      <div role="tablist" aria-label="친구 목록" className="flex gap-2 mb-6">
         <button
+          role="tab"
+          aria-selected={tab === 'friends'}
           onClick={() => setTab('friends')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'friends' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -98,6 +101,8 @@ export default function FriendsPage() {
           내 친구 {friends?.length ? `(${friends.length})` : ''}
         </button>
         <button
+          role="tab"
+          aria-selected={tab === 'pending'}
           onClick={() => setTab('pending')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'pending' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -110,7 +115,7 @@ export default function FriendsPage() {
       {/* 친구 목록 */}
       {tab === 'friends' && (
         isLoading ? (
-          <p className="text-gray-400 text-center py-12">로딩 중...</p>
+          <p role="status" className="text-gray-400 text-center py-12">로딩 중...</p>
         ) : !friends?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🤝</p>
@@ -134,6 +139,7 @@ export default function FriendsPage() {
                       removeMutation.mutate(f.id);
                     }
                   }}
+                  aria-label={`${f.friend_name || f.friend_email} 삭제`}
                   className="text-sm text-red-400 hover:text-red-500 transition-colors"
                 >
                   삭제
@@ -165,12 +171,14 @@ export default function FriendsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => acceptMutation.mutate(p.id)}
+                    aria-label={`${p.requester_name || p.requester_email} 요청 수락`}
                     className="px-4 py-2 bg-[#FF7F6B] text-white rounded-lg text-sm font-medium hover:bg-[#E05A47] transition-all"
                   >
                     수락
                   </button>
                   <button
                     onClick={() => removeMutation.mutate(p.id)}
+                    aria-label={`${p.requester_name || p.requester_email} 요청 거절`}
                     className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all"
                   >
                     거절

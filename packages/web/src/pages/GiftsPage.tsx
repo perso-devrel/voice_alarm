@@ -47,8 +47,10 @@ export default function GiftsPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div role="tablist" aria-label="선물 목록" className="flex gap-2 mb-6">
         <button
+          role="tab"
+          aria-selected={tab === 'received'}
           onClick={() => setTab('received')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'received' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -57,6 +59,8 @@ export default function GiftsPage() {
           받은 선물 {received?.length ? `(${received.length})` : ''}
         </button>
         <button
+          role="tab"
+          aria-selected={tab === 'sent'}
           onClick={() => setTab('sent')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'sent' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -68,7 +72,7 @@ export default function GiftsPage() {
 
       {tab === 'received' && (
         loadingReceived ? (
-          <p className="text-gray-400 text-center py-12">로딩 중...</p>
+          <p role="status" className="text-gray-400 text-center py-12">로딩 중...</p>
         ) : !received?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🎁</p>
@@ -99,6 +103,7 @@ export default function GiftsPage() {
                     <button
                       onClick={() => acceptMutation.mutate(g.id)}
                       disabled={acceptMutation.isPending}
+                      aria-label={`${g.sender_name || g.sender_email}님의 선물 수락`}
                       className="flex-1 py-2 bg-[#FF7F6B] text-white rounded-lg font-medium hover:bg-[#E05A47] disabled:opacity-50 transition-all"
                     >
                       수락
@@ -110,6 +115,7 @@ export default function GiftsPage() {
                         }
                       }}
                       disabled={rejectMutation.isPending}
+                      aria-label={`${g.sender_name || g.sender_email}님의 선물 거절`}
                       className="flex-1 py-2 bg-gray-100 text-gray-500 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 transition-all"
                     >
                       거절
@@ -124,7 +130,7 @@ export default function GiftsPage() {
 
       {tab === 'sent' && (
         loadingSent ? (
-          <p className="text-gray-400 text-center py-12">로딩 중...</p>
+          <p role="status" className="text-gray-400 text-center py-12">로딩 중...</p>
         ) : !sent?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">📤</p>

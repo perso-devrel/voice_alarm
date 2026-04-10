@@ -64,8 +64,10 @@ export default function MessagesPage() {
           <h2 className="text-3xl font-bold text-gray-900">메시지</h2>
           <p className="text-gray-500 mt-1">음성 메시지를 작성하고 관리하세요</p>
         </div>
-        <div className="flex gap-2">
+        <div role="tablist" aria-label="메시지 탭" className="flex gap-2">
           <button
+            role="tab"
+            aria-selected={tab === 'list'}
             onClick={() => setTab('list')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               tab === 'list' ? 'bg-[#FF7F6B] text-white' : 'bg-white text-gray-600 border'
@@ -74,6 +76,8 @@ export default function MessagesPage() {
             목록
           </button>
           <button
+            role="tab"
+            aria-selected={tab === 'create'}
             onClick={() => setTab('create')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               tab === 'create' ? 'bg-[#FF7F6B] text-white' : 'bg-white text-gray-600 border'
@@ -94,6 +98,7 @@ export default function MessagesPage() {
                 <button
                   key={v.id}
                   onClick={() => setSelectedVoice(v.id)}
+                  aria-pressed={selectedVoice === v.id}
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
                     selectedVoice === v.id
                       ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
@@ -118,6 +123,7 @@ export default function MessagesPage() {
                   <button
                     key={cat.category}
                     onClick={() => setCategory(cat.category)}
+                    aria-pressed={category === cat.category}
                     className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
                       category === cat.category
                         ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
@@ -171,10 +177,10 @@ export default function MessagesPage() {
           </button>
 
           {ttsMutation.isSuccess && (
-            <p className="text-green-600 text-sm mt-3">✅ 음성 메시지가 생성되었습니다!</p>
+            <p role="status" className="text-green-600 text-sm mt-3">✅ 음성 메시지가 생성되었습니다!</p>
           )}
           {ttsMutation.isError && (
-            <p className="text-red-500 text-sm mt-3">
+            <p role="alert" className="text-red-500 text-sm mt-3">
               오류: {getApiErrorMessage(ttsMutation.error, '생성 실패')}
             </p>
           )}
@@ -183,7 +189,7 @@ export default function MessagesPage() {
         /* 메시지 목록 */
         <div>
           {isLoading ? (
-            <div className="text-center py-12 text-gray-400">로딩 중...</div>
+            <div role="status" className="text-center py-12 text-gray-400">로딩 중...</div>
           ) : !messages?.length ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
               <p className="text-5xl mb-4">💌</p>
@@ -202,6 +208,7 @@ export default function MessagesPage() {
                     </p>
                   </div>
                   <button
+                    aria-label={`"${msg.text}" 메시지를 선물로 보내기`}
                     onClick={async () => {
                       try {
                         const friends = await getFriendList();
