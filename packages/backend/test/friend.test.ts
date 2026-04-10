@@ -1,0 +1,155 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Hono } from 'hono';
+import type { AppEnv } from '../src/types';
+import { createMockDB, fakeAuthMiddleware, jsonReq } from './helpers';
+
+const mockDB = createMockDB();
+
+vi.mock('../src/lib/db', () => ({
+  getDB: () => mockDB.client,
+}));
+
+import friendRoutes from '../src/routes/friend';
+
+function buildApp(userId = 'user-1') {
+  const app = new Hono<AppEnv>();
+  app.use('*', fakeAuthMiddleware(userId));
+  app.route('/friend', friendRoutes);
+  return app;
+}
+
+beforeEach(() => {
+  mockDB.calls.length = 0;
+});
+
+describe('POST /friend — 친구 요청', () => {
+  it('유효하지 않은 이메일이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/friend', { email: 'bad' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('이메일 누락이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/friend', {}));
+    expect(res.status).toBe(400);
+  });
+
+  it('존재하지 않는 사용자이면 404', async () => {
+    mockDB.pushResult([]); // user lookup returns empty
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/friend', { email: 'nobody@test.com' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('자기 자신에게 요청하면 400', async () => {
+    mockDB.pushResult([{ google_id: 'user-1', email: 'me@test.com', name: 'Me' }]);
+    const app = buildApp('user-1');
+    const res = await app.request(jsonReq('POST', '/friend', { email: 'me@test.com' }));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('자기 자신');
+  });
+
+  it('이미 친구이면 409', async () => {
+    mockDB.pushResult([{ google_id: 'user-2', email: 'b@test.com', name: 'B' }]);
+    mockDB.pushResult([{ id: 'f-1', status: 'accepted' }]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/friend', { email: 'b@test.com' }));
+    expect(res.status).toBe(409);
+  });
+
+  it('이미 대기 중이면 409', async () => {
+    mockDB.pushResult([{ google_id: 'user-2', email: 'b@test.com', name: 'B' }]);
+    mockDB.pushResult([{ id: 'f-1', status: 'pending' }]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/friend', { email: 'b@test.com' }));
+    expect(res.status).toBe(409);
+  });
+
+  it('정상 요청이면 201', async () => {
+    mockDB.pushResult([{ google_id: 'user-2', email: 'b@test.com', name: 'B' }]);
+    mockDB.pushResult([]); // no existing friendship
+    mockDB.pushResult([], 1); // insert
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/friend', { email: 'b@test.com' }));
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.friendship.status).toBe('pending');
+    expect(body.friendship.user_a).toBe('user-1');
+    expect(body.friendship.user_b).toBe('user-2');
+  });
+});
+
+describe('GET /friend/list — 친구 목록', () => {
+  it('빈 목록 반환', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/friend/list'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.friends).toEqual([]);
+  });
+
+  it('친구 목록 반환', async () => {
+    mockDB.pushResult([
+      { id: 'f-1', user_a: 'user-1', user_b: 'user-2', friend_email: 'b@test.com', friend_name: 'B', friend_picture: null, created_at: '2026-01-01' },
+    ]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/friend/list'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.friends).toHaveLength(1);
+    expect(body.friends[0].friend_email).toBe('b@test.com');
+  });
+});
+
+describe('GET /friend/pending — 대기 중인 요청', () => {
+  it('대기 중인 요청 반환', async () => {
+    mockDB.pushResult([
+      { id: 'f-1', user_a: 'user-2', requester_email: 'b@test.com', requester_name: 'B', requester_picture: null, created_at: '2026-01-01' },
+    ]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/friend/pending'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.pending).toHaveLength(1);
+  });
+});
+
+describe('PATCH /friend/:id/accept — 수락', () => {
+  it('존재하지 않는 요청이면 404', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/friend/f-999/accept'));
+    expect(res.status).toBe(404);
+  });
+
+  it('정상 수락이면 success', async () => {
+    mockDB.pushResult([{ id: 'f-1' }]); // existing pending
+    mockDB.pushResult([], 1); // update
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/friend/f-1/accept'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+  });
+});
+
+describe('DELETE /friend/:id — 삭제', () => {
+  it('존재하지 않는 친구관계면 404', async () => {
+    mockDB.pushResult([], 0);
+    const app = buildApp();
+    const res = await app.request(jsonReq('DELETE', '/friend/f-999'));
+    expect(res.status).toBe(404);
+  });
+
+  it('정상 삭제', async () => {
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(jsonReq('DELETE', '/friend/f-1'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+  });
+});

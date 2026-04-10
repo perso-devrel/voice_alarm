@@ -63,7 +63,7 @@
 
 - [x] i18n Phase 1: 번역 파일 확장 + 탭 화면 6개 + 공용 컴포넌트 2개 i18n 적용
 - [x] i18n Phase 2: sub-screen 8개에 t() 적용 (onboarding, alarm/create, message/create, gift/received, voice/record, voice/upload, voice/diarize, player) — ko.json/en.json 키 이미 정의됨
-- [ ] 백엔드 유닛 테스트: friend/gift/alarm 라우트 핵심 로직 테스트 (vitest)
+- [x] 백엔드 유닛 테스트: friend/gift/alarm 라우트 핵심 로직 테스트 (vitest)
 - [ ] 웹 접근성: 키보드 네비게이션 + aria-label 보강
 - [ ] 모바일 오프라인 지원 강화: 캐시된 오디오 + 알람 목록 오프라인 표시
 - [ ] ESLint + Prettier 설정 통일 (모노레포 루트 + 패키지별)
