@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getLibrary, toggleFavorite } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
@@ -26,6 +27,7 @@ export default function LibraryScreen() {
   const { setPlaying, currentPlayingId } = useAppStore();
   const [filter, setFilter] = useState<FilterType>('all');
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
+  const { t } = useTranslation();
 
   const { data: items, isLoading, isError, refetch } = useQuery({
     queryKey: ['library', filter],
@@ -39,7 +41,7 @@ export default function LibraryScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
     onError: () => {
-      Alert.alert('오류', '즐겨찾기 변경에 실패했어요.');
+      Alert.alert(t('common.error'), t('library.favoriteError'));
     },
   });
 
@@ -134,18 +136,17 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>보관함</Text>
-        <Text style={styles.subtitle}>받았던 모든 음성 메시지</Text>
+        <Text style={styles.title}>{t('library.title')}</Text>
+        <Text style={styles.subtitle}>{t('library.subtitle')}</Text>
       </View>
 
-      {/* 필터 */}
       <View style={styles.filterRow}>
         <TouchableOpacity
           style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
           onPress={() => setFilter('all')}
         >
           <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
-            전체
+            {t('library.all')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -153,7 +154,7 @@ export default function LibraryScreen() {
           onPress={() => setFilter('favorite')}
         >
           <Text style={[styles.filterText, filter === 'favorite' && styles.filterTextActive]}>
-            ❤️ 즐겨찾기
+            ❤️ {t('library.favorites')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -167,8 +168,8 @@ export default function LibraryScreen() {
           <Text style={styles.emptyEmoji}>📭</Text>
           <Text style={styles.emptyText}>
             {filter === 'favorite'
-              ? '즐겨찾기한 메시지가 없어요'
-              : '아직 받은 메시지가 없어요'}
+              ? t('library.emptyFavorites')
+              : t('library.emptyAll')}
           </Text>
         </View>
       ) : (

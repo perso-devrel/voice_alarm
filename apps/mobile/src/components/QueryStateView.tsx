@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
 
 export function LoadingView() {
@@ -10,14 +11,15 @@ export function LoadingView() {
 }
 
 export function ErrorView({ message, onRetry }: { message?: string; onRetry?: () => void }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.center}>
       <Text style={styles.emoji}>⚠️</Text>
-      <Text style={styles.title}>데이터를 불러올 수 없습니다</Text>
+      <Text style={styles.title}>{t('common.loadError')}</Text>
       {message && <Text style={styles.subtitle}>{message}</Text>}
       {onRetry && (
         <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-          <Text style={styles.retryText}>다시 시도</Text>
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
         </TouchableOpacity>
       )}
     </View>

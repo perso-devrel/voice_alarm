@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { getMessages, createAlarm, getFriendList } from '../../src/services/api';
@@ -22,6 +23,7 @@ export default function CreateAlarmScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isAuthenticated, userId } = useAppStore();
+  const { t } = useTranslation();
 
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
@@ -47,12 +49,12 @@ export default function CreateAlarmScreen() {
     mutationFn: createAlarm,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alarms'] });
-      Alert.alert('알람 설정 완료!', '매일 소중한 목소리로 깨워드릴게요.', [
-        { text: '확인', onPress: () => router.back() },
+      Alert.alert(t('alarmCreate.successTitle'), t('alarmCreate.successDesc'), [
+        { text: t('common.confirm'), onPress: () => router.back() },
       ]);
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '알람 생성에 실패했습니다.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarmCreate.createError')));
     },
   });
 
@@ -64,7 +66,7 @@ export default function CreateAlarmScreen() {
 
   const handleSubmit = () => {
     if (!selectedMessageId) {
-      Alert.alert('메시지 선택', '알람에 사용할 음성 메시지를 선택해주세요.');
+      Alert.alert(t('alarmCreate.selectMessageTitle'), t('alarmCreate.selectMessage'));
       return;
     }
 
@@ -89,13 +91,13 @@ export default function CreateAlarmScreen() {
       {/* 누구에게? */}
       {friends && friends.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>누구에게?</Text>
+          <Text style={styles.sectionTitle}>{t('alarmCreate.forWho')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.targetRow}>
             <TouchableOpacity
               style={[styles.targetChip, !targetUserId && styles.targetChipActive]}
               onPress={() => { setTargetUserId(null); setTargetName(null); }}
             >
-              <Text style={[styles.targetText, !targetUserId && styles.targetTextActive]}>나</Text>
+              <Text style={[styles.targetText, !targetUserId && styles.targetTextActive]}>{t('alarmCreate.forMe')}</Text>
             </TouchableOpacity>
             {friends.map((f: Friend) => {
               const friendId = f.user_a === userId ? f.user_b : f.user_a;
@@ -117,13 +119,13 @@ export default function CreateAlarmScreen() {
             })}
           </ScrollView>
           {targetName && (
-            <Text style={styles.targetHint}>{targetName}님에게 알람을 설정합니다</Text>
+            <Text style={styles.targetHint}>{t('alarmCreate.targetHint', { name: targetName })}</Text>
           )}
         </>
       )}
 
       {/* 시간 선택 */}
-      <Text style={styles.sectionTitle}>시간</Text>
+      <Text style={styles.sectionTitle}>{t('alarmCreate.time')}</Text>
       <View style={styles.timePickerContainer}>
         <View style={styles.timePicker}>
           {/* 시 */}
@@ -165,7 +167,7 @@ export default function CreateAlarmScreen() {
       </View>
 
       {/* 반복 요일 */}
-      <Text style={styles.sectionTitle}>반복</Text>
+      <Text style={styles.sectionTitle}>{t('alarmCreate.repeat')}</Text>
       <View style={styles.daysRow}>
         {DAYS_OF_WEEK.map((day, index) => (
           <TouchableOpacity
@@ -181,18 +183,18 @@ export default function CreateAlarmScreen() {
       </View>
       <View style={styles.quickDays}>
         <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('daily')}>
-          <Text style={styles.quickText}>매일</Text>
+          <Text style={styles.quickText}>{t('alarms.daily')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('weekday')}>
-          <Text style={styles.quickText}>평일</Text>
+          <Text style={styles.quickText}>{t('alarms.weekday')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('weekend')}>
-          <Text style={styles.quickText}>주말</Text>
+          <Text style={styles.quickText}>{t('alarms.weekend')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* 스누즈 */}
-      <Text style={styles.sectionTitle}>스누즈</Text>
+      <Text style={styles.sectionTitle}>{t('alarmCreate.snooze')}</Text>
       <View style={styles.snoozeRow}>
         {[5, 10, 15].map((min) => (
           <TouchableOpacity
@@ -201,21 +203,21 @@ export default function CreateAlarmScreen() {
             onPress={() => setSnooze(min)}
           >
             <Text style={[styles.snoozeText, snooze === min && styles.snoozeTextActive]}>
-              {min}분
+              {t('alarmCreate.snoozeMin', { min })}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* 메시지 선택 */}
-      <Text style={styles.sectionTitle}>알람 메시지</Text>
+      <Text style={styles.sectionTitle}>{t('alarmCreate.message')}</Text>
       {!messages || messages.length === 0 ? (
         <TouchableOpacity
           style={styles.emptyMessage}
           onPress={() => router.push('/message/create')}
         >
           <Text style={styles.emptyMessageText}>
-            먼저 음성 메시지를 만들어주세요 →
+            {t('alarmCreate.emptyMessage')}
           </Text>
         </TouchableOpacity>
       ) : (
@@ -255,7 +257,7 @@ export default function CreateAlarmScreen() {
         {createMutation.isPending ? (
           <ActivityIndicator color="#FFF" />
         ) : (
-          <Text style={styles.createText}>⏰ 알람 설정하기</Text>
+          <Text style={styles.createText}>{t('alarmCreate.submit')}</Text>
         )}
       </TouchableOpacity>
     </ScrollView>

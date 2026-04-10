@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
 import { useGoogleAuth, signInWithApple, isAppleAuthAvailable, saveAuthToken, decodeIdToken } from '../services/auth';
 import { useAppStore } from '../stores/useAppStore';
@@ -7,8 +8,8 @@ import { useAppStore } from '../stores/useAppStore';
 export default function LoginButtons() {
   const { setAuth } = useAppStore();
   const { request, response, promptAsync } = useGoogleAuth();
+  const { t } = useTranslation();
 
-  // Google 로그인 응답 처리
   useEffect(() => {
     if (response?.type === 'success') {
       const idToken = response.params.id_token;
@@ -35,21 +36,19 @@ export default function LoginButtons() {
 
   return (
     <View style={styles.container}>
-      {/* Google 로그인 */}
       <TouchableOpacity
         style={styles.googleButton}
         onPress={() => promptAsync()}
         disabled={!request}
       >
         <Text style={styles.googleIcon}>G</Text>
-        <Text style={styles.googleText}>Google로 계속하기</Text>
+        <Text style={styles.googleText}>{t('login.google')}</Text>
       </TouchableOpacity>
 
-      {/* Apple 로그인 (iOS만) */}
       {isAppleAuthAvailable() && (
         <TouchableOpacity style={styles.appleButton} onPress={handleAppleLogin}>
           <Text style={styles.appleIcon}></Text>
-          <Text style={styles.appleText}>Apple로 계속하기</Text>
+          <Text style={styles.appleText}>{t('login.apple')}</Text>
         </TouchableOpacity>
       )}
     </View>

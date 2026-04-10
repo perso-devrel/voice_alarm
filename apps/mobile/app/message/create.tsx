@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { PRESET_CATEGORIES } from '../../src/constants/presets';
 import { getVoiceProfiles, generateTTS, getFriendList, sendGift } from '../../src/services/api';

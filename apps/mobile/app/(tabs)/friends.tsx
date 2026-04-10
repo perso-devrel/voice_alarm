@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import {
   getFriendList,
   getPendingRequests,
@@ -30,6 +31,7 @@ export default function FriendsScreen() {
   const [email, setEmail] = useState('');
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const friends = useQuery({
     queryKey: ['friends'],
@@ -47,11 +49,11 @@ export default function FriendsScreen() {
     mutationFn: (email: string) => sendFriendRequest(email),
     onSuccess: () => {
       setEmail('');
-      Alert.alert('전송 완료', '친구 요청을 보냈습니다.');
+      Alert.alert(t('friends.sendSuccessTitle'), t('friends.sendSuccess'));
       queryClient.invalidateQueries({ queryKey: ['friends-pending'] });
     },
     onError: (err: unknown) => {
-      Alert.alert('오류', getApiErrorMessage(err, '친구 요청에 실패했습니다.'));
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('friends.sendError')));
     },
   });
 
@@ -76,7 +78,7 @@ export default function FriendsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>👥</Text>
-          <Text style={styles.emptyText}>로그인 후 친구를 추가할 수 있습니다</Text>
+          <Text style={styles.emptyText}>{t('friends.loginRequired')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -92,12 +94,12 @@ export default function FriendsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>친구</Text>
+      <Text style={styles.title}>{t('friends.title')}</Text>
 
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder="이메일로 친구 추가"
+          placeholder={t('friends.addPlaceholder')}
           placeholderTextColor={Colors.light.textTertiary}
           value={email}
           onChangeText={setEmail}
@@ -113,7 +115,7 @@ export default function FriendsScreen() {
           {sendRequest.isPending ? (
             <ActivityIndicator size="small" color="#FFF" />
           ) : (
-            <Text style={styles.sendBtnText}>추가</Text>
+            <Text style={styles.sendBtnText}>{t('common.add')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -124,7 +126,7 @@ export default function FriendsScreen() {
           onPress={() => setActiveTab('friends')}
         >
           <Text style={[styles.tabText, activeTab === 'friends' && styles.tabTextActive]}>
-            내 친구 {friends.data?.length ? `(${friends.data.length})` : ''}
+            {t('friends.myFriends')} {friends.data?.length ? `(${friends.data.length})` : ''}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -132,7 +134,7 @@ export default function FriendsScreen() {
           onPress={() => setActiveTab('pending')}
         >
           <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
-            받은 요청 {pending.data?.length ? `(${pending.data.length})` : ''}
+            {t('friends.pendingRequests')} {pending.data?.length ? `(${pending.data.length})` : ''}
           </Text>
         </TouchableOpacity>
       </View>
@@ -150,8 +152,8 @@ export default function FriendsScreen() {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Text style={styles.emptyEmoji}>🤝</Text>
-                <Text style={styles.emptyText}>아직 친구가 없습니다</Text>
-                <Text style={styles.emptySubtext}>이메일로 친구를 추가해 보세요</Text>
+                <Text style={styles.emptyText}>{t('friends.emptyFriends')}</Text>
+                <Text style={styles.emptySubtext}>{t('friends.emptyFriendsHint')}</Text>
               </View>
             }
             renderItem={({ item }) => (
@@ -162,19 +164,19 @@ export default function FriendsScreen() {
                   </Text>
                 </View>
                 <View style={styles.cardInfo}>
-                  <Text style={styles.cardName}>{item.friend_name || '이름 없음'}</Text>
+                  <Text style={styles.cardName}>{item.friend_name || t('common.noName')}</Text>
                   <Text style={styles.cardEmail}>{item.friend_email}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.removeBtn}
                   onPress={() =>
-                    Alert.alert('친구 삭제', `${item.friend_name || item.friend_email}님을 삭제하시겠습니까?`, [
-                      { text: '취소', style: 'cancel' },
-                      { text: '삭제', style: 'destructive', onPress: () => remove.mutate(item.id) },
+                    Alert.alert(t('friends.deleteTitle'), t('friends.deleteConfirm', { name: item.friend_name || item.friend_email }), [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      { text: t('common.delete'), style: 'destructive', onPress: () => remove.mutate(item.id) },
                     ])
                   }
                 >
-                  <Text style={styles.removeBtnText}>삭제</Text>
+                  <Text style={styles.removeBtnText}>{t('common.delete')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -193,7 +195,7 @@ export default function FriendsScreen() {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Text style={styles.emptyEmoji}>📭</Text>
-                <Text style={styles.emptyText}>대기 중인 요청이 없습니다</Text>
+                <Text style={styles.emptyText}>{t('friends.emptyPending')}</Text>
               </View>
             }
             renderItem={({ item }) => (
@@ -204,7 +206,7 @@ export default function FriendsScreen() {
                   </Text>
                 </View>
                 <View style={styles.cardInfo}>
-                  <Text style={styles.cardName}>{item.requester_name || '이름 없음'}</Text>
+                  <Text style={styles.cardName}>{item.requester_name || t('common.noName')}</Text>
                   <Text style={styles.cardEmail}>{item.requester_email}</Text>
                 </View>
                 <View style={styles.actionRow}>
@@ -212,13 +214,13 @@ export default function FriendsScreen() {
                     style={styles.acceptBtn}
                     onPress={() => accept.mutate(item.id)}
                   >
-                    <Text style={styles.acceptBtnText}>수락</Text>
+                    <Text style={styles.acceptBtnText}>{t('common.accept')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.rejectBtn}
                     onPress={() => remove.mutate(item.id)}
                   >
-                    <Text style={styles.rejectBtnText}>거절</Text>
+                    <Text style={styles.rejectBtnText}>{t('common.reject')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
