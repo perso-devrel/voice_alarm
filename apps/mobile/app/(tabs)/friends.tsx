@@ -27,6 +27,7 @@ import type { UserSearchResult } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { getApiErrorMessage } from '../../src/types';
+import { ErrorView } from '../../src/components/QueryStateView';
 
 type Tab = 'friends' | 'pending';
 

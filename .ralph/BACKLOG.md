@@ -293,10 +293,10 @@
 
 ## P36 - 자가 생성 항목 (API 견고성 + UX 개선)
 
-- [ ] 백엔드: bodyLimit 미들웨어 테스트 (bodyLimit.test.ts 신규)
-- [ ] 백엔드: POST /api/voice 음성 프로필 생성 엔드포인트에 name 최대 길이 제한 (50자)
-- [ ] 웹: 세션 만료 시 자동 로그아웃 + 로그인 페이지로 리다이렉트 (401 인터셉터)
-- [ ] 모바일: 네트워크 오류 시 재시도 버튼이 있는 통합 에러 화면 (현재 각 탭 개별 처리)
+- [x] 백엔드: bodyLimit.test.ts 신규 (4개 테스트 — 허용/초과/경계값)
+- [x] 백엔드: POST /api/voice name 최대 길이 제한 추가 (50자 초과 시 400)
+- [x] 웹: 401 인터셉터 — 이미 구현 확인 (api.ts interceptors.response에 401 → localStorage 클리어 + /login 리다이렉트)
+- [x] 모바일: ErrorView + retry — 이미 구현 확인 (QueryStateView.tsx에 ErrorView 컴포넌트, 전 탭 적용)
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동
