@@ -1,22 +1,22 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --color-primary: #FF7F6B;
-  --color-primary-light: #FFB4A8;
-  --color-primary-dark: #E05A47;
-  --color-bg: #FFF5F3;
-  --color-surface: #FFFFFF;
+  --color-primary: #ff7f6b;
+  --color-primary-light: #ffb4a8;
+  --color-primary-dark: #e05a47;
+  --color-bg: #fff5f3;
+  --color-surface: #ffffff;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   background-color: var(--color-bg);
-  color: #2D2D2D;
+  color: #2d2d2d;
   margin: 0;
 }
 
 .gradient-primary {
-  background: linear-gradient(135deg, #FF7F6B, #FF6B8A);
+  background: linear-gradient(135deg, #ff7f6b, #ff6b8a);
 }
 
 *:focus-visible {

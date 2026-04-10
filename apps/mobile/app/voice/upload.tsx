@@ -33,15 +33,13 @@ export default function UploadScreen() {
           type: params.file.mimeType || 'audio/wav',
         },
         params.name,
-        provider
+        provider,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
-      Alert.alert(
-        t('voiceUpload.successTitle'),
-        t('voiceUpload.successDesc'),
-        [{ text: t('common.confirm'), onPress: () => router.back() }]
-      );
+      Alert.alert(t('voiceUpload.successTitle'), t('voiceUpload.successDesc'), [
+        { text: t('common.confirm'), onPress: () => router.back() },
+      ]);
     },
     onError: (err: unknown) => {
       Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceUpload.uploadError')));
@@ -70,9 +68,7 @@ export default function UploadScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.description}>
-          {t('voiceUpload.description')}
-        </Text>
+        <Text style={styles.description}>{t('voiceUpload.description')}</Text>
 
         {/* 파일 선택 */}
         <TouchableOpacity style={styles.pickButton} onPress={handlePickFile}>
@@ -114,7 +110,9 @@ export default function UploadScreen() {
             style={[styles.providerChip, provider === 'elevenlabs' && styles.providerActive]}
             onPress={() => setProvider('elevenlabs')}
           >
-            <Text style={[styles.providerText, provider === 'elevenlabs' && styles.providerTextActive]}>
+            <Text
+              style={[styles.providerText, provider === 'elevenlabs' && styles.providerTextActive]}
+            >
               ElevenLabs
             </Text>
           </TouchableOpacity>
@@ -122,7 +120,10 @@ export default function UploadScreen() {
 
         {/* 제출 */}
         <TouchableOpacity
-          style={[styles.submitButton, (!selectedFile || !name.trim() || cloneMutation.isPending) && styles.disabled]}
+          style={[
+            styles.submitButton,
+            (!selectedFile || !name.trim() || cloneMutation.isPending) && styles.disabled,
+          ]}
           onPress={handleSubmit}
           disabled={!selectedFile || !name.trim() || cloneMutation.isPending}
         >

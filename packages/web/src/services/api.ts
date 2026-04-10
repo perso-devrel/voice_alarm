@@ -2,9 +2,7 @@ import axios from 'axios';
 
 // 프로덕션: VITE_API_URL 환경변수 사용
 // 개발: vite.config.ts의 proxy로 /api → localhost:8787
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api';
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -27,7 +25,7 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     return Promise.reject(err);
-  }
+  },
 );
 
 export async function getVoiceProfiles() {

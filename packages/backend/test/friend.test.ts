@@ -93,7 +93,15 @@ describe('GET /friend/list — 친구 목록', () => {
 
   it('친구 목록 반환', async () => {
     mockDB.pushResult([
-      { id: 'f-1', user_a: 'user-1', user_b: 'user-2', friend_email: 'b@test.com', friend_name: 'B', friend_picture: null, created_at: '2026-01-01' },
+      {
+        id: 'f-1',
+        user_a: 'user-1',
+        user_b: 'user-2',
+        friend_email: 'b@test.com',
+        friend_name: 'B',
+        friend_picture: null,
+        created_at: '2026-01-01',
+      },
     ]);
     const app = buildApp();
     const res = await app.request(jsonReq('GET', '/friend/list'));
@@ -107,7 +115,14 @@ describe('GET /friend/list — 친구 목록', () => {
 describe('GET /friend/pending — 대기 중인 요청', () => {
   it('대기 중인 요청 반환', async () => {
     mockDB.pushResult([
-      { id: 'f-1', user_a: 'user-2', requester_email: 'b@test.com', requester_name: 'B', requester_picture: null, created_at: '2026-01-01' },
+      {
+        id: 'f-1',
+        user_a: 'user-2',
+        requester_email: 'b@test.com',
+        requester_name: 'B',
+        requester_picture: null,
+        created_at: '2026-01-01',
+      },
     ]);
     const app = buildApp();
     const res = await app.request(jsonReq('GET', '/friend/pending'));

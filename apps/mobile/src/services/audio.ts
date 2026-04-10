@@ -98,7 +98,7 @@ export async function stopRecording(recording: Audio.Recording): Promise<{
 export async function saveAudioLocally(
   base64Data: string,
   messageId: string,
-  format: string = 'mp3'
+  format: string = 'mp3',
 ): Promise<string> {
   if (isWeb) {
     // 웹에서는 data URL로 반환
@@ -135,10 +135,7 @@ export async function playAudio(uri: string): Promise<Audio.Sound> {
     });
   }
 
-  const { sound } = await Audio.Sound.createAsync(
-    { uri },
-    { shouldPlay: true }
-  );
+  const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
 
   return sound;
 }

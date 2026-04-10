@@ -32,6 +32,20 @@ slug: p4-web-accessibility
 - Backend `npx tsc --noEmit` — 통과
 - Mobile `npx tsc --noEmit` — 통과
 
+## ESLint + Prettier 설정 통일 (같은 iteration에서 진행)
+
+### 변경 내역
+- `eslint.config.js` — ESLint 9 flat config (js recommended + typescript-eslint + react-hooks + prettier compat)
+- `.prettierrc` — singleQuote, trailingComma "all", printWidth 100, semi
+- `.prettierignore` — node_modules, dist, .expo, .wrangler, lock files, .ralph
+- `package.json` — ESLint/Prettier devDeps + lint/format scripts 추가
+- `globals` 패키지 추가 (ESLint 런타임 의존성)
+- `prettier --write` 로 전체 50개 파일 포매팅 적용
+
+### ESLint 결과
+- 0 errors, 17 warnings (unused vars, react-hooks/exhaustive-deps)
+
 ## 다음 루프
-- P4 웹 접근성 완료
-- 남은 P4: 모바일 오프라인 지원 강화 또는 ESLint + Prettier 설정 통일
+- P4 웹 접근성 + ESLint/Prettier 완료
+- 남은 P4: 모바일 오프라인 지원 강화
+- 선택적: ESLint warnings 17개 수정

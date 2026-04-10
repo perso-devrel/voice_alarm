@@ -1,8 +1,14 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
-import { useGoogleAuth, signInWithApple, isAppleAuthAvailable, saveAuthToken, decodeIdToken } from '../services/auth';
+import { Spacing, BorderRadius, FontSize } from '../constants/theme';
+import {
+  useGoogleAuth,
+  signInWithApple,
+  isAppleAuthAvailable,
+  saveAuthToken,
+  decodeIdToken,
+} from '../services/auth';
 import { useAppStore } from '../stores/useAppStore';
 
 export default function LoginButtons() {

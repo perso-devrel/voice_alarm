@@ -26,7 +26,15 @@ export function ErrorView({ message, onRetry }: { message?: string; onRetry?: ()
   );
 }
 
-export function EmptyView({ emoji, title, subtitle }: { emoji: string; title: string; subtitle?: string }) {
+export function EmptyView({
+  emoji,
+  title,
+  subtitle,
+}: {
+  emoji: string;
+  title: string;
+  subtitle?: string;
+}) {
   return (
     <View style={styles.center}>
       <Text style={styles.emoji}>{emoji}</Text>

@@ -16,9 +16,24 @@ import { useAppStore } from '../src/stores/useAppStore';
 const { width } = Dimensions.get('window');
 
 const ONBOARDING_PAGES = [
-  { emoji: '🎙️', titleKey: 'onboarding.page1Title', descKey: 'onboarding.page1Desc', color: '#FFF5F3' },
-  { emoji: '💌', titleKey: 'onboarding.page2Title', descKey: 'onboarding.page2Desc', color: '#FFF0ED' },
-  { emoji: '⏰', titleKey: 'onboarding.page3Title', descKey: 'onboarding.page3Desc', color: '#FFEAE5' },
+  {
+    emoji: '🎙️',
+    titleKey: 'onboarding.page1Title',
+    descKey: 'onboarding.page1Desc',
+    color: '#FFF5F3',
+  },
+  {
+    emoji: '💌',
+    titleKey: 'onboarding.page2Title',
+    descKey: 'onboarding.page2Desc',
+    color: '#FFF0ED',
+  },
+  {
+    emoji: '⏰',
+    titleKey: 'onboarding.page3Title',
+    descKey: 'onboarding.page3Desc',
+    color: '#FFEAE5',
+  },
 ];
 
 export default function OnboardingScreen() {
@@ -44,7 +59,7 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)');
   };
 
-  const renderPage = ({ item }: { item: typeof ONBOARDING_PAGES[0] }) => (
+  const renderPage = ({ item }: { item: (typeof ONBOARDING_PAGES)[0] }) => (
     <View style={[styles.page, { width, backgroundColor: item.color }]}>
       <Text style={styles.emoji}>{item.emoji}</Text>
       <Text style={styles.title}>{t(item.titleKey)}</Text>
@@ -67,10 +82,9 @@ export default function OnboardingScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+          useNativeDriver: false,
+        })}
         onMomentumScrollEnd={(e) => {
           const index = Math.round(e.nativeEvent.contentOffset.x / width);
           setCurrentIndex(index);
@@ -92,15 +106,7 @@ export default function OnboardingScreen() {
             outputRange: [0.3, 1, 0.3],
             extrapolate: 'clamp',
           });
-          return (
-            <Animated.View
-              key={i}
-              style={[
-                styles.dot,
-                { width: dotWidth, opacity },
-              ]}
-            />
-          );
+          return <Animated.View key={i} style={[styles.dot, { width: dotWidth, opacity }]} />;
         })}
       </View>
 

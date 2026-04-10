@@ -77,7 +77,7 @@ interface AppState {
   loadPersistedState: () => Promise<void>;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set, _get) => ({
   isAuthenticated: false,
   firebaseToken: null,
   userId: null,
@@ -112,16 +112,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       voiceProfiles: state.voiceProfiles.filter((p) => p.id !== id),
     })),
 
-  setPlaying: (id) =>
-    set({ isPlaying: id !== null, currentPlayingId: id }),
+  setPlaying: (id) => set({ isPlaying: id !== null, currentPlayingId: id }),
 
   completeOnboarding: async () => {
     await AsyncStorage.setItem('onboarding_complete', 'true');
     set({ hasCompletedOnboarding: true });
   },
 
-  incrementTtsCount: () =>
-    set((state) => ({ dailyTtsCount: state.dailyTtsCount + 1 })),
+  incrementTtsCount: () => set((state) => ({ dailyTtsCount: state.dailyTtsCount + 1 })),
 
   loadPersistedState: async () => {
     const token = await AsyncStorage.getItem('auth_token');

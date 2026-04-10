@@ -77,26 +77,30 @@ export default function ReceivedGiftsScreen() {
           <View style={styles.card}>
             <View style={styles.header}>
               <View style={styles.senderInfo}>
-                <Text style={styles.senderName}>{item.sender_name || t('giftReceived.unknown')}</Text>
+                <Text style={styles.senderName}>
+                  {item.sender_name || t('giftReceived.unknown')}
+                </Text>
                 <Text style={styles.senderEmail}>{item.sender_email}</Text>
               </View>
-              <Text style={[
-                styles.status,
-                item.status === 'accepted' && styles.statusAccepted,
-                item.status === 'rejected' && styles.statusRejected,
-              ]}>
+              <Text
+                style={[
+                  styles.status,
+                  item.status === 'accepted' && styles.statusAccepted,
+                  item.status === 'rejected' && styles.statusRejected,
+                ]}
+              >
                 {statusLabel(item.status)}
               </Text>
             </View>
 
             <View style={styles.messageBox}>
               <Text style={styles.category}>{item.category}</Text>
-              <Text style={styles.messageText} numberOfLines={2}>{item.message_text}</Text>
+              <Text style={styles.messageText} numberOfLines={2}>
+                {item.message_text}
+              </Text>
             </View>
 
-            {item.note && (
-              <Text style={styles.note}>"{item.note}"</Text>
-            )}
+            {item.note && <Text style={styles.note}>"{item.note}"</Text>}
 
             {item.status === 'pending' && (
               <View style={styles.actions}>
@@ -112,7 +116,11 @@ export default function ReceivedGiftsScreen() {
                   onPress={() =>
                     Alert.alert(t('giftReceived.rejectTitle'), t('giftReceived.rejectConfirm'), [
                       { text: t('common.cancel'), style: 'cancel' },
-                      { text: t('common.reject'), style: 'destructive', onPress: () => reject.mutate(item.id) },
+                      {
+                        text: t('common.reject'),
+                        style: 'destructive',
+                        onPress: () => reject.mutate(item.id),
+                      },
                     ])
                   }
                   disabled={reject.isPending}

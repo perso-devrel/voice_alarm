@@ -51,16 +51,19 @@ friend.post('/', async (c) => {
     args: [id, userId, targetUserId, 'pending'],
   });
 
-  return c.json({
-    friendship: {
-      id,
-      user_a: userId,
-      user_b: targetUserId,
-      target_email: target.rows[0].email,
-      target_name: target.rows[0].name,
-      status: 'pending',
+  return c.json(
+    {
+      friendship: {
+        id,
+        user_a: userId,
+        user_b: targetUserId,
+        target_email: target.rows[0].email,
+        target_name: target.rows[0].name,
+        status: 'pending',
+      },
     },
-  }, 201);
+    201,
+  );
 });
 
 /** 친구 목록 (수락된 친구만) */

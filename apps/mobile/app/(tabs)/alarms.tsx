@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -27,7 +26,12 @@ export default function AlarmsScreen() {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
 
-  const { data: alarms, isLoading, isError, refetch } = useQuery({
+  const {
+    data: alarms,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['alarms'],
     queryFn: getAlarms,
     enabled: isAuthenticated,
@@ -93,9 +97,7 @@ export default function AlarmsScreen() {
         </View>
         <Switch
           value={!!item.is_active}
-          onValueChange={(value) =>
-            toggleMutation.mutate({ id: item.id, is_active: value })
-          }
+          onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
           trackColor={{
             false: Colors.light.border,
             true: Colors.light.primaryLight,
@@ -110,10 +112,7 @@ export default function AlarmsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('alarms.title')}</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/alarm/create')}
-        >
+        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/alarm/create')}>
           <Text style={styles.addButtonText}>{t('alarms.add')}</Text>
         </TouchableOpacity>
       </View>
@@ -127,10 +126,7 @@ export default function AlarmsScreen() {
           <Text style={styles.emptyEmoji}>⏰</Text>
           <Text style={styles.emptyTitle}>{t('alarms.emptyTitle')}</Text>
           <Text style={styles.emptyDesc}>{t('alarms.emptyDesc')}</Text>
-          <TouchableOpacity
-            style={styles.emptyButton}
-            onPress={() => router.push('/alarm/create')}
-          >
+          <TouchableOpacity style={styles.emptyButton} onPress={() => router.push('/alarm/create')}>
             <Text style={styles.emptyButtonText}>{t('alarms.emptyButton')}</Text>
           </TouchableOpacity>
         </View>

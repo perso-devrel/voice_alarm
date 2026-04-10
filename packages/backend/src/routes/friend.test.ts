@@ -24,7 +24,10 @@ describe('friend routes', () => {
 
     it('returns 404 when target user not found', async () => {
       mockDB.execute.mockResolvedValueOnce({ rows: [] });
-      const res = await app.request('/friend', jsonReq('POST', '/friend', { email: 'other@example.com' }));
+      const res = await app.request(
+        '/friend',
+        jsonReq('POST', '/friend', { email: 'other@example.com' }),
+      );
       expect(res.status).toBe(404);
     });
 
@@ -32,7 +35,10 @@ describe('friend routes', () => {
       mockDB.execute.mockResolvedValueOnce({
         rows: [{ google_id: 'test-user-id', email: 'other@example.com', name: 'Other' }],
       });
-      const res = await app.request('/friend', jsonReq('POST', '/friend', { email: 'other@example.com' }));
+      const res = await app.request(
+        '/friend',
+        jsonReq('POST', '/friend', { email: 'other@example.com' }),
+      );
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.error).toContain('자기 자신');
@@ -56,7 +62,9 @@ describe('friend routes', () => {
 
     it('creates friendship and returns 201', async () => {
       mockDB.execute
-        .mockResolvedValueOnce({ rows: [{ google_id: 'other-id', email: 'o@e.com', name: 'Other' }] })
+        .mockResolvedValueOnce({
+          rows: [{ google_id: 'other-id', email: 'o@e.com', name: 'Other' }],
+        })
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [], rowsAffected: 1 });
       const res = await app.request('/friend', jsonReq('POST', '/friend', { email: 'o@e.com' }));

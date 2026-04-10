@@ -1,12 +1,4 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
@@ -76,7 +68,11 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.voice')}</Text>
           <View style={styles.card}>
-            <SettingRow label={t('settings.voiceQuality')} value={t('settings.voiceQualityHigh')} onPress={() => {}} />
+            <SettingRow
+              label={t('settings.voiceQuality')}
+              value={t('settings.voiceQualityHigh')}
+              onPress={() => {}}
+            />
             <SettingRow label={t('settings.cacheSize')} value={formatBytes(cacheSize)} />
             <SettingRow
               label={t('settings.clearCache')}
@@ -100,7 +96,11 @@ export default function SettingsScreen() {
                 />
               }
             />
-            <SettingRow label={t('settings.language')} value={t('settings.languageKorean')} onPress={() => {}} />
+            <SettingRow
+              label={t('settings.language')}
+              value={t('settings.languageKorean')}
+              onPress={() => {}}
+            />
             <SettingRow label={t('settings.version')} value="1.0.0" />
           </View>
         </View>

@@ -18,35 +18,47 @@ describe('gift routes', () => {
 
   describe('POST /gift — send gift', () => {
     it('returns 400 for invalid email', async () => {
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'bad',
-        message_id: 'm1',
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'bad',
+          message_id: 'm1',
+        }),
+      );
       expect(res.status).toBe(400);
     });
 
     it('returns 400 when message_id missing', async () => {
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'a@b.com',
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'a@b.com',
+        }),
+      );
       expect(res.status).toBe(400);
     });
 
     it('returns 400 when note exceeds 200 chars', async () => {
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'a@b.com',
-        message_id: 'm1',
-        note: 'x'.repeat(201),
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'a@b.com',
+          message_id: 'm1',
+          note: 'x'.repeat(201),
+        }),
+      );
       expect(res.status).toBe(400);
     });
 
     it('returns 404 when recipient not found', async () => {
       mockDB.execute.mockResolvedValueOnce({ rows: [] });
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'a@b.com',
-        message_id: 'm1',
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'a@b.com',
+          message_id: 'm1',
+        }),
+      );
       expect(res.status).toBe(404);
     });
 
@@ -54,10 +66,13 @@ describe('gift routes', () => {
       mockDB.execute.mockResolvedValueOnce({
         rows: [{ google_id: 'test-user-id' }],
       });
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'a@b.com',
-        message_id: 'm1',
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'a@b.com',
+          message_id: 'm1',
+        }),
+      );
       expect(res.status).toBe(400);
     });
 
@@ -65,10 +80,13 @@ describe('gift routes', () => {
       mockDB.execute
         .mockResolvedValueOnce({ rows: [{ google_id: 'other-id' }] }) // recipient lookup
         .mockResolvedValueOnce({ rows: [] }); // areFriends check
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'a@b.com',
-        message_id: 'm1',
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'a@b.com',
+          message_id: 'm1',
+        }),
+      );
       expect(res.status).toBe(403);
     });
 
@@ -77,10 +95,13 @@ describe('gift routes', () => {
         .mockResolvedValueOnce({ rows: [{ google_id: 'other-id' }] })
         .mockResolvedValueOnce({ rows: [{ id: 'f1' }] }) // areFriends
         .mockResolvedValueOnce({ rows: [] }); // message check
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'a@b.com',
-        message_id: 'm1',
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'a@b.com',
+          message_id: 'm1',
+        }),
+      );
       expect(res.status).toBe(404);
     });
 
@@ -90,11 +111,14 @@ describe('gift routes', () => {
         .mockResolvedValueOnce({ rows: [{ id: 'f1' }] })
         .mockResolvedValueOnce({ rows: [{ id: 'm1' }] })
         .mockResolvedValueOnce({ rowsAffected: 1 });
-      const res = await app.request('/gift', jsonReq('POST', '/gift', {
-        recipient_email: 'a@b.com',
-        message_id: 'm1',
-        note: 'hello!',
-      }));
+      const res = await app.request(
+        '/gift',
+        jsonReq('POST', '/gift', {
+          recipient_email: 'a@b.com',
+          message_id: 'm1',
+          note: 'hello!',
+        }),
+      );
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.gift.status).toBe('pending');

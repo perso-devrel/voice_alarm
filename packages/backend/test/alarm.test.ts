@@ -34,7 +34,14 @@ describe('GET /alarm — 알람 목록', () => {
 
   it('알람 목록 반환', async () => {
     mockDB.pushResult([
-      { id: 'a-1', time: '07:00', is_active: 1, message_text: '좋은 아침!', category: 'morning', voice_name: 'Mom' },
+      {
+        id: 'a-1',
+        time: '07:00',
+        is_active: 1,
+        message_text: '좋은 아침!',
+        category: 'morning',
+        voice_name: 'Mom',
+      },
     ]);
     const app = buildApp();
     const res = await app.request(jsonReq('GET', '/alarm'));
@@ -72,20 +79,26 @@ describe('POST /alarm — 알람 생성', () => {
 
   it('잘못된 repeat_days 면 400', async () => {
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', repeat_days: [7] }));
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', repeat_days: [7] }),
+    );
     expect(res.status).toBe(400);
   });
 
   it('snooze_minutes 범위 초과면 400', async () => {
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', snooze_minutes: 60 }));
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', snooze_minutes: 60 }),
+    );
     expect(res.status).toBe(400);
   });
 
   it('target_user_id 에 친구가 아닌 사용자면 403', async () => {
     mockDB.pushResult([]); // friendship check
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', target_user_id: 'user-2' }));
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', target_user_id: 'user-2' }),
+    );
     expect(res.status).toBe(403);
   });
 
@@ -104,7 +117,9 @@ describe('POST /alarm — 알람 생성', () => {
     mockDB.pushResult([{ plan: 'plus' }]); // user plan (not free, skip count)
     mockDB.pushResult([]); // message lookup
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-bad', time: '07:00' }));
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: 'm-bad', time: '07:00' }),
+    );
     expect(res.status).toBe(404);
   });
 
@@ -113,7 +128,9 @@ describe('POST /alarm — 알람 생성', () => {
     mockDB.pushResult([{ id: 'm-1' }]); // message exists
     mockDB.pushResult([], 1); // insert alarm
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', repeat_days: [1, 3, 5] }));
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '07:00', repeat_days: [1, 3, 5] }),
+    );
     expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.alarm.time).toBe('07:00');
@@ -126,7 +143,9 @@ describe('POST /alarm — 알람 생성', () => {
     mockDB.pushResult([{ id: 'm-1' }]); // message exists
     mockDB.pushResult([], 1); // insert
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/alarm', { message_id: 'm-1', time: '08:00', target_user_id: 'user-2' }));
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: 'm-1', time: '08:00', target_user_id: 'user-2' }),
+    );
     expect(res.status).toBe(201);
   });
 });
@@ -157,7 +176,9 @@ describe('PATCH /alarm/:id — 알람 수정', () => {
     mockDB.pushResult([{ id: 'a-1' }]); // existing
     mockDB.pushResult([], 1); // update
     const app = buildApp();
-    const res = await app.request(jsonReq('PATCH', '/alarm/a-1', { time: '09:30', is_active: false }));
+    const res = await app.request(
+      jsonReq('PATCH', '/alarm/a-1', { time: '09:30', is_active: false }),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);

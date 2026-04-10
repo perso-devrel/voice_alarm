@@ -162,7 +162,9 @@ export default function HomeScreen() {
             <View style={styles.cheerFooter}>
               <Text style={styles.cheerVoice}>— {latestMessage.voice_name}</Text>
               <Text style={styles.playButton}>
-                {currentPlayingId === latestMessage.id ? `⏸️ ${t('home.pause')}` : `▶️ ${t('home.play')}`}
+                {currentPlayingId === latestMessage.id
+                  ? `⏸️ ${t('home.pause')}`
+                  : `▶️ ${t('home.play')}`}
               </Text>
             </View>
           </TouchableOpacity>

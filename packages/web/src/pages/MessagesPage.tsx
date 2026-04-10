@@ -1,13 +1,26 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVoiceProfiles, getMessages, getPresets, generateTTS, getFriendList, sendGift } from '../services/api';
+import {
+  getVoiceProfiles,
+  getMessages,
+  getPresets,
+  generateTTS,
+  getFriendList,
+  sendGift,
+} from '../services/api';
 import type { VoiceProfile, Message, PresetCategory, Friend } from '../types';
 import { getApiErrorMessage } from '../types';
 
 const CATEGORY_EMOJIS: Record<string, string> = {
-  morning: '🌅', lunch: '🍽️', afternoon: '☕',
-  evening: '🌙', night: '😴', cheer: '💪',
-  love: '❤️', health: '🏥', custom: '✏️',
+  morning: '🌅',
+  lunch: '🍽️',
+  afternoon: '☕',
+  evening: '🌙',
+  night: '😴',
+  cheer: '💪',
+  love: '❤️',
+  health: '🏥',
+  custom: '✏️',
 };
 
 export default function MessagesPage() {
@@ -177,7 +190,9 @@ export default function MessagesPage() {
           </button>
 
           {ttsMutation.isSuccess && (
-            <p role="status" className="text-green-600 text-sm mt-3">✅ 음성 메시지가 생성되었습니다!</p>
+            <p role="status" className="text-green-600 text-sm mt-3">
+              ✅ 음성 메시지가 생성되었습니다!
+            </p>
           )}
           {ttsMutation.isError && (
             <p role="alert" className="text-red-500 text-sm mt-3">
@@ -189,7 +204,9 @@ export default function MessagesPage() {
         /* 메시지 목록 */
         <div>
           {isLoading ? (
-            <div role="status" className="text-center py-12 text-gray-400">로딩 중...</div>
+            <div role="status" className="text-center py-12 text-gray-400">
+              로딩 중...
+            </div>
           ) : !messages?.length ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
               <p className="text-5xl mb-4">💌</p>
@@ -198,7 +215,10 @@ export default function MessagesPage() {
           ) : (
             <div className="space-y-3">
               {messages.map((msg: Message) => (
-                <div key={msg.id} className="bg-white rounded-xl p-4 border border-[#F2E8E5] flex items-center gap-4">
+                <div
+                  key={msg.id}
+                  className="bg-white rounded-xl p-4 border border-[#F2E8E5] flex items-center gap-4"
+                >
                   <span className="text-2xl">{CATEGORY_EMOJIS[msg.category] || '💌'}</span>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[#FF7F6B]">{msg.voice_name}</p>
@@ -217,7 +237,7 @@ export default function MessagesPage() {
                           return;
                         }
                         const name = prompt(
-                          `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: Friend) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`
+                          `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: Friend) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`,
                         );
                         if (!name) return;
                         await sendGift({ recipient_email: name, message_id: msg.id });

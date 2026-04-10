@@ -70,21 +70,13 @@ export const PRESET_CATEGORIES: PresetCategory[] = [
     key: 'love',
     emoji: '❤️',
     label: '사랑',
-    messages: [
-      '사랑해, 항상 고마워!',
-      '네가 있어서 행복해!',
-      '보고 싶어, 빨리 보자!',
-    ],
+    messages: ['사랑해, 항상 고마워!', '네가 있어서 행복해!', '보고 싶어, 빨리 보자!'],
   },
   {
     key: 'health',
     emoji: '🏥',
     label: '건강',
-    messages: [
-      '약 챙겨 먹었어?',
-      '물 많이 마셔! 건강 챙겨!',
-      '오늘 스트레칭 했어? 몸 좀 풀어!',
-    ],
+    messages: ['약 챙겨 먹었어?', '물 많이 마셔! 건강 챙겨!', '오늘 스트레칭 했어? 몸 좀 풀어!'],
   },
 ];
 

@@ -85,7 +85,9 @@ export default function FriendsPage() {
         </p>
       )}
       {sendMutation.isSuccess && (
-        <p role="status" className="text-green-500 text-sm mb-4">친구 요청을 보냈습니다!</p>
+        <p role="status" className="text-green-500 text-sm mb-4">
+          친구 요청을 보냈습니다!
+        </p>
       )}
 
       {/* 탭 */}
@@ -95,7 +97,9 @@ export default function FriendsPage() {
           aria-selected={tab === 'friends'}
           onClick={() => setTab('friends')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            tab === 'friends' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            tab === 'friends'
+              ? 'bg-[#FF7F6B] text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
           내 친구 {friends?.length ? `(${friends.length})` : ''}
@@ -105,7 +109,9 @@ export default function FriendsPage() {
           aria-selected={tab === 'pending'}
           onClick={() => setTab('pending')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            tab === 'pending' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            tab === 'pending'
+              ? 'bg-[#FF7F6B] text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
           받은 요청 {pending?.length ? `(${pending.length})` : ''}
@@ -113,9 +119,11 @@ export default function FriendsPage() {
       </div>
 
       {/* 친구 목록 */}
-      {tab === 'friends' && (
-        isLoading ? (
-          <p role="status" className="text-gray-400 text-center py-12">로딩 중...</p>
+      {tab === 'friends' &&
+        (isLoading ? (
+          <p role="status" className="text-gray-400 text-center py-12">
+            로딩 중...
+          </p>
         ) : !friends?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🤝</p>
@@ -125,7 +133,10 @@ export default function FriendsPage() {
         ) : (
           <div className="grid gap-3">
             {friends.map((f: Friend) => (
-              <div key={f.id} className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]">
+              <div
+                key={f.id}
+                className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]"
+              >
                 <div className="w-10 h-10 rounded-full bg-[#FFB4A8] flex items-center justify-center text-[#E05A47] font-bold mr-4">
                   {(f.friend_name || f.friend_email || '?')[0].toUpperCase()}
                 </div>
@@ -147,12 +158,11 @@ export default function FriendsPage() {
               </div>
             ))}
           </div>
-        )
-      )}
+        ))}
 
       {/* 받은 요청 */}
-      {tab === 'pending' && (
-        !pending?.length ? (
+      {tab === 'pending' &&
+        (!pending?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">📭</p>
             <p className="text-gray-500 font-medium">대기 중인 요청이 없습니다</p>
@@ -160,7 +170,10 @@ export default function FriendsPage() {
         ) : (
           <div className="grid gap-3">
             {pending.map((p: PendingFriendRequest) => (
-              <div key={p.id} className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]">
+              <div
+                key={p.id}
+                className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]"
+              >
                 <div className="w-10 h-10 rounded-full bg-[#FFB4A8] flex items-center justify-center text-[#E05A47] font-bold mr-4">
                   {(p.requester_name || p.requester_email || '?')[0].toUpperCase()}
                 </div>
@@ -187,8 +200,7 @@ export default function FriendsPage() {
               </div>
             ))}
           </div>
-        )
-      )}
+        ))}
     </div>
   );
 }

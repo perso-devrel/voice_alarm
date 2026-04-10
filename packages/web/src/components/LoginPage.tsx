@@ -1,13 +1,18 @@
 import { useEffect, useRef } from 'react';
 
-declare const google: {
-  accounts: {
-    id: {
-      initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void;
-      renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
-    };
-  };
-} | undefined;
+declare const google:
+  | {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential: string }) => void;
+          }) => void;
+          renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
+        };
+      };
+    }
+  | undefined;
 
 // Google Cloud Console에서 생성한 Web Client ID
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
@@ -33,17 +38,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         },
       });
       if (googleButtonRef.current) {
-        google?.accounts.id.renderButton(
-          googleButtonRef.current,
-          {
-            type: 'standard',
-            theme: 'outline',
-            size: 'large',
-            text: 'continue_with',
-            shape: 'rectangular',
-            width: 320,
-          }
-        );
+        google?.accounts.id.renderButton(googleButtonRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'rectangular',
+          width: 320,
+        });
       }
     };
     document.body.appendChild(script);
@@ -59,7 +61,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <p className="text-6xl mb-6">🎙️</p>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">VoiceAlarm</h1>
         <p className="text-gray-500 mb-8">
-          소중한 사람의 목소리로<br />
+          소중한 사람의 목소리로
+          <br />
           매일 따뜻한 메시지를 받아보세요
         </p>
 
@@ -69,10 +72,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
           {/* Client ID 미설정 시 안내 */}
           {!GOOGLE_CLIENT_ID && (
-            <div role="alert" className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700">
+            <div
+              role="alert"
+              className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-700"
+            >
               <p className="font-semibold mb-1">Google Client ID 필요</p>
               <p>
-                <code>packages/web/src/components/LoginPage.tsx</code>에서<br />
+                <code>packages/web/src/components/LoginPage.tsx</code>에서
+                <br />
                 <code>GOOGLE_CLIENT_ID</code>를 설정해주세요.
               </p>
             </div>

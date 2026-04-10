@@ -108,7 +108,10 @@ export default function FriendsScreen() {
           editable={!sendRequest.isPending}
         />
         <TouchableOpacity
-          style={[styles.sendBtn, (!email.trim() || sendRequest.isPending) && styles.sendBtnDisabled]}
+          style={[
+            styles.sendBtn,
+            (!email.trim() || sendRequest.isPending) && styles.sendBtnDisabled,
+          ]}
           onPress={handleSend}
           disabled={!email.trim() || sendRequest.isPending}
         >
@@ -147,7 +150,13 @@ export default function FriendsScreen() {
             data={friends.data ?? []}
             keyExtractor={(item) => item.id}
             refreshControl={
-              <RefreshControl refreshing={isRefreshing} onRefresh={() => { friends.refetch(); pending.refetch(); }} />
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={() => {
+                  friends.refetch();
+                  pending.refetch();
+                }}
+              />
             }
             ListEmptyComponent={
               <View style={styles.empty}>
@@ -170,10 +179,18 @@ export default function FriendsScreen() {
                 <TouchableOpacity
                   style={styles.removeBtn}
                   onPress={() =>
-                    Alert.alert(t('friends.deleteTitle'), t('friends.deleteConfirm', { name: item.friend_name || item.friend_email }), [
-                      { text: t('common.cancel'), style: 'cancel' },
-                      { text: t('common.delete'), style: 'destructive', onPress: () => remove.mutate(item.id) },
-                    ])
+                    Alert.alert(
+                      t('friends.deleteTitle'),
+                      t('friends.deleteConfirm', { name: item.friend_name || item.friend_email }),
+                      [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        {
+                          text: t('common.delete'),
+                          style: 'destructive',
+                          onPress: () => remove.mutate(item.id),
+                        },
+                      ],
+                    )
                   }
                 >
                   <Text style={styles.removeBtnText}>{t('common.delete')}</Text>
@@ -182,51 +199,49 @@ export default function FriendsScreen() {
             )}
           />
         )
+      ) : pending.isLoading ? (
+        <ActivityIndicator style={styles.loader} color={Colors.light.primary} />
       ) : (
-        pending.isLoading ? (
-          <ActivityIndicator style={styles.loader} color={Colors.light.primary} />
-        ) : (
-          <FlatList
-            data={pending.data ?? []}
-            keyExtractor={(item) => item.id}
-            refreshControl={
-              <RefreshControl refreshing={isRefreshing} onRefresh={() => { friends.refetch(); pending.refetch(); }} />
-            }
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <Text style={styles.emptyEmoji}>📭</Text>
-                <Text style={styles.emptyText}>{t('friends.emptyPending')}</Text>
+        <FlatList
+          data={pending.data ?? []}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => {
+                friends.refetch();
+                pending.refetch();
+              }}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyEmoji}>📭</Text>
+              <Text style={styles.emptyText}>{t('friends.emptyPending')}</Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {(item.requester_name || item.requester_email || '?')[0].toUpperCase()}
+                </Text>
               </View>
-            }
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {(item.requester_name || item.requester_email || '?')[0].toUpperCase()}
-                  </Text>
-                </View>
-                <View style={styles.cardInfo}>
-                  <Text style={styles.cardName}>{item.requester_name || t('common.noName')}</Text>
-                  <Text style={styles.cardEmail}>{item.requester_email}</Text>
-                </View>
-                <View style={styles.actionRow}>
-                  <TouchableOpacity
-                    style={styles.acceptBtn}
-                    onPress={() => accept.mutate(item.id)}
-                  >
-                    <Text style={styles.acceptBtnText}>{t('common.accept')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rejectBtn}
-                    onPress={() => remove.mutate(item.id)}
-                  >
-                    <Text style={styles.rejectBtnText}>{t('common.reject')}</Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.cardInfo}>
+                <Text style={styles.cardName}>{item.requester_name || t('common.noName')}</Text>
+                <Text style={styles.cardEmail}>{item.requester_email}</Text>
               </View>
-            )}
-          />
-        )
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={styles.acceptBtn} onPress={() => accept.mutate(item.id)}>
+                  <Text style={styles.acceptBtnText}>{t('common.accept')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.rejectBtn} onPress={() => remove.mutate(item.id)}>
+                  <Text style={styles.rejectBtnText}>{t('common.reject')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        />
       )}
     </SafeAreaView>
   );

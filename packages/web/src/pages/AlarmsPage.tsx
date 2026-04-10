@@ -40,7 +40,9 @@ export default function AlarmsPage() {
       </div>
 
       {isLoading ? (
-        <div role="status" aria-live="polite" className="text-center py-12 text-gray-400">로딩 중...</div>
+        <div role="status" aria-live="polite" className="text-center py-12 text-gray-400">
+          로딩 중...
+        </div>
       ) : !alarms?.length ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
           <p className="text-5xl mb-4">⏰</p>
@@ -70,7 +72,9 @@ export default function AlarmsPage() {
                   <input
                     type="checkbox"
                     checked={!!alarm.is_active}
-                    onChange={() => toggleMutation.mutate({ id: alarm.id, is_active: !alarm.is_active })}
+                    onChange={() =>
+                      toggleMutation.mutate({ id: alarm.id, is_active: !alarm.is_active })
+                    }
                     aria-label={`${alarm.time} 알람 ${alarm.is_active ? '비활성화' : '활성화'}`}
                     className="sr-only peer"
                   />

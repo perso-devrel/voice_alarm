@@ -12,11 +12,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     library: '📚',
     settings: '⚙️',
   };
-  return (
-    <Text style={[styles.icon, focused && styles.iconFocused]}>
-      {icons[name] || '📱'}
-    </Text>
-  );
+  return <Text style={[styles.icon, focused && styles.iconFocused]}>{icons[name] || '📱'}</Text>;
 }
 
 export default function TabLayout() {

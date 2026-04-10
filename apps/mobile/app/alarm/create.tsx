@@ -7,7 +7,6 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -59,9 +58,7 @@ export default function CreateAlarmScreen() {
   });
 
   const toggleDay = (day: number) => {
-    setRepeatDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
+    setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
   const handleSubmit = () => {
@@ -95,9 +92,14 @@ export default function CreateAlarmScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.targetRow}>
             <TouchableOpacity
               style={[styles.targetChip, !targetUserId && styles.targetChipActive]}
-              onPress={() => { setTargetUserId(null); setTargetName(null); }}
+              onPress={() => {
+                setTargetUserId(null);
+                setTargetName(null);
+              }}
             >
-              <Text style={[styles.targetText, !targetUserId && styles.targetTextActive]}>{t('alarmCreate.forMe')}</Text>
+              <Text style={[styles.targetText, !targetUserId && styles.targetTextActive]}>
+                {t('alarmCreate.forMe')}
+              </Text>
             </TouchableOpacity>
             {friends.map((f: Friend) => {
               const friendId = f.user_a === userId ? f.user_b : f.user_a;
@@ -108,7 +110,7 @@ export default function CreateAlarmScreen() {
                   style={[styles.targetChip, isSelected && styles.targetChipActive]}
                   onPress={() => {
                     setTargetUserId(isSelected ? null : friendId);
-                    setTargetName(isSelected ? null : (f.friend_name || f.friend_email || null));
+                    setTargetName(isSelected ? null : f.friend_name || f.friend_email || null);
                   }}
                 >
                   <Text style={[styles.targetText, isSelected && styles.targetTextActive]}>
@@ -119,7 +121,9 @@ export default function CreateAlarmScreen() {
             })}
           </ScrollView>
           {targetName && (
-            <Text style={styles.targetHint}>{t('alarmCreate.targetHint', { name: targetName })}</Text>
+            <Text style={styles.targetHint}>
+              {t('alarmCreate.targetHint', { name: targetName })}
+            </Text>
           )}
         </>
       )}
@@ -130,10 +134,7 @@ export default function CreateAlarmScreen() {
         <View style={styles.timePicker}>
           {/* 시 */}
           <View style={styles.timeColumn}>
-            <TouchableOpacity
-              style={styles.timeArrow}
-              onPress={() => setHour((h) => (h + 1) % 24)}
-            >
+            <TouchableOpacity style={styles.timeArrow} onPress={() => setHour((h) => (h + 1) % 24)}>
               <Text style={styles.arrowText}>▲</Text>
             </TouchableOpacity>
             <Text style={styles.timeValue}>{hour.toString().padStart(2, '0')}</Text>
@@ -216,9 +217,7 @@ export default function CreateAlarmScreen() {
           style={styles.emptyMessage}
           onPress={() => router.push('/message/create')}
         >
-          <Text style={styles.emptyMessageText}>
-            {t('alarmCreate.emptyMessage')}
-          </Text>
+          <Text style={styles.emptyMessageText}>{t('alarmCreate.emptyMessage')}</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.messageList}>
@@ -237,9 +236,7 @@ export default function CreateAlarmScreen() {
                   "{msg.text}"
                 </Text>
               </View>
-              {selectedMessageId === msg.id && (
-                <Text style={styles.checkmark}>✓</Text>
-              )}
+              {selectedMessageId === msg.id && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
         </View>

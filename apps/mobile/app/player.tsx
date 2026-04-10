@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +7,7 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../src/constants/theme'
 import { playAudio, getLocalAudioPath } from '../src/services/audio';
 import { useAppStore } from '../src/stores/useAppStore';
 
-const { width } = Dimensions.get('window');
+const { width: _width } = Dimensions.get('window');
 
 export default function PlayerScreen() {
   const router = useRouter();
@@ -106,9 +100,7 @@ export default function PlayerScreen() {
         {/* 프로필 */}
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {params.voiceName?.charAt(0) || '?'}
-            </Text>
+            <Text style={styles.avatarText}>{params.voiceName?.charAt(0) || '?'}</Text>
           </View>
           <Text style={styles.voiceName}>{params.voiceName}</Text>
         </View>
@@ -123,10 +115,7 @@ export default function PlayerScreen() {
 
         {/* 반응 */}
         {!reacted ? (
-          <TouchableOpacity
-            style={styles.reactionButton}
-            onPress={() => setReacted(true)}
-          >
+          <TouchableOpacity style={styles.reactionButton} onPress={() => setReacted(true)}>
             <Text style={styles.reactionText}>{t('player.thanks')}</Text>
           </TouchableOpacity>
         ) : (

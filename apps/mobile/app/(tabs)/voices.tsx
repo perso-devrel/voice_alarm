@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -25,7 +24,12 @@ export default function VoicesScreen() {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
 
-  const { data: profiles, isLoading, isError, refetch } = useQuery({
+  const {
+    data: profiles,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['voiceProfiles'],
     queryFn: getVoiceProfiles,
     enabled: isAuthenticated,
@@ -42,18 +46,14 @@ export default function VoicesScreen() {
   });
 
   const handleDelete = (id: string, name: string) => {
-    Alert.alert(
-      t('voices.deleteTitle'),
-      t('voices.deleteConfirm', { name }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: () => deleteMutation.mutate(id),
-        },
-      ]
-    );
+    Alert.alert(t('voices.deleteTitle'), t('voices.deleteConfirm', { name }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => deleteMutation.mutate(id),
+      },
+    ]);
   };
 
   const getStatusBadge = (status: string) => {
@@ -74,9 +74,7 @@ export default function VoicesScreen() {
     return (
       <View style={styles.profileCard}>
         <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>
-            {item.name.charAt(0)}
-          </Text>
+          <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
         </View>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{item.name}</Text>
@@ -106,10 +104,7 @@ export default function VoicesScreen() {
       </View>
 
       <View style={styles.addSection}>
-        <TouchableOpacity
-          style={styles.addCard}
-          onPress={() => router.push('/voice/record')}
-        >
+        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/record')}>
           <Text style={styles.addEmoji}>🎙️</Text>
           <View>
             <Text style={styles.addTitle}>{t('voices.record')}</Text>
@@ -117,10 +112,7 @@ export default function VoicesScreen() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.addCard}
-          onPress={() => router.push('/voice/upload')}
-        >
+        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/upload')}>
           <Text style={styles.addEmoji}>📁</Text>
           <View>
             <Text style={styles.addTitle}>{t('voices.upload')}</Text>
@@ -154,7 +146,9 @@ export default function VoicesScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🎵</Text>
             <Text style={styles.emptyText}>
-              {t('voices.emptyTitle')}{'\n'}{t('voices.emptyDesc')}
+              {t('voices.emptyTitle')}
+              {'\n'}
+              {t('voices.emptyDesc')}
             </Text>
           </View>
         ) : (

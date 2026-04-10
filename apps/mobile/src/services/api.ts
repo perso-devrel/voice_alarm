@@ -1,11 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { VoiceProfile, Message, Alarm, Friend, PendingFriendRequest, Gift, LibraryItem, Speaker } from '../types';
+import type {
+  VoiceProfile,
+  Message,
+  Alarm,
+  Friend,
+  PendingFriendRequest,
+  Gift,
+  LibraryItem,
+  Speaker,
+} from '../types';
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ??
-  (__DEV__
-    ? 'http://localhost:8787'
-    : 'https://voice-alarm-api.your-name.workers.dev');
+  (__DEV__ ? 'http://localhost:8787' : 'https://voice-alarm-api.your-name.workers.dev');
 
 const BASE = `${API_BASE_URL}/api`;
 const TIMEOUT_MS = 60000;
@@ -81,7 +88,11 @@ function get<T>(path: string, params?: Record<string, string>): Promise<T> {
   return request({ method: 'GET', path, params });
 }
 
-function post<T>(path: string, body?: unknown, opts?: { isFormData?: boolean; headers?: Record<string, string> }): Promise<T> {
+function post<T>(
+  path: string,
+  body?: unknown,
+  opts?: { isFormData?: boolean; headers?: Record<string, string> },
+): Promise<T> {
   return request({ method: 'POST', path, body, ...opts });
 }
 
@@ -108,7 +119,7 @@ export async function getVoiceProfile(id: string) {
 export async function createVoiceClone(
   audioFile: { uri: string; name: string; type: string },
   name: string,
-  provider: 'perso' | 'elevenlabs' = 'perso'
+  provider: 'perso' | 'elevenlabs' = 'perso',
 ) {
   const formData = new FormData();
   formData.append('audio', audioFile as unknown as Blob);
@@ -145,7 +156,13 @@ export async function generateTTS(params: {
   pitch?: number;
   provider?: 'perso' | 'elevenlabs';
 }) {
-  return post<{ message_id: string; audio_base64: string; audio_format: string; text: string; voice_profile_id: string }>('/tts/generate', params);
+  return post<{
+    message_id: string;
+    audio_base64: string;
+    audio_format: string;
+    text: string;
+    voice_profile_id: string;
+  }>('/tts/generate', params);
 }
 
 export async function getMessages(category?: string) {
@@ -177,13 +194,16 @@ export async function createAlarm(params: {
   return data.alarm;
 }
 
-export async function updateAlarm(id: string, params: {
-  time?: string;
-  repeat_days?: number[];
-  is_active?: boolean;
-  snooze_minutes?: number;
-  message_id?: string;
-}) {
+export async function updateAlarm(
+  id: string,
+  params: {
+    time?: string;
+    repeat_days?: number[];
+    is_active?: boolean;
+    snooze_minutes?: number;
+    message_id?: string;
+  },
+) {
   await patch(`/alarm/${id}`, params);
 }
 

@@ -53,7 +53,9 @@ export default function GiftsPage() {
           aria-selected={tab === 'received'}
           onClick={() => setTab('received')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            tab === 'received' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            tab === 'received'
+              ? 'bg-[#FF7F6B] text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
           받은 선물 {received?.length ? `(${received.length})` : ''}
@@ -63,16 +65,20 @@ export default function GiftsPage() {
           aria-selected={tab === 'sent'}
           onClick={() => setTab('sent')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            tab === 'sent' ? 'bg-[#FF7F6B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            tab === 'sent'
+              ? 'bg-[#FF7F6B] text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
           보낸 선물 {sent?.length ? `(${sent.length})` : ''}
         </button>
       </div>
 
-      {tab === 'received' && (
-        loadingReceived ? (
-          <p role="status" className="text-gray-400 text-center py-12">로딩 중...</p>
+      {tab === 'received' &&
+        (loadingReceived ? (
+          <p role="status" className="text-gray-400 text-center py-12">
+            로딩 중...
+          </p>
         ) : !received?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🎁</p>
@@ -95,9 +101,7 @@ export default function GiftsPage() {
                   <p className="text-xs text-gray-400 uppercase mb-1">{g.category}</p>
                   <p className="text-gray-700">{g.message_text}</p>
                 </div>
-                {g.note && (
-                  <p className="text-sm text-gray-400 italic mb-3">"{g.note}"</p>
-                )}
+                {g.note && <p className="text-sm text-gray-400 italic mb-3">"{g.note}"</p>}
                 {g.status === 'pending' && (
                   <div className="flex gap-2">
                     <button
@@ -125,12 +129,13 @@ export default function GiftsPage() {
               </div>
             ))}
           </div>
-        )
-      )}
+        ))}
 
-      {tab === 'sent' && (
-        loadingSent ? (
-          <p role="status" className="text-gray-400 text-center py-12">로딩 중...</p>
+      {tab === 'sent' &&
+        (loadingSent ? (
+          <p role="status" className="text-gray-400 text-center py-12">
+            로딩 중...
+          </p>
         ) : !sent?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">📤</p>
@@ -142,7 +147,9 @@ export default function GiftsPage() {
               <div key={g.id} className="bg-white rounded-xl p-5 border border-[#F2E8E5]">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-semibold text-gray-800">{g.recipient_name || '알 수 없음'}</p>
+                    <p className="font-semibold text-gray-800">
+                      {g.recipient_name || '알 수 없음'}
+                    </p>
                     <p className="text-xs text-gray-400">{g.recipient_email}</p>
                   </div>
                   <span className={`text-xs font-semibold ${statusColor(g.status)}`}>
@@ -156,8 +163,7 @@ export default function GiftsPage() {
               </div>
             ))}
           </div>
-        )
-      )}
+        ))}
     </div>
   );
 }

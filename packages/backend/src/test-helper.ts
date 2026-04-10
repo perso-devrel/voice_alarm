@@ -14,11 +14,7 @@ export function createMockDB(): MockDB {
   };
 }
 
-export function createTestApp(
-  routes: Hono<AppEnv>,
-  basePath: string,
-  userId = 'test-user-id',
-) {
+export function createTestApp(routes: Hono<AppEnv>, basePath: string, userId = 'test-user-id') {
   const app = new Hono<AppEnv>();
 
   app.use('*', async (c, next) => {
@@ -33,11 +29,7 @@ export function createTestApp(
   return app;
 }
 
-export function jsonReq(
-  method: string,
-  path: string,
-  body?: Record<string, unknown>,
-) {
+export function jsonReq(method: string, path: string, body?: Record<string, unknown>) {
   const init: RequestInit = {
     method,
     headers: { 'Content-Type': 'application/json' },

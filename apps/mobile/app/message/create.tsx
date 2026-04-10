@@ -47,7 +47,11 @@ export default function CreateMessageScreen() {
     mutationFn: generateTTS,
     onSuccess: async (data) => {
       // base64 오디오를 로컬에 저장
-      const localPath = await saveAudioLocally(data.audio_base64, data.message_id, data.audio_format);
+      const localPath = await saveAudioLocally(
+        data.audio_base64,
+        data.message_id,
+        data.audio_format,
+      );
       setGeneratedAudioId(data.message_id);
       incrementTtsCount();
 
@@ -64,7 +68,10 @@ export default function CreateMessageScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
     onError: (err: unknown) => {
-      Alert.alert(t('messageCreate.generateErrorTitle'), getApiErrorMessage(err, t('messageCreate.generateError')));
+      Alert.alert(
+        t('messageCreate.generateErrorTitle'),
+        getApiErrorMessage(err, t('messageCreate.generateError')),
+      );
     },
   });
 
@@ -112,23 +119,15 @@ export default function CreateMessageScreen() {
       {/* 음성 프로필 선택 */}
       <Text style={styles.sectionTitle}>{t('messageCreate.whoseVoice')}</Text>
       {readyProfiles.length === 0 ? (
-        <TouchableOpacity
-          style={styles.emptyVoice}
-          onPress={() => router.push('/voice/record')}
-        >
-          <Text style={styles.emptyVoiceText}>
-            {t('messageCreate.emptyVoice')}
-          </Text>
+        <TouchableOpacity style={styles.emptyVoice} onPress={() => router.push('/voice/record')}>
+          <Text style={styles.emptyVoiceText}>{t('messageCreate.emptyVoice')}</Text>
         </TouchableOpacity>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.voiceRow}>
           {readyProfiles.map((profile: VoiceProfile) => (
             <TouchableOpacity
               key={profile.id}
-              style={[
-                styles.voiceChip,
-                selectedVoiceId === profile.id && styles.voiceChipSelected,
-              ]}
+              style={[styles.voiceChip, selectedVoiceId === profile.id && styles.voiceChipSelected]}
               onPress={() => setSelectedVoiceId(profile.id)}
             >
               <Text style={styles.voiceChipAvatar}>{profile.name.charAt(0)}</Text>
@@ -198,28 +197,20 @@ export default function CreateMessageScreen() {
           {/* 메시지 선택 */}
           {selectedCategory && (
             <View style={styles.presetList}>
-              {PRESET_CATEGORIES.find((c) => c.key === selectedCategory)?.messages.map(
-                (msg, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={[
-                      styles.presetItem,
-                      selectedPreset === msg && styles.presetItemSelected,
-                    ]}
-                    onPress={() => setSelectedPreset(msg)}
+              {PRESET_CATEGORIES.find((c) => c.key === selectedCategory)?.messages.map((msg, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.presetItem, selectedPreset === msg && styles.presetItemSelected]}
+                  onPress={() => setSelectedPreset(msg)}
+                >
+                  <Text
+                    style={[styles.presetText, selectedPreset === msg && styles.presetTextSelected]}
                   >
-                    <Text
-                      style={[
-                        styles.presetText,
-                        selectedPreset === msg && styles.presetTextSelected,
-                      ]}
-                    >
-                      {msg}
-                    </Text>
-                    {selectedPreset === msg && <Text style={styles.checkmark}>✓</Text>}
-                  </TouchableOpacity>
-                )
-              )}
+                    {msg}
+                  </Text>
+                  {selectedPreset === msg && <Text style={styles.checkmark}>✓</Text>}
+                </TouchableOpacity>
+              ))}
             </View>
           )}
         </>
@@ -305,9 +296,15 @@ export default function CreateMessageScreen() {
                         message_id: generatedAudioId!,
                         note: messageText ?? undefined,
                       });
-                      Alert.alert(t('messageCreate.giftSentTitle'), t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }));
+                      Alert.alert(
+                        t('messageCreate.giftSentTitle'),
+                        t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }),
+                      );
                     } catch (err: unknown) {
-                      Alert.alert(t('common.error'), getApiErrorMessage(err, t('messageCreate.giftError')));
+                      Alert.alert(
+                        t('common.error'),
+                        getApiErrorMessage(err, t('messageCreate.giftError')),
+                      );
                     }
                   },
                 }));

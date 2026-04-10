@@ -50,9 +50,24 @@ export default function SettingsPage() {
         <h3 className="text-lg font-semibold mb-4">구독 플랜</h3>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { plan: 'free', name: 'Free', price: '$0', features: ['음성 1개', '알람 2개', '일 3회 TTS'] },
-            { plan: 'plus', name: 'Plus', price: '$3.99/월', features: ['음성 3개', '알람 무제한', 'TTS 무제한', '위젯'] },
-            { plan: 'family', name: 'Family', price: '$7.99/월', features: ['음성 10개', '가족 공유 5명', '모든 기능'] },
+            {
+              plan: 'free',
+              name: 'Free',
+              price: '$0',
+              features: ['음성 1개', '알람 2개', '일 3회 TTS'],
+            },
+            {
+              plan: 'plus',
+              name: 'Plus',
+              price: '$3.99/월',
+              features: ['음성 3개', '알람 무제한', 'TTS 무제한', '위젯'],
+            },
+            {
+              plan: 'family',
+              name: 'Family',
+              price: '$7.99/월',
+              features: ['음성 10개', '가족 공유 5명', '모든 기능'],
+            },
           ].map((tier) => (
             <div
               key={tier.plan}
@@ -79,13 +94,22 @@ export default function SettingsPage() {
       <div className="bg-white rounded-2xl p-6 border border-[#F2E8E5]">
         <h3 className="text-lg font-semibold mb-4">정보</h3>
         <div className="space-y-2">
-          <button aria-label="이용약관 보기" className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button
+            aria-label="이용약관 보기"
+            className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
             이용약관
           </button>
-          <button aria-label="개인정보처리방침 보기" className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button
+            aria-label="개인정보처리방침 보기"
+            className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
             개인정보처리방침
           </button>
-          <button aria-label="오픈소스 라이선스 보기" className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button
+            aria-label="오픈소스 라이선스 보기"
+            className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
             오픈소스 라이선스
           </button>
           <div className="pt-2 border-t border-gray-100">

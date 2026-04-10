@@ -12,7 +12,6 @@ import {
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { diarizeAudio, createVoiceClone } from '../../src/services/api';
@@ -41,7 +40,10 @@ export default function DiarizeScreen() {
       setStep('select');
     },
     onError: (err: unknown) => {
-      Alert.alert(t('voiceDiarize.analyzeErrorTitle'), getApiErrorMessage(err, t('voiceDiarize.analyzeError')));
+      Alert.alert(
+        t('voiceDiarize.analyzeErrorTitle'),
+        getApiErrorMessage(err, t('voiceDiarize.analyzeError')),
+      );
     },
   });
 
@@ -55,16 +57,14 @@ export default function DiarizeScreen() {
           type: selectedFile.mimeType || 'audio/wav',
         },
         params.name,
-        'elevenlabs'
+        'elevenlabs',
       );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
-      Alert.alert(
-        t('voiceDiarize.successTitle'),
-        t('voiceDiarize.successDesc'),
-        [{ text: t('common.confirm'), onPress: () => router.back() }]
-      );
+      Alert.alert(t('voiceDiarize.successTitle'), t('voiceDiarize.successDesc'), [
+        { text: t('common.confirm'), onPress: () => router.back() },
+      ]);
     },
     onError: (err: unknown) => {
       Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceDiarize.cloneError')));
@@ -114,9 +114,7 @@ export default function DiarizeScreen() {
           <View style={styles.stepHeader}>
             <Text style={styles.stepBadge}>STEP 1</Text>
             <Text style={styles.stepTitle}>{t('voiceDiarize.step1Title')}</Text>
-            <Text style={styles.stepDesc}>
-              {t('voiceDiarize.step1Desc')}
-            </Text>
+            <Text style={styles.stepDesc}>{t('voiceDiarize.step1Desc')}</Text>
           </View>
 
           <TouchableOpacity style={styles.pickButton} onPress={handlePickFile}>
@@ -166,14 +164,16 @@ export default function DiarizeScreen() {
               onPress={() => handleSelectSpeaker(speaker.speaker_id)}
             >
               <View style={styles.speakerAvatar}>
-                <Text style={styles.speakerAvatarText}>
-                  {String.fromCharCode(65 + index)}
-                </Text>
+                <Text style={styles.speakerAvatarText}>{String.fromCharCode(65 + index)}</Text>
               </View>
               <View style={styles.speakerInfo}>
-                <Text style={styles.speakerLabel}>{t('voiceDiarize.speaker', { index: index + 1 })}</Text>
+                <Text style={styles.speakerLabel}>
+                  {t('voiceDiarize.speaker', { index: index + 1 })}
+                </Text>
                 <Text style={styles.speakerDuration}>
-                  {t('voiceDiarize.totalDuration', { duration: formatDuration(speaker.total_duration) })}
+                  {t('voiceDiarize.totalDuration', {
+                    duration: formatDuration(speaker.total_duration),
+                  })}
                 </Text>
                 <Text style={styles.speakerSegments}>
                   {t('voiceDiarize.segments', { count: speaker.segments.length })}
@@ -183,10 +183,7 @@ export default function DiarizeScreen() {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setStep('upload')}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => setStep('upload')}>
             <Text style={styles.backText}>{t('voiceDiarize.back')}</Text>
           </TouchableOpacity>
         </>
@@ -198,9 +195,7 @@ export default function DiarizeScreen() {
           <View style={styles.stepHeader}>
             <Text style={styles.stepBadge}>STEP 3</Text>
             <Text style={styles.stepTitle}>{t('voiceDiarize.step3Title')}</Text>
-            <Text style={styles.stepDesc}>
-              {t('voiceDiarize.step3Desc')}
-            </Text>
+            <Text style={styles.stepDesc}>{t('voiceDiarize.step3Desc')}</Text>
           </View>
 
           <TextInput
@@ -224,10 +219,7 @@ export default function DiarizeScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setStep('select')}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => setStep('select')}>
             <Text style={styles.backText}>{t('voiceDiarize.backToSelect')}</Text>
           </TouchableOpacity>
         </>

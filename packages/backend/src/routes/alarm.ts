@@ -50,7 +50,10 @@ alarm.post('/', async (c) => {
     return c.json({ error: 'Invalid time value' }, 400);
   }
 
-  if (body.repeat_days && (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))) {
+  if (
+    body.repeat_days &&
+    (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))
+  ) {
     return c.json({ error: 'repeat_days must be an array of numbers 0-6' }, 400);
   }
 
@@ -79,7 +82,7 @@ alarm.post('/', async (c) => {
 
   if (user.rows.length > 0 && user.rows[0].plan === 'free') {
     const alarmCount = await db.execute({
-      sql: "SELECT COUNT(*) as count FROM alarms WHERE user_id = ? OR target_user_id = ?",
+      sql: 'SELECT COUNT(*) as count FROM alarms WHERE user_id = ? OR target_user_id = ?',
       args: [alarmOwner, alarmOwner],
     });
     if (Number(alarmCount.rows[0].count) >= 2) {
@@ -146,7 +149,10 @@ alarm.patch('/:id', async (c) => {
     }
   }
 
-  if (body.repeat_days !== undefined && (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))) {
+  if (
+    body.repeat_days !== undefined &&
+    (!Array.isArray(body.repeat_days) || body.repeat_days.some((d) => d < 0 || d > 6))
+  ) {
     return c.json({ error: 'repeat_days must be an array of numbers 0-6' }, 400);
   }
 

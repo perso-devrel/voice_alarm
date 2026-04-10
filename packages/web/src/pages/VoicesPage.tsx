@@ -1,6 +1,10 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVoiceProfiles, createVoiceClone, diarizeAudio, deleteVoiceProfile } from '../services/api';
+import {
+  getVoiceProfiles,
+  createVoiceClone,
+  deleteVoiceProfile,
+} from '../services/api';
 import type { VoiceProfile } from '../types';
 import { getApiErrorMessage } from '../types';
 
@@ -117,7 +121,12 @@ export default function VoicesPage() {
             aria-label={uploadFile ? `선택된 파일: ${uploadFile.name}` : '오디오 파일 선택'}
             className="border-2 border-dashed border-[#FFB4A8] rounded-xl p-8 text-center cursor-pointer hover:bg-[#FFF5F3] focus:outline-none focus:ring-2 focus:ring-[#FF7F6B] transition-colors mb-4"
             onClick={() => fileInputRef.current?.click()}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
           >
             <input
               ref={fileInputRef}
@@ -126,7 +135,9 @@ export default function VoicesPage() {
               className="hidden"
               onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
             />
-            <p className="text-4xl mb-2" aria-hidden="true">📁</p>
+            <p className="text-4xl mb-2" aria-hidden="true">
+              📁
+            </p>
             <p className="text-gray-600 font-medium">
               {uploadFile ? uploadFile.name : '오디오 파일을 선택하세요'}
             </p>
@@ -159,7 +170,9 @@ export default function VoicesPage() {
 
       {/* 프로필 목록 */}
       {isLoading ? (
-        <div role="status" className="text-center py-12 text-gray-400">로딩 중...</div>
+        <div role="status" className="text-center py-12 text-gray-400">
+          로딩 중...
+        </div>
       ) : !profiles?.length ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
           <p className="text-5xl mb-4">🎵</p>
@@ -169,7 +182,10 @@ export default function VoicesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {profiles.map((profile: VoiceProfile) => (
-            <div key={profile.id} className="bg-white rounded-2xl p-5 border border-[#F2E8E5] shadow-sm">
+            <div
+              key={profile.id}
+              className="bg-white rounded-2xl p-5 border border-[#F2E8E5] shadow-sm"
+            >
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-[#FFB4A8] flex items-center justify-center text-xl font-bold text-[#E05A47]">
                   {profile.name.charAt(0)}

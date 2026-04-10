@@ -14,11 +14,7 @@ import { Audio } from 'expo-av';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import {
-  requestMicPermission,
-  startRecording,
-  stopRecording,
-} from '../../src/services/audio';
+import { requestMicPermission, startRecording, stopRecording } from '../../src/services/audio';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 
@@ -50,15 +46,13 @@ export default function RecordScreen() {
       createVoiceClone(
         { uri: params.uri, name: 'recording.wav', type: 'audio/wav' },
         params.name,
-        provider
+        provider,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
-      Alert.alert(
-        t('voiceRecord.successTitle'),
-        t('voiceRecord.successDesc'),
-        [{ text: t('common.confirm'), onPress: () => router.back() }]
-      );
+      Alert.alert(t('voiceRecord.successTitle'), t('voiceRecord.successDesc'), [
+        { text: t('common.confirm'), onPress: () => router.back() },
+      ]);
     },
     onError: (err: unknown) => {
       Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceRecord.cloneError')));
@@ -80,9 +74,9 @@ export default function RecordScreen() {
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.3, duration: 800, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ])
+        ]),
       ).start();
-    } catch (err) {
+    } catch {
       Alert.alert(t('common.error'), t('voiceRecord.recordError'));
     }
   };
@@ -120,9 +114,7 @@ export default function RecordScreen() {
   if (hasPermission === false) {
     return (
       <View style={styles.center}>
-        <Text style={styles.permissionText}>
-          {t('voiceRecord.permissionRequired')}
-        </Text>
+        <Text style={styles.permissionText}>{t('voiceRecord.permissionRequired')}</Text>
       </View>
     );
   }
@@ -138,9 +130,7 @@ export default function RecordScreen() {
             <Text style={styles.guideText}>{sentence}</Text>
           </View>
         ))}
-        <Text style={styles.guideTip}>
-          {t('voiceRecord.guideTip')}
-        </Text>
+        <Text style={styles.guideTip}>{t('voiceRecord.guideTip')}</Text>
       </View>
 
       {/* 녹음 컨트롤 */}
@@ -170,7 +160,9 @@ export default function RecordScreen() {
       {/* 녹음 완료 후 */}
       {recordedUri && !isRecording && (
         <View style={styles.resultSection}>
-          <Text style={styles.resultTitle}>{t('voiceRecord.resultTitle', { time: formatTime(duration) })}</Text>
+          <Text style={styles.resultTitle}>
+            {t('voiceRecord.resultTitle', { time: formatTime(duration) })}
+          </Text>
 
           <TextInput
             style={styles.nameInput}
@@ -186,7 +178,9 @@ export default function RecordScreen() {
               style={[styles.providerChip, provider === 'perso' && styles.providerActive]}
               onPress={() => setProvider('perso')}
             >
-              <Text style={[styles.providerText, provider === 'perso' && styles.providerTextActive]}>
+              <Text
+                style={[styles.providerText, provider === 'perso' && styles.providerTextActive]}
+              >
                 Perso.ai
               </Text>
             </TouchableOpacity>
@@ -194,7 +188,12 @@ export default function RecordScreen() {
               style={[styles.providerChip, provider === 'elevenlabs' && styles.providerActive]}
               onPress={() => setProvider('elevenlabs')}
             >
-              <Text style={[styles.providerText, provider === 'elevenlabs' && styles.providerTextActive]}>
+              <Text
+                style={[
+                  styles.providerText,
+                  provider === 'elevenlabs' && styles.providerTextActive,
+                ]}
+              >
                 ElevenLabs
               </Text>
             </TouchableOpacity>

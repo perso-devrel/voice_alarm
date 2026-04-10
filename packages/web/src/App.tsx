@@ -43,19 +43,28 @@ export default function App() {
 
   const renderPage = () => {
     switch (page) {
-      case 'voices': return <VoicesPage />;
-      case 'messages': return <MessagesPage />;
-      case 'alarms': return <AlarmsPage />;
-      case 'friends': return <FriendsPage />;
-      case 'gifts': return <GiftsPage />;
-      case 'settings': return <SettingsPage />;
+      case 'voices':
+        return <VoicesPage />;
+      case 'messages':
+        return <MessagesPage />;
+      case 'alarms':
+        return <AlarmsPage />;
+      case 'friends':
+        return <FriendsPage />;
+      case 'gifts':
+        return <GiftsPage />;
+      case 'settings':
+        return <SettingsPage />;
     }
   };
 
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
-      <nav aria-label="메인 메뉴" className="w-64 bg-white border-r border-[#F2E8E5] p-6 flex flex-col">
+      <nav
+        aria-label="메인 메뉴"
+        className="w-64 bg-white border-r border-[#F2E8E5] p-6 flex flex-col"
+      >
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#FF7F6B]">VoiceAlarm</h1>
           <p className="text-sm text-gray-400 mt-1">음성 관리 대시보드</p>
@@ -73,7 +82,9 @@ export default function App() {
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <span className="text-xl" aria-hidden="true">{item.emoji}</span>
+              <span className="text-xl" aria-hidden="true">
+                {item.emoji}
+              </span>
               <span>{item.label}</span>
             </button>
           ))}
@@ -92,9 +103,7 @@ export default function App() {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        {renderPage()}
-      </main>
+      <main className="flex-1 p-8 overflow-y-auto">{renderPage()}</main>
     </div>
   );
 }

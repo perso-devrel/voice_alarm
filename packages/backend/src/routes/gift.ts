@@ -4,7 +4,11 @@ import { getDB } from '../lib/db';
 
 const gift = new Hono<AppEnv>();
 
-async function areFriends(db: import('@libsql/client/web').Client, userA: string, userB: string): Promise<boolean> {
+async function areFriends(
+  db: import('@libsql/client/web').Client,
+  userA: string,
+  userB: string,
+): Promise<boolean> {
   const result = await db.execute({
     sql: `SELECT id FROM friendships
           WHERE ((user_a = ? AND user_b = ?) OR (user_a = ? AND user_b = ?))

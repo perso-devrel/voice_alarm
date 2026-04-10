@@ -37,25 +37,31 @@ describe('POST /gift — 선물 보내기', () => {
 
   it('메모 200자 초과면 400', async () => {
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/gift', {
-      recipient_email: 'b@test.com',
-      message_id: 'm-1',
-      note: 'x'.repeat(201),
-    }));
+    const res = await app.request(
+      jsonReq('POST', '/gift', {
+        recipient_email: 'b@test.com',
+        message_id: 'm-1',
+        note: 'x'.repeat(201),
+      }),
+    );
     expect(res.status).toBe(400);
   });
 
   it('받는 사람이 존재하지 않으면 404', async () => {
     mockDB.pushResult([]); // recipient lookup
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/gift', { recipient_email: 'nobody@test.com', message_id: 'm-1' }));
+    const res = await app.request(
+      jsonReq('POST', '/gift', { recipient_email: 'nobody@test.com', message_id: 'm-1' }),
+    );
     expect(res.status).toBe(404);
   });
 
   it('자기 자신에게 선물하면 400', async () => {
     mockDB.pushResult([{ google_id: 'user-1' }]);
     const app = buildApp('user-1');
-    const res = await app.request(jsonReq('POST', '/gift', { recipient_email: 'me@test.com', message_id: 'm-1' }));
+    const res = await app.request(
+      jsonReq('POST', '/gift', { recipient_email: 'me@test.com', message_id: 'm-1' }),
+    );
     expect(res.status).toBe(400);
   });
 
@@ -63,7 +69,9 @@ describe('POST /gift — 선물 보내기', () => {
     mockDB.pushResult([{ google_id: 'user-2' }]); // recipient exists
     mockDB.pushResult([]); // areFriends returns false
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-1' }));
+    const res = await app.request(
+      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-1' }),
+    );
     expect(res.status).toBe(403);
   });
 
@@ -72,7 +80,9 @@ describe('POST /gift — 선물 보내기', () => {
     mockDB.pushResult([{ id: 'f-1' }]); // areFriends
     mockDB.pushResult([]); // message lookup
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-bad' }));
+    const res = await app.request(
+      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-bad' }),
+    );
     expect(res.status).toBe(404);
   });
 
@@ -82,7 +92,9 @@ describe('POST /gift — 선물 보내기', () => {
     mockDB.pushResult([{ id: 'm-1' }]); // message exists
     mockDB.pushResult([], 1); // insert gift
     const app = buildApp();
-    const res = await app.request(jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-1' }));
+    const res = await app.request(
+      jsonReq('POST', '/gift', { recipient_email: 'b@test.com', message_id: 'm-1' }),
+    );
     expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.gift.status).toBe('pending');

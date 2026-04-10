@@ -58,9 +58,12 @@ voice.post('/clone', async (c) => {
 
     const limits: Record<string, number> = { free: 1, plus: 3, family: 10 };
     if (count >= (limits[plan] ?? 1)) {
-      return c.json({
-        error: `${plan} 플랜은 최대 ${limits[plan]}개의 음성 프로필을 지원합니다. 업그레이드해주세요.`
-      }, 403);
+      return c.json(
+        {
+          error: `${plan} 플랜은 최대 ${limits[plan]}개의 음성 프로필을 지원합니다. 업그레이드해주세요.`,
+        },
+        403,
+      );
     }
   }
 
@@ -112,26 +115,32 @@ voice.post('/clone', async (c) => {
       });
     }
 
-    return c.json({
-      profile: {
-        id: profileId,
-        name,
-        voice_id: voiceId,
-        provider,
-        status: 'ready',
-      }
-    }, 201);
+    return c.json(
+      {
+        profile: {
+          id: profileId,
+          name,
+          voice_id: voiceId,
+          provider,
+          status: 'ready',
+        },
+      },
+      201,
+    );
   } catch (err) {
     await db.execute({
       sql: `UPDATE voice_profiles SET status = 'failed', updated_at = datetime('now') WHERE id = ?`,
       args: [profileId],
     });
 
-    return c.json({
-      error: 'Voice cloning failed',
-      detail: err instanceof Error ? err.message : 'Unknown error',
-      profile_id: profileId,
-    }, 500);
+    return c.json(
+      {
+        error: 'Voice cloning failed',
+        detail: err instanceof Error ? err.message : 'Unknown error',
+        profile_id: profileId,
+      },
+      500,
+    );
   }
 });
 
@@ -159,10 +168,13 @@ voice.post('/diarize', async (c) => {
       })),
     });
   } catch (err) {
-    return c.json({
-      error: 'Speaker diarization failed',
-      detail: err instanceof Error ? err.message : 'Unknown error',
-    }, 500);
+    return c.json(
+      {
+        error: 'Speaker diarization failed',
+        detail: err instanceof Error ? err.message : 'Unknown error',
+      },
+      500,
+    );
   }
 });
 

@@ -29,7 +29,12 @@ export default function LibraryScreen() {
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const { t } = useTranslation();
 
-  const { data: items, isLoading, isError, refetch } = useQuery({
+  const {
+    data: items,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['library', filter],
     queryFn: () => getLibrary(filter === 'favorite' ? 'favorite' : undefined),
     enabled: isAuthenticated,
@@ -74,9 +79,15 @@ export default function LibraryScreen() {
 
   const getCategoryEmoji = (category: string) => {
     const map: Record<string, string> = {
-      morning: '🌅', lunch: '🍽️', afternoon: '☕',
-      evening: '🌙', night: '😴', cheer: '💪',
-      love: '❤️', health: '🏥', custom: '✏️',
+      morning: '🌅',
+      lunch: '🍽️',
+      afternoon: '☕',
+      evening: '🌙',
+      night: '😴',
+      cheer: '💪',
+      love: '❤️',
+      health: '🏥',
+      custom: '✏️',
     };
     return map[category] || '💌';
   };
@@ -89,16 +100,12 @@ export default function LibraryScreen() {
     >
       <View style={styles.messageLeft}>
         <View style={styles.avatarSmall}>
-          <Text style={styles.avatarLetter}>
-            {item.voice_name?.charAt(0) || '?'}
-          </Text>
+          <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
         </View>
         <View style={styles.messageContent}>
           <View style={styles.messageHeader}>
             <Text style={styles.voiceName}>{item.voice_name}</Text>
-            <Text style={styles.categoryBadge}>
-              {getCategoryEmoji(item.category)}
-            </Text>
+            <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
           </View>
           <Text style={styles.messageText} numberOfLines={2}>
             "{item.text}"
@@ -115,9 +122,7 @@ export default function LibraryScreen() {
       </View>
 
       <View style={styles.messageActions}>
-        {currentPlayingId === item.message_id && (
-          <Text style={styles.playingIndicator}>♫</Text>
-        )}
+        {currentPlayingId === item.message_id && <Text style={styles.playingIndicator}>♫</Text>}
         <TouchableOpacity
           onPress={(e) => {
             e.stopPropagation();
@@ -125,9 +130,7 @@ export default function LibraryScreen() {
           }}
           hitSlop={8}
         >
-          <Text style={styles.favoriteIcon}>
-            {item.is_favorite ? '❤️' : '🤍'}
-          </Text>
+          <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -167,9 +170,7 @@ export default function LibraryScreen() {
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>📭</Text>
           <Text style={styles.emptyText}>
-            {filter === 'favorite'
-              ? t('library.emptyFavorites')
-              : t('library.emptyAll')}
+            {filter === 'favorite' ? t('library.emptyFavorites') : t('library.emptyAll')}
           </Text>
         </View>
       ) : (
