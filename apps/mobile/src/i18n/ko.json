@@ -50,7 +50,8 @@
     "send": "전송",
     "accept": "수락",
     "reject": "거절",
-    "logout": "로그아웃"
+    "logout": "로그아웃",
+    "back": "돌아가기"
   },
   "alarms": {
     "title": "알람",
@@ -102,6 +103,18 @@
     "deleteTitle": "친구 삭제",
     "deleteConfirm": "{{name}}님을 삭제하시겠습니까?"
   },
+  "friendProfile": {
+    "since": "{{date}}부터 친구",
+    "giftsSent": "보낸 선물",
+    "giftsReceived": "받은 선물",
+    "alarms": "알람",
+    "recentGiftsFrom": "{{name}}님이 보낸 선물",
+    "recentGiftsTo": "내가 보낸 선물",
+    "pending": "대기중",
+    "accepted": "수락됨",
+    "rejected": "거절됨",
+    "setAlarm": "이 친구에게 알람 보내기"
+  },
   "library": {
     "title": "보관함",
     "subtitle": "받았던 모든 음성 메시지",
@@ -117,6 +130,8 @@
   "settings": {
     "title": "설정",
     "account": "계정",
+    "name": "이름",
+    "email": "이메일",
     "plan": "구독 플랜",
     "managePlan": "구독 관리",
     "notifications": "알림",

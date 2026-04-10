@@ -208,20 +208,20 @@ export default function AlarmsScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.alarmLeft}>
-            <Text style={[styles.alarmTime, !item.is_active && styles.textInactive]}>
+            <Text style={[styles.alarmTime, !item.is_active && styles.timeInactive]}>
               {item.time}
             </Text>
             <View style={styles.alarmSubRow}>
               <Text style={[styles.alarmRepeat, !item.is_active && styles.textInactive]}>
                 {formatRepeatDays(repeatDays)}
               </Text>
-              {perAlarmCountdown && (
+              {item.is_active && perAlarmCountdown && (
                 <Text style={styles.alarmCountdown}>{perAlarmCountdown}</Text>
               )}
             </View>
             <View style={styles.alarmMeta}>
-              <Text style={styles.alarmVoice}>🗣️ {item.voice_name}</Text>
-              <Text style={styles.alarmMessage} numberOfLines={1}>
+              <Text style={[styles.alarmVoice, !item.is_active && styles.textInactive]}>🗣️ {item.voice_name}</Text>
+              <Text style={[styles.alarmMessage, !item.is_active && styles.textInactive]} numberOfLines={1}>
                 "{item.message_text}"
               </Text>
             </View>
@@ -377,6 +377,10 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '300',
     color: Colors.light.text,
+  },
+  timeInactive: {
+    color: Colors.light.textTertiary,
+    textDecorationLine: 'line-through' as const,
   },
   textInactive: {
     color: Colors.light.textTertiary,

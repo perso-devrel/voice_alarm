@@ -13,6 +13,7 @@ import userRoutes from './routes/user';
 import libraryRoutes from './routes/library';
 import friendRoutes from './routes/friend';
 import giftRoutes from './routes/gift';
+import statsRoutes from './routes/stats';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -154,6 +155,7 @@ api.route('/user', userRoutes);
 api.route('/library', libraryRoutes);
 api.route('/friend', friendRoutes);
 api.route('/gift', giftRoutes);
+api.route('/stats', statsRoutes);
 
 app.route('/api', api);
 

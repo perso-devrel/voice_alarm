@@ -50,7 +50,8 @@
     "send": "Send",
     "accept": "Accept",
     "reject": "Reject",
-    "logout": "Log out"
+    "logout": "Log out",
+    "back": "Back"
   },
   "alarms": {
     "title": "Alarms",
@@ -102,6 +103,18 @@
     "deleteTitle": "Remove friend",
     "deleteConfirm": "Remove {{name}}?"
   },
+  "friendProfile": {
+    "since": "Friends since {{date}}",
+    "giftsSent": "Sent",
+    "giftsReceived": "Received",
+    "alarms": "Alarms",
+    "recentGiftsFrom": "Gifts from {{name}}",
+    "recentGiftsTo": "Gifts you sent",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "setAlarm": "Send alarm to this friend"
+  },
   "library": {
     "title": "Library",
     "subtitle": "All received voice messages",
@@ -117,6 +130,8 @@
   "settings": {
     "title": "Settings",
     "account": "Account",
+    "name": "Name",
+    "email": "Email",
     "plan": "Subscription plan",
     "managePlan": "Manage plan",
     "notifications": "Notifications",

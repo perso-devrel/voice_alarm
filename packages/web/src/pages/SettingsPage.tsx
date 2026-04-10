@@ -62,6 +62,12 @@ export default function SettingsPage({ darkMode }: Props) {
       <div className="bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] mb-6 transition-colors">
         <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">계정</h3>
         <div className="space-y-3">
+          {profile?.user?.name && (
+            <div className="flex justify-between py-2 border-b border-[var(--color-border)]">
+              <span className="text-[var(--color-text-secondary)]">이름</span>
+              <span className="text-[var(--color-text)] font-medium">{profile.user.name}</span>
+            </div>
+          )}
           <div className="flex justify-between py-2 border-b border-[var(--color-border)]">
             <span className="text-[var(--color-text-secondary)]">이메일</span>
             <span className="text-[var(--color-text)]">{profile?.user?.email || '-'}</span>

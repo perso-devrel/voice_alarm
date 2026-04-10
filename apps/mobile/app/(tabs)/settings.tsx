@@ -1,8 +1,11 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { getUserProfile } from '../../src/services/api';
 import { useState, useEffect } from 'react';
 import { getAudioCacheSize } from '../../src/services/audio';
 
@@ -11,6 +14,14 @@ export default function SettingsScreen() {
   const [cacheSize, setCacheSize] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
   const { t } = useTranslation();
+
+  const { data: profile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: getUserProfile,
+    enabled: isAuthenticated,
+  });
+
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   useEffect(() => {
     getAudioCacheSize().then(setCacheSize);
@@ -46,6 +57,12 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
           <View style={styles.card}>
+            {profile?.name && (
+              <SettingRow label={t('settings.name', '이름')} value={profile.name} />
+            )}
+            {profile?.email && (
+              <SettingRow label={t('settings.email', '이메일')} value={profile.email} />
+            )}
             <SettingRow label={t('settings.plan')} value={getPlanLabel()} />
             <SettingRow label={t('settings.managePlan')} value="→" onPress={() => {}} />
           </View>
@@ -126,7 +143,7 @@ export default function SettingsScreen() {
               value={t('settings.languageKorean')}
               onPress={() => {}}
             />
-            <SettingRow label={t('settings.version')} value="1.0.0" />
+            <SettingRow label={t('settings.version')} value={appVersion} />
           </View>
         </View>
 

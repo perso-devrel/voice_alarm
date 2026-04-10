@@ -66,4 +66,30 @@ user.patch('/plan', async (c) => {
   return c.json({ success: true, plan: body.plan });
 });
 
+user.get('/search', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const q = (c.req.query('q') || '').trim();
+
+  if (q.length < 2) {
+    return c.json({ users: [] });
+  }
+
+  const result = await db.execute({
+    sql: `SELECT google_id, email, name, picture FROM users
+          WHERE google_id != ? AND email LIKE ?
+          LIMIT 10`,
+    args: [userId, `%${q}%`],
+  });
+
+  return c.json({
+    users: result.rows.map((r) => ({
+      id: r.google_id,
+      email: r.email,
+      name: r.name,
+      picture: r.picture,
+    })),
+  });
+});
+
 export default user;

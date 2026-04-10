@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
 import { useDarkMode } from './hooks/useDarkMode';
 
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const AlarmsPage = lazy(() => import('./pages/AlarmsPage'));
@@ -9,9 +10,10 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const FriendsPage = lazy(() => import('./pages/FriendsPage'));
 const GiftsPage = lazy(() => import('./pages/GiftsPage'));
 
-type Page = 'voices' | 'messages' | 'alarms' | 'friends' | 'gifts' | 'settings';
+type Page = 'dashboard' | 'voices' | 'messages' | 'alarms' | 'friends' | 'gifts' | 'settings';
 
 const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
+  { key: 'dashboard', label: '대시보드', emoji: '📊' },
   { key: 'voices', label: '음성 관리', emoji: '🎙️' },
   { key: 'messages', label: '메시지', emoji: '💌' },
   { key: 'alarms', label: '알람 설정', emoji: '⏰' },
@@ -21,7 +23,7 @@ const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
 ];
 
 export default function App() {
-  const [page, setPage] = useState<Page>('voices');
+  const [page, setPage] = useState<Page>('dashboard');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const darkMode = useDarkMode();
 
@@ -46,6 +48,8 @@ export default function App() {
 
   const renderPage = () => {
     switch (page) {
+      case 'dashboard':
+        return <DashboardPage onNavigate={(p) => setPage(p as Page)} />;
       case 'voices':
         return <VoicesPage />;
       case 'messages':

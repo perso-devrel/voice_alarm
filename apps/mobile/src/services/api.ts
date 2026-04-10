@@ -291,3 +291,17 @@ export async function toggleFavorite(id: string) {
 export async function deleteLibraryItem(id: string) {
   return del<{ ok: boolean }>(`/library/${id}`);
 }
+
+// ===== Stats API =====
+
+export interface Stats {
+  alarms: { total: number; active: number };
+  messages: { total: number };
+  voices: { total: number };
+  friends: { total: number };
+  gifts: { received: number; receivedPending: number; sent: number };
+}
+
+export async function getStats() {
+  return get<Stats>('/stats');
+}

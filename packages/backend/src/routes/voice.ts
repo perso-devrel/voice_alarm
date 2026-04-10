@@ -12,13 +12,22 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 voice.get('/', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  const result = await db.execute({
-    sql: 'SELECT * FROM voice_profiles WHERE user_id = ? ORDER BY created_at DESC',
-    args: [userId],
-  });
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: 'SELECT COUNT(*) as total FROM voice_profiles WHERE user_id = ?',
+      args: [userId],
+    }),
+    db.execute({
+      sql: 'SELECT * FROM voice_profiles WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      args: [userId, limit, offset],
+    }),
+  ]);
 
-  return c.json({ profiles: result.rows });
+  const total = Number(countRes.rows[0].total);
+  return c.json({ profiles: result.rows, total, limit, offset });
 });
 
 /** 음성 프로필 상세 조회 */

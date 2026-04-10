@@ -13,7 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { getAlarms, getMessages } from '../../src/services/api';
+import { getAlarms, getMessages, getStats } from '../../src/services/api';
+import type { Stats } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import LoginButtons from '../../src/components/LoginButtons';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -65,6 +66,12 @@ export default function HomeScreen() {
   } = useQuery({
     queryKey: ['messages'],
     queryFn: () => getMessages(),
+    enabled: isAuthenticated && isConnected,
+  });
+
+  const { data: stats } = useQuery<Stats>({
+    queryKey: ['stats'],
+    queryFn: getStats,
     enabled: isAuthenticated && isConnected,
   });
 
@@ -150,6 +157,30 @@ export default function HomeScreen() {
 
         {isAuthenticated && (alarmsLoading || messagesLoading) && !refreshing && (
           <ActivityIndicator color={Colors.light.primary} style={{ marginVertical: Spacing.lg }} />
+        )}
+
+        {/* 요약 통계 */}
+        {isAuthenticated && stats && (
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statCount}>{stats.alarms.active}</Text>
+              <Text style={styles.statLabel}>{t('home.activeAlarms', '활성 알람')}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statCount}>{stats.messages.total}</Text>
+              <Text style={styles.statLabel}>{t('home.messages', '메시지')}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statCount}>{stats.friends.total}</Text>
+              <Text style={styles.statLabel}>{t('home.friends', '친구')}</Text>
+            </View>
+            {stats.gifts.receivedPending > 0 && (
+              <TouchableOpacity style={styles.statItem} onPress={() => router.push('/gift/received')}>
+                <Text style={[styles.statCount, { color: Colors.light.accent }]}>{stats.gifts.receivedPending}</Text>
+                <Text style={[styles.statLabel, { color: Colors.light.accent }]}>{t('home.pendingGifts', '대기 선물')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
 
         {/* 다음 알람 카드 */}
@@ -273,6 +304,28 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: Spacing.lg,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  statItem: {
+    flex: 1,
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    alignItems: 'center',
+  },
+  statCount: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.light.primary,
+  },
+  statLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
   },
   greeting: {
     fontSize: FontSize.hero,

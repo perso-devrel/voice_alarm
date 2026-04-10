@@ -161,4 +161,41 @@ export async function getUserProfile() {
   return data;
 }
 
+export interface UserSearchResult {
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
+export async function searchUsers(q: string): Promise<UserSearchResult[]> {
+  const { data } = await api.get('/user/search', { params: { q } });
+  return data.users;
+}
+
+export interface Stats {
+  alarms: { total: number; active: number };
+  messages: { total: number };
+  voices: { total: number };
+  friends: { total: number };
+  gifts: { received: number; receivedPending: number; sent: number };
+}
+
+export async function getStats(): Promise<Stats> {
+  const { data } = await api.get('/stats');
+  return data;
+}
+
+export interface Activity {
+  id: string;
+  type: 'alarm' | 'message' | 'gift' | 'voice';
+  summary: string;
+  created_at: string;
+}
+
+export async function getRecentActivity(): Promise<Activity[]> {
+  const { data } = await api.get('/stats/activity');
+  return data.activities;
+}
+
 export default api;

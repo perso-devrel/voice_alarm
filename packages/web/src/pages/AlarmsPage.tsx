@@ -19,6 +19,7 @@ const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 export default function AlarmsPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const { data: alarms, isLoading } = useQuery({
     queryKey: ['alarms'],
@@ -60,6 +61,15 @@ export default function AlarmsPage() {
       }
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: ({ id, params }: { id: string; params: Record<string, unknown> }) =>
+      updateAlarm(id, params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alarms'] });
+      setEditingId(null);
+    },
   });
 
   const createMutation = useMutation({
@@ -114,50 +124,69 @@ export default function AlarmsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {alarms.map((alarm: Alarm) => (
-            <div
-              key={alarm.id}
-              className={`bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] shadow-sm flex items-center gap-6 transition-all ${
-                !alarm.is_active ? 'opacity-50' : ''
-              }`}
-            >
-              <div className="flex-1">
-                <p className="text-4xl font-light text-[var(--color-text)]">{alarm.time}</p>
-                <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeat(alarm.repeat_days)}</p>
-                <div className="mt-2">
-                  <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {alarm.voice_name}</span>
-                  <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">"{alarm.message_text}"</p>
+          {alarms.map((alarm: Alarm) =>
+            editingId === alarm.id ? (
+              <AlarmEditInline
+                key={alarm.id}
+                alarm={alarm}
+                onSave={(params) => editMutation.mutate({ id: alarm.id, params })}
+                onCancel={() => setEditingId(null)}
+                isPending={editMutation.isPending}
+                error={editMutation.isError ? getApiErrorMessage(editMutation.error, '알람 수정 실패') : null}
+              />
+            ) : (
+              <div
+                key={alarm.id}
+                onClick={() => setEditingId(alarm.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') setEditingId(alarm.id); }}
+                aria-label={`${alarm.time} 알람 편집`}
+                className={`bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] shadow-sm flex items-center gap-6 transition-all cursor-pointer hover:border-[var(--color-primary)] ${
+                  !alarm.is_active ? 'opacity-50' : ''
+                }`}
+              >
+                <div className="flex-1">
+                  <p className="text-4xl font-light text-[var(--color-text)]">{alarm.time}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeat(alarm.repeat_days)}</p>
+                  <div className="mt-2">
+                    <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {alarm.voice_name}</span>
+                    <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">"{alarm.message_text}"</p>
+                    {alarm.snooze_minutes > 0 && (
+                      <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">스누즈 {alarm.snooze_minutes}분</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!alarm.is_active}
+                      onChange={() =>
+                        toggleMutation.mutate({ id: alarm.id, is_active: !alarm.is_active })
+                      }
+                      aria-label={`${alarm.time} 알람 ${alarm.is_active ? '비활성화' : '활성화'}`}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[var(--color-surface-alt)] peer-focus:ring-2 peer-focus:ring-[var(--color-primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[var(--color-primary)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
+                  </label>
+
+                  <button
+                    onClick={() => {
+                      if (confirm('이 알람을 삭제하시겠어요?')) {
+                        deleteMutation.mutate(alarm.id);
+                      }
+                    }}
+                    aria-label={`${alarm.time} 알람 삭제`}
+                    className="text-sm text-red-400 hover:text-red-500"
+                  >
+                    삭제
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!!alarm.is_active}
-                    onChange={() =>
-                      toggleMutation.mutate({ id: alarm.id, is_active: !alarm.is_active })
-                    }
-                    aria-label={`${alarm.time} 알람 ${alarm.is_active ? '비활성화' : '활성화'}`}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-[var(--color-surface-alt)] peer-focus:ring-2 peer-focus:ring-[var(--color-primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[var(--color-primary)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
-                </label>
-
-                <button
-                  onClick={() => {
-                    if (confirm('이 알람을 삭제하시겠어요?')) {
-                      deleteMutation.mutate(alarm.id);
-                    }
-                  }}
-                  aria-label={`${alarm.time} 알람 삭제`}
-                  className="text-sm text-red-400 hover:text-red-500"
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          ))}
+            ),
+          )}
         </div>
       )}
     </div>
@@ -394,6 +423,155 @@ function AlarmCreateForm({
           className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition-colors disabled:opacity-50"
         >
           {isPending ? '생성 중...' : '⏰ 알람 설정하기'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="px-6 py-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+        >
+          취소
+        </button>
+      </div>
+      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+    </div>
+  );
+}
+
+function AlarmEditInline({
+  alarm,
+  onSave,
+  onCancel,
+  isPending,
+  error,
+}: {
+  alarm: Alarm;
+  onSave: (params: Record<string, unknown>) => void;
+  onCancel: () => void;
+  isPending: boolean;
+  error: string | null;
+}) {
+  const [time, setTime] = useState(alarm.time);
+  const [repeatDays, setRepeatDays] = useState<number[]>(() => {
+    try { return JSON.parse(alarm.repeat_days || '[]'); } catch { return []; }
+  });
+  const [selectedMessageId, setSelectedMessageId] = useState(alarm.message_id);
+  const [snoozeMinutes, setSnoozeMinutes] = useState(alarm.snooze_minutes ?? 5);
+
+  const { data: messages } = useQuery({
+    queryKey: ['messages'],
+    queryFn: () => getMessages(),
+  });
+
+  const toggleDay = (day: number) => {
+    setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
+  };
+
+  const origRepeat = JSON.stringify((JSON.parse(alarm.repeat_days || '[]') as number[]).sort());
+  const hasChanges =
+    time !== alarm.time ||
+    JSON.stringify(repeatDays.sort()) !== origRepeat ||
+    selectedMessageId !== alarm.message_id ||
+    snoozeMinutes !== (alarm.snooze_minutes ?? 5);
+
+  const handleSave = () => {
+    const params: Record<string, unknown> = {};
+    if (time !== alarm.time) params.time = time;
+    if (JSON.stringify(repeatDays.sort()) !== origRepeat) {
+      params.repeat_days = repeatDays;
+    }
+    if (selectedMessageId !== alarm.message_id) params.message_id = selectedMessageId;
+    if (snoozeMinutes !== (alarm.snooze_minutes ?? 5)) params.snooze_minutes = snoozeMinutes;
+    onSave(params);
+  };
+
+  return (
+    <div className="bg-[var(--color-surface)] rounded-2xl p-6 border-2 border-[var(--color-primary)] shadow-sm transition-colors">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">알람 편집</h3>
+        <button onClick={onCancel} className="text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]">
+          취소
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">시간</label>
+        <input
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          className="border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] rounded-lg px-4 py-2 text-2xl font-light focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">반복</label>
+        <div className="flex gap-2 mb-2">
+          {DAYS.map((day, i) => (
+            <button
+              key={i}
+              onClick={() => toggleDay(i)}
+              className={`w-10 h-10 rounded-full text-sm font-semibold transition-colors ${
+                repeatDays.includes(i)
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-bg)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
+              }`}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setRepeatDays([0, 1, 2, 3, 4, 5, 6])} className="text-xs text-[var(--color-primary)] hover:underline">매일</button>
+          <button onClick={() => setRepeatDays([1, 2, 3, 4, 5])} className="text-xs text-[var(--color-primary)] hover:underline">평일</button>
+          <button onClick={() => setRepeatDays([0, 6])} className="text-xs text-[var(--color-primary)] hover:underline">주말</button>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">스누즈</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={1}
+            max={30}
+            value={snoozeMinutes}
+            onChange={(e) => setSnoozeMinutes(Number(e.target.value))}
+            className="flex-1 accent-[var(--color-primary)]"
+          />
+          <span className="text-sm text-[var(--color-text)] font-medium w-12 text-right">{snoozeMinutes}분</span>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">알람 메시지</label>
+        {messages && messages.length > 0 ? (
+          <div className="grid gap-2 max-h-48 overflow-y-auto">
+            {messages.map((msg: Message) => (
+              <button
+                key={msg.id}
+                onClick={() => setSelectedMessageId(msg.id)}
+                className={`text-left p-3 rounded-lg border transition-colors ${
+                  selectedMessageId === msg.id
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                    : 'border-[var(--color-border)] hover:bg-[var(--color-bg)]'
+                }`}
+              >
+                <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {msg.voice_name}</span>
+                <p className="text-sm text-[var(--color-text)] mt-0.5 truncate">"{msg.text}"</p>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--color-text-tertiary)]">메시지가 없습니다</p>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={handleSave}
+          disabled={!hasChanges || isPending}
+          className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition-colors disabled:opacity-50"
+        >
+          {isPending ? '저장 중...' : '저장'}
         </button>
         <button
           onClick={onCancel}

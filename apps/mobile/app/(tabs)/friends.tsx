@@ -12,6 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import {
@@ -67,6 +68,7 @@ export default function FriendsScreen() {
   const [email, setEmail] = useState('');
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { t } = useTranslation();
 
   const friends = useQuery({
@@ -203,7 +205,11 @@ export default function FriendsScreen() {
                 </View>
               }
               renderItem={({ item }) => (
-                <View style={styles.card}>
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={() => router.push({ pathname: '/friend/[id]', params: { id: item.id } })}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.avatar}>
                     <Text style={styles.avatarText}>
                       {(item.friend_name || item.friend_email || '?')[0].toUpperCase()}
@@ -215,7 +221,8 @@ export default function FriendsScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.removeBtn}
-                    onPress={() =>
+                    onPress={(e) => {
+                      e.stopPropagation();
                       Alert.alert(
                         t('friends.deleteTitle'),
                         t('friends.deleteConfirm', { name: item.friend_name || item.friend_email }),
@@ -227,12 +234,12 @@ export default function FriendsScreen() {
                             onPress: () => remove.mutate(item.id),
                           },
                         ],
-                      )
-                    }
+                      );
+                    }}
                   >
                     <Text style={styles.removeBtnText}>{t('common.delete')}</Text>
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               )}
             />
           </View>
