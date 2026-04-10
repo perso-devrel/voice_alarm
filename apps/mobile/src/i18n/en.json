@@ -214,7 +214,8 @@
     "acceptError": "Failed to accept.",
     "rejectError": "Failed to reject.",
     "rejectTitle": "Reject gift",
-    "rejectConfirm": "Reject this gift?"
+    "rejectConfirm": "Reject this gift?",
+    "setAsAlarm": "⏰ Set as alarm"
   },
   "voiceRecord": {
     "guideTitle": "Please read the sentences below naturally",

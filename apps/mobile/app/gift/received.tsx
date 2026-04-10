@@ -324,4 +324,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: FontSize.md,
   },
+  setAlarmBtn: {
+    backgroundColor: Colors.light.surfaceVariant,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.primary,
+  },
+  setAlarmBtnText: {
+    color: Colors.light.primary,
+    fontWeight: '600',
+    fontSize: FontSize.sm,
+  },
 });

@@ -214,7 +214,8 @@
     "acceptError": "수락에 실패했습니다.",
     "rejectError": "거절에 실패했습니다.",
     "rejectTitle": "선물 거절",
-    "rejectConfirm": "이 선물을 거절하시겠습니까?"
+    "rejectConfirm": "이 선물을 거절하시겠습니까?",
+    "setAsAlarm": "⏰ 이 메시지로 알람 설정"
   },
   "voiceRecord": {
     "guideTitle": "아래 문장을 편안하게 읽어주세요",
