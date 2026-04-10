@@ -6,6 +6,8 @@ import { getDB } from '../lib/db';
 
 const voice = new Hono<AppEnv>();
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** 음성 프로필 목록 조회 */
 voice.get('/', async (c) => {
   const userId = c.get('userId');
@@ -24,6 +26,10 @@ voice.get('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'SELECT * FROM voice_profiles WHERE id = ? AND user_id = ?',
@@ -183,6 +189,10 @@ voice.delete('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'SELECT * FROM voice_profiles WHERE id = ? AND user_id = ?',
