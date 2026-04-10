@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { PersoClient } from '../lib/perso';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 
-const voice = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const voice = new Hono<AppEnv>();
 
 /** 음성 프로필 목록 조회 */
 voice.get('/', async (c) => {

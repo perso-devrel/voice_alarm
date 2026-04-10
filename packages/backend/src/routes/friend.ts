@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
-const friend = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const friend = new Hono<AppEnv>();
 
 /** 이메일로 친구 요청 */
 friend.post('/', async (c) => {

@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
-const alarm = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const alarm = new Hono<AppEnv>();
 
 /** 알람 목록 조회 */
 alarm.get('/', async (c) => {

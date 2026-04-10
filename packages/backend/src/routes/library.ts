@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
-const library = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const library = new Hono<AppEnv>();
 
 /** 라이브러리 목록 조회 */
 library.get('/', async (c) => {

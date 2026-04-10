@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { PersoClient } from '../lib/perso';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 
-const tts = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const tts = new Hono<AppEnv>();
 
 /** TTS 생성 - 텍스트를 클론된 음성으로 변환 */
 tts.post('/generate', async (c) => {

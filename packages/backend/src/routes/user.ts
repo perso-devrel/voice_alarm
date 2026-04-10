@@ -1,15 +1,14 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
-const user = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
+const user = new Hono<AppEnv>();
 
-/** 사용자 프로필 조회 (없으면 자동 생성) */
 user.get('/me', async (c) => {
-  const userId = (c as any).get('userId');
-  const email = (c as any).get('userEmail') || '';
-  const name = (c as any).get('userName') || '';
-  const picture = (c as any).get('userPicture') || '';
+  const userId = c.get('userId');
+  const email = c.get('userEmail') || '';
+  const name = c.get('userName') || '';
+  const picture = c.get('userPicture') || '';
   const db = getDB(c.env);
 
   let result = await db.execute({
@@ -50,9 +49,8 @@ user.get('/me', async (c) => {
   });
 });
 
-/** 구독 플랜 업데이트 */
 user.patch('/plan', async (c) => {
-  const userId = (c as any).get('userId');
+  const userId = c.get('userId');
   const db = getDB(c.env);
   const body = await c.req.json<{ plan: 'free' | 'plus' | 'family' }>();
 

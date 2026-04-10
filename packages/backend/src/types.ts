@@ -7,6 +7,15 @@ export interface Env {
   ENVIRONMENT: string;
 }
 
+export type AuthVariables = {
+  userId: string;
+  userEmail: string;
+  userName: string;
+  userPicture: string;
+};
+
+export type AppEnv = { Bindings: Env; Variables: AuthVariables };
+
 export interface VoiceProfile {
   id: string;
   user_id: string;

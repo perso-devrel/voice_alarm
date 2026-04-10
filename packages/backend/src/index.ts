@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { Env } from './types';
+import type { Env, AppEnv } from './types';
 import { authMiddleware } from './middleware/auth';
 import { initDB } from './lib/db';
 import voiceRoutes from './routes/voice';
@@ -58,7 +58,7 @@ app.get('/api/tts/presets', async (c) => {
 });
 
 // 인증이 필요한 라우트들
-const api = new Hono<{ Bindings: Env }>();
+const api = new Hono<AppEnv>();
 api.use('*', authMiddleware);
 api.route('/voice', voiceRoutes);
 api.route('/tts', ttsRoutes);
