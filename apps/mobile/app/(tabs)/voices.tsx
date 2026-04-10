@@ -110,7 +110,11 @@ export default function VoicesScreen() {
         onSwipeableOpen={() => handleDelete(item.id, item.name)}
         overshootRight={false}
       >
-        <View style={styles.profileCard}>
+        <TouchableOpacity
+          style={styles.profileCard}
+          activeOpacity={0.7}
+          onPress={() => router.push({ pathname: '/voice/[id]', params: { id: item.id } })}
+        >
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
           </View>
@@ -130,7 +134,7 @@ export default function VoicesScreen() {
           >
             <Text style={styles.deleteText}>{t('common.delete')}</Text>
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </Swipeable>
     );
   };

@@ -87,6 +87,10 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
           <Stack.Screen
+            name="voice/[id]"
+            options={{ headerShown: true, title: t('screen.voiceDetail') }}
+          />
+          <Stack.Screen
             name="voice/record"
             options={{ headerShown: true, title: t('screen.voiceRecord'), presentation: 'modal' }}
           />

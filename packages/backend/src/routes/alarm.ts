@@ -45,6 +45,34 @@ alarm.get('/', async (c) => {
   return c.json({ alarms: result.rows, total, limit, offset });
 });
 
+/** 단일 알람 조회 */
+alarm.get('/:id', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid alarm ID format' }, 400);
+  }
+
+  const result = await db.execute({
+    sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name,
+            creator.email as creator_email, creator.name as creator_name
+          FROM alarms a
+          JOIN messages m ON a.message_id = m.id
+          JOIN voice_profiles vp ON m.voice_profile_id = vp.id
+          LEFT JOIN users creator ON creator.google_id = a.user_id
+          WHERE a.id = ? AND (a.user_id = ? OR a.target_user_id = ?)`,
+    args: [id, userId, userId],
+  });
+
+  if (result.rows.length === 0) {
+    return c.json({ error: 'Alarm not found' }, 404);
+  }
+
+  return c.json({ alarm: result.rows[0] });
+});
+
 /** 알람 생성 */
 alarm.post('/', async (c) => {
   const userId = c.get('userId');

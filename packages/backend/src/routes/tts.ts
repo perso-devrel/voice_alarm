@@ -164,6 +164,7 @@ tts.get('/messages', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const category = c.req.query('category');
+  const voiceProfileId = c.req.query('voice_profile_id');
   const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
   const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
@@ -173,6 +174,14 @@ tts.get('/messages', async (c) => {
   if (category) {
     whereClause += ' AND m.category = ?';
     filterArgs.push(category);
+  }
+
+  if (voiceProfileId) {
+    if (!UUID_RE.test(voiceProfileId)) {
+      return c.json({ error: 'Invalid voice_profile_id format' }, 400);
+    }
+    whereClause += ' AND m.voice_profile_id = ?';
+    filterArgs.push(voiceProfileId);
   }
 
   const [countRes, result] = await Promise.all([

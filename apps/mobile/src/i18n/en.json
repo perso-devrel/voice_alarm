@@ -28,7 +28,8 @@
     "diarize": "Speaker Diarization",
     "alarmSetting": "Alarm Settings",
     "writeMessage": "Create Message",
-    "receivedGifts": "Received Gifts"
+    "receivedGifts": "Received Gifts",
+    "voiceDetail": "Voice Detail"
   },
   "tab": {
     "home": "Home",
@@ -316,6 +317,15 @@
     "cloneError": "Failed to create voice clone.",
     "backToSelect": "← Choose another speaker",
     "minSec": "{{min}}m {{sec}}s"
+  },
+  "voiceDetail": {
+    "messages": "Messages",
+    "alarms": "Alarms",
+    "messageList": "Messages with this voice",
+    "alarmList": "Alarms using this voice",
+    "active": "Active",
+    "inactive": "Inactive",
+    "empty": "No messages or alarms with this voice"
   },
   "player": {
     "thanks": "💝 Thank you",

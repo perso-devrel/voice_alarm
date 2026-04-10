@@ -171,6 +171,11 @@ export async function getMessages(category?: string) {
   return data.messages;
 }
 
+export async function getMessagesByVoice(voiceProfileId: string) {
+  const data = await get<{ messages: Message[] }>('/tts/messages', { voice_profile_id: voiceProfileId });
+  return data.messages;
+}
+
 export async function getPresets() {
   const data = await get<{ presets: Message[] }>('/tts/presets');
   return data.presets;

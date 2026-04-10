@@ -252,6 +252,7 @@ export default function GiftsPage() {
                   <p className="text-xs text-[var(--color-text-tertiary)] uppercase mb-1">{g.category}</p>
                   <p className="text-[var(--color-text)]">{g.message_text}</p>
                 </div>
+                {g.note && <p className="text-sm text-[var(--color-text-tertiary)] italic mt-3">"{g.note}"</p>}
               </div>
             ))}
           </div>

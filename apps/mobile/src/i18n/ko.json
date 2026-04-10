@@ -28,7 +28,8 @@
     "diarize": "화자 분리",
     "alarmSetting": "알람 설정",
     "writeMessage": "메시지 작성",
-    "receivedGifts": "받은 선물"
+    "receivedGifts": "받은 선물",
+    "voiceDetail": "음성 상세"
   },
   "tab": {
     "home": "홈",
@@ -316,6 +317,15 @@
     "cloneError": "음성 클론 생성에 실패했습니다.",
     "backToSelect": "← 다른 화자 선택",
     "minSec": "{{min}}분 {{sec}}초"
+  },
+  "voiceDetail": {
+    "messages": "메시지",
+    "alarms": "알람",
+    "messageList": "이 음성으로 만든 메시지",
+    "alarmList": "이 음성을 사용하는 알람",
+    "active": "활성",
+    "inactive": "비활성",
+    "empty": "이 음성으로 만든 메시지나 알람이 없습니다"
   },
   "player": {
     "thanks": "💝 고마워",
