@@ -12,9 +12,15 @@ alarm.get('/', async (c) => {
   const db = getDB(c.env);
   const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
   const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
+  const isActiveParam = c.req.query('is_active');
 
-  const whereClause = 'WHERE a.user_id = ? OR a.target_user_id = ?';
-  const whereArgs = [userId, userId];
+  let whereClause = 'WHERE (a.user_id = ? OR a.target_user_id = ?)';
+  const whereArgs: (string | number)[] = [userId, userId];
+
+  if (isActiveParam === 'true' || isActiveParam === 'false') {
+    whereClause += ' AND a.is_active = ?';
+    whereArgs.push(isActiveParam === 'true' ? 1 : 0);
+  }
 
   const [countRes, result] = await Promise.all([
     db.execute({

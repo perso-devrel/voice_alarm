@@ -35,6 +35,8 @@ export default function MessagesPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [giftTarget, setGiftTarget] = useState<Message | null>(null);
+  const [giftSending, setGiftSending] = useState(false);
 
   const { data: voices } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -47,6 +49,11 @@ export default function MessagesPage() {
   const { data: presets } = useQuery({
     queryKey: ['presets'],
     queryFn: getPresets,
+  });
+
+  const { data: friends } = useQuery({
+    queryKey: ['friends'],
+    queryFn: getFriendList,
   });
 
   const readyVoices = voices?.filter((v: VoiceProfile) => v.status === 'ready') || [];
@@ -97,6 +104,35 @@ export default function MessagesPage() {
       category,
     });
   };
+
+  const handleGiftSend = async (friend: Friend) => {
+    if (!giftTarget || giftSending) return;
+    setGiftSending(true);
+    try {
+      await sendGift({ recipient_email: friend.friend_email, message_id: giftTarget.id });
+      setGiftTarget(null);
+      alert('선물을 보냈습니다!');
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, '선물 전송 실패'));
+    } finally {
+      setGiftSending(false);
+    }
+  };
+
+  const filteredMessages = (() => {
+    if (!messages) return [];
+    const q = search.toLowerCase().trim();
+    return messages.filter((m: Message) => {
+      if (filterCategory !== 'all' && m.category !== filterCategory) return false;
+      if (q) {
+        return (
+          m.text.toLowerCase().includes(q) ||
+          (m.voice_name ?? '').toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  })();
 
   return (
     <div>
@@ -286,33 +322,17 @@ export default function MessagesPage() {
               <p className="text-5xl mb-4">💌</p>
               <p className="text-[var(--color-text-secondary)]">아직 생성된 메시지가 없어요</p>
             </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+              <p className="text-3xl mb-3">🔍</p>
+              <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+              <button onClick={() => { setSearch(''); setFilterCategory('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+                필터 초기화
+              </button>
+            </div>
           ) : (
-            (() => {
-              const q = search.toLowerCase().trim();
-              const filtered = messages.filter((m: Message) => {
-                if (filterCategory !== 'all' && m.category !== filterCategory) return false;
-                if (q) {
-                  return (
-                    m.text.toLowerCase().includes(q) ||
-                    (m.voice_name ?? '').toLowerCase().includes(q)
-                  );
-                }
-                return true;
-              });
-              if (filtered.length === 0) {
-                return (
-                  <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
-                    <p className="text-3xl mb-3">🔍</p>
-                    <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
-                    <button onClick={() => { setSearch(''); setFilterCategory('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
-                      필터 초기화
-                    </button>
-                  </div>
-                );
-              }
-              return (
             <div className="space-y-3">
-              {filtered.map((msg: Message) => (
+              {filteredMessages.map((msg: Message) => (
                 <div
                   key={msg.id}
                   className="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] flex items-center gap-4 transition-colors"
@@ -329,22 +349,12 @@ export default function MessagesPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     <button
                       aria-label={`"${msg.text}" 메시지를 선물로 보내기`}
-                      onClick={async () => {
-                        try {
-                          const friends = await getFriendList();
-                          if (!friends?.length) {
-                            alert('먼저 친구를 추가해주세요.');
-                            return;
-                          }
-                          const name = prompt(
-                            `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: Friend) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`,
-                          );
-                          if (!name) return;
-                          await sendGift({ recipient_email: name, message_id: msg.id });
-                          alert('선물을 보냈습니다!');
-                        } catch (err: unknown) {
-                          alert(getApiErrorMessage(err, '선물 전송 실패'));
+                      onClick={() => {
+                        if (!friends?.length) {
+                          alert('먼저 친구를 추가해주세요.');
+                          return;
                         }
+                        setGiftTarget(msg);
                       }}
                       className="px-3 py-1.5 text-sm border border-[var(--color-primary)] text-[var(--color-primary)] rounded-lg hover:bg-[var(--color-primary)]/10 transition-colors"
                     >
@@ -362,6 +372,46 @@ export default function MessagesPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+      {giftTarget && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setGiftTarget(null)}
+        >
+          <div
+            className="bg-[var(--color-surface)] rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto border border-[var(--color-border)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-[var(--color-text)] mb-2">친구에게 선물하기</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+              "{giftTarget.text}" 메시지를 선물할 친구를 선택하세요
+            </p>
+            <div className="space-y-2">
+              {friends?.map((f: Friend) => (
+                <button
+                  key={f.id}
+                  disabled={giftSending}
+                  onClick={() => handleGiftSend(f)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all text-left disabled:opacity-50"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center font-bold text-[var(--color-primary-dark)]">
+                    {(f.friend_name || f.friend_email || '?')[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--color-text)] truncate">{f.friend_name || '이름 없음'}</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)] truncate">{f.friend_email}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setGiftTarget(null)}
+              className="w-full mt-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors"
+            >
+              취소
+            </button>
+          </div>
         </div>
       )}
     </div>

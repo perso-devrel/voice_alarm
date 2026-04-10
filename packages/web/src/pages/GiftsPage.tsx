@@ -7,6 +7,8 @@ import { GiftSkeleton } from '../components/Skeleton';
 export default function GiftsPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'received' | 'sent'>('received');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: received, isLoading: loadingReceived } = useQuery({
     queryKey: ['gifts-received'],
@@ -61,6 +63,28 @@ export default function GiftsPage() {
   const statusColor = (s: string) =>
     s === 'accepted' ? 'text-green-500' : s === 'rejected' ? 'text-red-400' : 'text-amber-500';
 
+  const filterGifts = (gifts: Gift[] | undefined) => {
+    if (!gifts) return [];
+    const q = search.toLowerCase().trim();
+    return gifts.filter((g: Gift) => {
+      if (statusFilter !== 'all' && g.status !== statusFilter) return false;
+      if (q) {
+        const name = tab === 'received'
+          ? (g.sender_name || g.sender_email || '')
+          : (g.recipient_name || g.recipient_email || '');
+        return (
+          name.toLowerCase().includes(q) ||
+          (g.message_text ?? '').toLowerCase().includes(q) ||
+          (g.note ?? '').toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  };
+
+  const filteredReceived = filterGifts(received);
+  const filteredSent = filterGifts(sent);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -97,6 +121,39 @@ export default function GiftsPage() {
         </button>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="이름, 이메일, 메시지 검색..."
+            aria-label="선물 검색"
+            className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded-xl px-4 py-2.5 pl-10 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-colors"
+          />
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
+            🔍
+          </span>
+        </div>
+        <div className="flex gap-2" role="radiogroup" aria-label="상태 필터">
+          {([['all', '전체'], ['pending', '대기'], ['accepted', '수락'], ['rejected', '거절']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={statusFilter === value}
+              onClick={() => setStatusFilter(value)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                statusFilter === value
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {tab === 'received' &&
         (loadingReceived ? (
           <GiftSkeleton />
@@ -105,9 +162,17 @@ export default function GiftsPage() {
             <p className="text-4xl mb-3">🎁</p>
             <p className="text-[var(--color-text-secondary)] font-medium">받은 선물이 없습니다</p>
           </div>
+        ) : filteredReceived.length === 0 ? (
+          <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+            <p className="text-3xl mb-3">🔍</p>
+            <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+            <button onClick={() => { setSearch(''); setStatusFilter('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+              필터 초기화
+            </button>
+          </div>
         ) : (
           <div className="grid gap-3">
-            {received.map((g: Gift) => (
+            {filteredReceived.map((g: Gift) => (
               <div key={g.id} className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)] transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -160,9 +225,17 @@ export default function GiftsPage() {
             <p className="text-4xl mb-3">📤</p>
             <p className="text-[var(--color-text-secondary)] font-medium">보낸 선물이 없습니다</p>
           </div>
+        ) : filteredSent.length === 0 ? (
+          <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+            <p className="text-3xl mb-3">🔍</p>
+            <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+            <button onClick={() => { setSearch(''); setStatusFilter('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+              필터 초기화
+            </button>
+          </div>
         ) : (
           <div className="grid gap-3">
-            {sent.map((g: Gift) => (
+            {filteredSent.map((g: Gift) => (
               <div key={g.id} className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)] transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <div>

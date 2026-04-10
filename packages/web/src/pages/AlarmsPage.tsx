@@ -93,6 +93,23 @@ export default function AlarmsPage() {
     return parsed.map((d) => DAYS[d]).join(', ');
   };
 
+  const filteredAlarms = (() => {
+    if (!alarms) return [];
+    const q = search.toLowerCase().trim();
+    return alarms.filter((a: Alarm) => {
+      if (filter === 'active' && !a.is_active) return false;
+      if (filter === 'inactive' && a.is_active) return false;
+      if (q) {
+        return (
+          a.time.includes(q) ||
+          (a.voice_name ?? '').toLowerCase().includes(q) ||
+          (a.message_text ?? '').toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  })();
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -160,34 +177,17 @@ export default function AlarmsPage() {
           <p className="text-[var(--color-text-secondary)] text-lg">설정된 알람이 없어요</p>
           <p className="text-[var(--color-text-tertiary)] text-sm mt-1">앱에서 알람을 추가해주세요</p>
         </div>
-      ) : (() => {
-        const q = search.toLowerCase().trim();
-        const filtered = alarms.filter((a: Alarm) => {
-          if (filter === 'active' && !a.is_active) return false;
-          if (filter === 'inactive' && a.is_active) return false;
-          if (q) {
-            return (
-              a.time.includes(q) ||
-              (a.voice_name ?? '').toLowerCase().includes(q) ||
-              (a.message_text ?? '').toLowerCase().includes(q)
-            );
-          }
-          return true;
-        });
-        if (filtered.length === 0) {
-          return (
-            <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
-              <p className="text-3xl mb-3">🔍</p>
-              <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
-              <button onClick={() => { setSearch(''); setFilter('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
-                필터 초기화
-              </button>
-            </div>
-          );
-        }
-        return (
+      ) : filteredAlarms.length === 0 ? (
+        <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+          <p className="text-3xl mb-3">🔍</p>
+          <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+          <button onClick={() => { setSearch(''); setFilter('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+            필터 초기화
+          </button>
+        </div>
+      ) : (
         <div className="space-y-4">
-          {filtered.map((alarm: Alarm) =>
+          {filteredAlarms.map((alarm: Alarm) =>
             editingId === alarm.id ? (
               <AlarmEditInline
                 key={alarm.id}
@@ -251,8 +251,7 @@ export default function AlarmsPage() {
             ),
           )}
         </div>
-        );
-      })()}
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ export default function FriendsPage() {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [tab, setTab] = useState<'friends' | 'pending'>('friends');
+  const [friendSearch, setFriendSearch] = useState('');
   const [suggestions, setSuggestions] = useState<UserSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -122,6 +123,16 @@ export default function FriendsPage() {
     },
   });
 
+  const filteredFriends = (() => {
+    if (!friends) return [];
+    const q = friendSearch.toLowerCase().trim();
+    if (!q) return friends;
+    return friends.filter((f: Friend) =>
+      (f.friend_name || '').toLowerCase().includes(q) ||
+      (f.friend_email || '').toLowerCase().includes(q),
+    );
+  })();
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -215,6 +226,24 @@ export default function FriendsPage() {
         </button>
       </div>
 
+      {tab === 'friends' && (
+        <div className="mb-4">
+          <div className="relative">
+            <input
+              type="text"
+              value={friendSearch}
+              onChange={(e) => setFriendSearch(e.target.value)}
+              placeholder="이름 또는 이메일로 검색..."
+              aria-label="친구 검색"
+              className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded-xl px-4 py-2.5 pl-10 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-colors"
+            />
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
+              🔍
+            </span>
+          </div>
+        </div>
+      )}
+
       {tab === 'friends' &&
         (isLoading ? (
           <FriendSkeleton />
@@ -224,9 +253,17 @@ export default function FriendsPage() {
             <p className="text-[var(--color-text-secondary)] font-medium">아직 친구가 없습니다</p>
             <p className="text-[var(--color-text-tertiary)] text-sm mt-1">이메일로 친구를 추가해 보세요</p>
           </div>
+        ) : filteredFriends.length === 0 ? (
+          <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+            <p className="text-3xl mb-3">🔍</p>
+            <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+            <button onClick={() => setFriendSearch('')} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+              검색 초기화
+            </button>
+          </div>
         ) : (
           <div className="grid gap-3">
-            {friends.map((f: Friend) => (
+            {filteredFriends.map((f: Friend) => (
               <div
                 key={f.id}
                 className="flex items-center bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] transition-colors"

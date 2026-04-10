@@ -317,3 +317,15 @@ export interface Stats {
 export async function getStats() {
   return get<Stats>('/stats');
 }
+
+export interface UserSearchResult {
+  id: string;
+  name: string;
+  email: string;
+  picture: string;
+}
+
+export async function searchUsers(q: string) {
+  const data = await get<{ users: UserSearchResult[] }>('/user/search', { q });
+  return data.users;
+}

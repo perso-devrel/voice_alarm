@@ -14,6 +14,8 @@ export default function VoicesPage() {
   const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
   const [testingId, setTestingId] = useState<string | null>(null);
   const testAudioRef = useRef<HTMLAudioElement>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -86,6 +88,16 @@ export default function VoicesPage() {
       </span>
     );
   };
+
+  const filteredProfiles = (() => {
+    if (!profiles) return [];
+    const q = search.toLowerCase().trim();
+    return profiles.filter((p: VoiceProfile) => {
+      if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+      if (q) return p.name.toLowerCase().includes(q);
+      return true;
+    });
+  })();
 
   return (
     <div>
@@ -201,6 +213,40 @@ export default function VoicesPage() {
         </div>
       )}
 
+      {/* 검색 + 상태 필터 */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="음성 프로필 검색..."
+            aria-label="음성 프로필 검색"
+            className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded-xl px-4 py-2.5 pl-10 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-colors"
+          />
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
+            🔍
+          </span>
+        </div>
+        <div className="flex gap-2" role="radiogroup" aria-label="상태 필터">
+          {([['all', '전체'], ['ready', '사용 가능'], ['processing', '생성 중'], ['failed', '실패']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={statusFilter === value}
+              onClick={() => setStatusFilter(value)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                statusFilter === value
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {isLoading ? (
         <VoiceCardSkeleton />
       ) : !profiles?.length ? (
@@ -209,9 +255,17 @@ export default function VoicesPage() {
           <p className="text-[var(--color-text-secondary)] text-lg">아직 등록된 음성이 없어요</p>
           <p className="text-[var(--color-text-tertiary)] text-sm mt-1">위의 버튼으로 음성을 등록해보세요</p>
         </div>
+      ) : filteredProfiles.length === 0 ? (
+        <div className="text-center py-12 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
+          <p className="text-3xl mb-3">🔍</p>
+          <p className="text-[var(--color-text-secondary)]">검색 결과가 없습니다</p>
+          <button onClick={() => { setSearch(''); setStatusFilter('all'); }} className="text-sm text-[var(--color-primary)] mt-2 hover:underline">
+            필터 초기화
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {profiles.map((profile: VoiceProfile) => (
+          {filteredProfiles.map((profile: VoiceProfile) => (
             <div
               key={profile.id}
               className="bg-[var(--color-surface)] rounded-2xl p-5 border border-[var(--color-border)] shadow-sm transition-colors"

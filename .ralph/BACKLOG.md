@@ -173,5 +173,32 @@
 - [x] 웹: renderPage() default case 추가 (잘못된 페이지 상태 → 대시보드 리다이렉트)
 - [x] 모바일: 홈탭 통계 카드에 전주 대비 트렌드 표시 (웹과 동일, trends API 활용)
 
+## P19 - 빌드 복구 + IIFE 리팩터링
+
+- [x] MessagesPage.tsx 인라인 IIFE → filteredMessages const 추출 (빌드 에러 수정)
+- [x] VoicesPage.tsx 인라인 IIFE → filteredProfiles const 추출 + 검색/필터 UI 추가
+- [x] AlarmsPage.tsx 인라인 IIFE → filteredAlarms const 추출 (이전 루프 미커밋분 포함)
+
+## P20 - 자가 생성 항목 (16차)
+
+- [x] 웹: GiftsPage에 검색 + 필터 UI 추가 (보낸/받은 필터, 상태 필터)
+- [x] 웹: FriendsPage에 검색 UI 추가 (이름/이메일 검색)
+- [x] 백엔드: GET /api/message에 category 필터 쿼리 파라미터 — 이미 구현 확인
+- [x] 모바일: 친구 추가 시 이메일 자동완성 (검색 API 연동, 웹과 동일)
+
+## P21 - 자가 생성 항목 (17차)
+
+- [x] 웹: 대시보드에 퀵 액션 카드 (음성 등록, 메시지 생성, 친구 추가 바로가기)
+- [x] 웹: 선물 보내기 시 친구 선택 모달 (현재 prompt → 드롭다운 모달로 개선)
+- [x] 백엔드: GET /api/alarm에 is_active 필터 쿼리 파라미터 추가 — 이미 구현 확인
+- [x] 모바일: 메시지 라이브러리에서 카테고리별 필터 UI 추가
+
+## P22 - 자가 생성 항목 (18차)
+
+- [ ] 모바일: 알람/음성 탭에 검색 바 추가 (웹과 동일한 검색 기능)
+- [ ] 웹: 선물 보내기 시 노트(메모) 입력 필드 추가 (gift API에 note 필드 이미 지원)
+- [ ] 모바일: 선물 보내기 시 노트 입력 필드 추가
+- [ ] 백엔드: DELETE /api/message/:id 에서 연관 알람 존재 시 경고 응답 추가
+
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

@@ -21,7 +21,9 @@ import {
   sendFriendRequest,
   acceptFriendRequest,
   deleteFriend,
+  searchUsers,
 } from '../../src/services/api';
+import type { UserSearchResult } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { getApiErrorMessage } from '../../src/types';
@@ -66,10 +68,39 @@ function SkeletonList({ count = 4 }: { count?: number }) {
 export default function FriendsScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('friends');
   const [email, setEmail] = useState('');
+  const [suggestions, setSuggestions] = useState<UserSearchResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const queryClient = useQueryClient();
   const router = useRouter();
   const { t } = useTranslation();
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (text.trim().length >= 2) {
+      searchTimeout.current = setTimeout(async () => {
+        try {
+          const results = await searchUsers(text.trim());
+          setSuggestions(results);
+          setShowSuggestions(results.length > 0);
+        } catch {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }, 300);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectSuggestion = (user: UserSearchResult) => {
+    setEmail(user.email);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
 
   const friends = useQuery({
     queryKey: ['friends'],
@@ -135,16 +166,44 @@ export default function FriendsScreen() {
       <Text style={styles.title}>{t('friends.title')}</Text>
 
       <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder={t('friends.addPlaceholder')}
-          placeholderTextColor={Colors.light.textTertiary}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          editable={!sendRequest.isPending}
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder={t('friends.addPlaceholder')}
+            placeholderTextColor={Colors.light.textTertiary}
+            value={email}
+            onChangeText={handleEmailChange}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={!sendRequest.isPending}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          />
+          {showSuggestions && (
+            <View style={styles.suggestionsDropdown}>
+              {suggestions.map((user) => (
+                <TouchableOpacity
+                  key={user.id}
+                  style={styles.suggestionItem}
+                  onPress={() => selectSuggestion(user)}
+                >
+                  <View style={styles.suggestionAvatar}>
+                    <Text style={styles.suggestionAvatarText}>
+                      {(user.name || user.email)[0].toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.suggestionInfo}>
+                    <Text style={styles.suggestionName} numberOfLines={1}>
+                      {user.name || t('common.noName')}
+                    </Text>
+                    <Text style={styles.suggestionEmail} numberOfLines={1}>
+                      {user.email}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
         <TouchableOpacity
           style={[
             styles.sendBtn,
@@ -312,9 +371,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     gap: Spacing.sm,
     marginBottom: Spacing.md,
+    zIndex: 10,
+  },
+  inputWrapper: {
+    flex: 1,
+    position: 'relative' as const,
   },
   input: {
-    flex: 1,
     backgroundColor: Colors.light.surface,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
@@ -323,6 +386,57 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     borderWidth: 1,
     borderColor: Colors.light.border,
+  },
+  suggestionsDropdown: {
+    position: 'absolute' as const,
+    top: 48,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginTop: 4,
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 20,
+  },
+  suggestionItem: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  suggestionAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.primaryLight,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginRight: Spacing.sm,
+  },
+  suggestionAvatarText: {
+    fontSize: FontSize.sm,
+    fontWeight: '600' as const,
+    color: Colors.light.primaryDark,
+  },
+  suggestionInfo: {
+    flex: 1,
+  },
+  suggestionName: {
+    fontSize: FontSize.sm,
+    fontWeight: '600' as const,
+    color: Colors.light.text,
+  },
+  suggestionEmail: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textSecondary,
   },
   sendBtn: {
     backgroundColor: Colors.light.primary,

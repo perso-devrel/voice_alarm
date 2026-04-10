@@ -120,6 +120,39 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
         />
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+        <button
+          onClick={() => onNavigate('voices')}
+          className="flex items-center gap-3 p-4 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:shadow-md transition-all text-left"
+        >
+          <span className="text-2xl">🎙️</span>
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-text)]">음성 등록</p>
+            <p className="text-xs text-[var(--color-text-tertiary)]">새 음성 프로필 만들기</p>
+          </div>
+        </button>
+        <button
+          onClick={() => onNavigate('messages')}
+          className="flex items-center gap-3 p-4 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:shadow-md transition-all text-left"
+        >
+          <span className="text-2xl">💌</span>
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-text)]">메시지 생성</p>
+            <p className="text-xs text-[var(--color-text-tertiary)]">음성 메시지 만들기</p>
+          </div>
+        </button>
+        <button
+          onClick={() => onNavigate('friends')}
+          className="flex items-center gap-3 p-4 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:shadow-md transition-all text-left"
+        >
+          <span className="text-2xl">👥</span>
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-text)]">친구 추가</p>
+            <p className="text-xs text-[var(--color-text-tertiary)]">친구와 선물 주고받기</p>
+          </div>
+        </button>
+      </div>
+
       {stats && (stats.alarms.active > 0 || stats.gifts.receivedPending > 0) && (
         <div className="space-y-3 mb-8">
           {stats.alarms.active > 0 && (

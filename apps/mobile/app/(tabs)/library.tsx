@@ -27,11 +27,25 @@ import { getApiErrorMessage } from '../../src/types';
 
 type FilterType = 'all' | 'favorite';
 
+const CATEGORIES = [
+  { key: 'all', emoji: '📋' },
+  { key: 'morning', emoji: '🌅' },
+  { key: 'lunch', emoji: '🍽️' },
+  { key: 'afternoon', emoji: '☕' },
+  { key: 'evening', emoji: '🌙' },
+  { key: 'night', emoji: '😴' },
+  { key: 'cheer', emoji: '💪' },
+  { key: 'love', emoji: '❤️' },
+  { key: 'health', emoji: '🏥' },
+  { key: 'custom', emoji: '✏️' },
+] as const;
+
 export default function LibraryScreen() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { setPlaying, currentPlayingId } = useAppStore();
   const [filter, setFilter] = useState<FilterType>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const { t } = useTranslation();
   const isConnected = useNetworkStatus();
@@ -60,7 +74,10 @@ export default function LibraryScreen() {
     }
   }, [items, filter]);
 
-  const displayItems = items ?? (filter === 'all' ? cachedItems : null);
+  const baseItems = items ?? (filter === 'all' ? cachedItems : null);
+  const displayItems = categoryFilter === 'all'
+    ? baseItems
+    : baseItems?.filter((item: LibraryItem) => item.category === categoryFilter) ?? null;
   const showingCached = !items && !!cachedItems && !isConnected && filter === 'all';
 
   const favoriteMutation = useMutation({
@@ -219,6 +236,24 @@ export default function LibraryScreen() {
         </TouchableOpacity>
       </View>
 
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={CATEGORIES}
+        keyExtractor={(item) => item.key}
+        contentContainerStyle={styles.categoryRow}
+        renderItem={({ item: cat }) => (
+          <TouchableOpacity
+            style={[styles.categoryChip, categoryFilter === cat.key && styles.categoryChipActive]}
+            onPress={() => setCategoryFilter(cat.key)}
+          >
+            <Text style={styles.categoryChipText}>
+              {cat.emoji} {cat.key === 'all' ? t('library.all') : cat.key}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+
       {showingCached && (
         <View style={styles.cachedBanner}>
           <Text style={styles.cachedText}>{t('offline.cachedData')}</Text>
@@ -274,6 +309,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     gap: Spacing.sm,
+  },
+  categoryRow: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  categoryChip: {
+    paddingHorizontal: Spacing.sm + 4,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginRight: Spacing.xs,
+  },
+  categoryChipActive: {
+    backgroundColor: Colors.light.primaryLight,
+    borderColor: Colors.light.primary,
+  },
+  categoryChipText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.text,
+    fontWeight: '500',
   },
   filterChip: {
     paddingHorizontal: Spacing.md,
