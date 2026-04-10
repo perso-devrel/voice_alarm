@@ -42,8 +42,8 @@ export default function GiftsPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">🎁 선물</h2>
-          <p className="text-gray-400 text-sm mt-1">친구에게 받거나 보낸 음성 선물</p>
+          <h2 className="text-2xl font-bold text-[var(--color-text)]">🎁 선물</h2>
+          <p className="text-[var(--color-text-tertiary)] text-sm mt-1">친구에게 받거나 보낸 음성 선물</p>
         </div>
       </div>
 
@@ -54,8 +54,8 @@ export default function GiftsPage() {
           onClick={() => setTab('received')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'received'
-              ? 'bg-[#FF7F6B] text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:opacity-80'
           }`}
         >
           받은 선물 {received?.length ? `(${received.length})` : ''}
@@ -66,8 +66,8 @@ export default function GiftsPage() {
           onClick={() => setTab('sent')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'sent'
-              ? 'bg-[#FF7F6B] text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:opacity-80'
           }`}
         >
           보낸 선물 {sent?.length ? `(${sent.length})` : ''}
@@ -76,39 +76,39 @@ export default function GiftsPage() {
 
       {tab === 'received' &&
         (loadingReceived ? (
-          <p role="status" className="text-gray-400 text-center py-12">
+          <p role="status" className="text-[var(--color-text-tertiary)] text-center py-12">
             로딩 중...
           </p>
         ) : !received?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🎁</p>
-            <p className="text-gray-500 font-medium">받은 선물이 없습니다</p>
+            <p className="text-[var(--color-text-secondary)] font-medium">받은 선물이 없습니다</p>
           </div>
         ) : (
           <div className="grid gap-3">
             {received.map((g: Gift) => (
-              <div key={g.id} className="bg-white rounded-xl p-5 border border-[#F2E8E5]">
+              <div key={g.id} className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)] transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-semibold text-gray-800">{g.sender_name || '알 수 없음'}</p>
-                    <p className="text-xs text-gray-400">{g.sender_email}</p>
+                    <p className="font-semibold text-[var(--color-text)]">{g.sender_name || '알 수 없음'}</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">{g.sender_email}</p>
                   </div>
                   <span className={`text-xs font-semibold ${statusColor(g.status)}`}>
                     {statusLabel(g.status)}
                   </span>
                 </div>
-                <div className="bg-[#FFF5F3] rounded-lg p-3 mb-3">
-                  <p className="text-xs text-gray-400 uppercase mb-1">{g.category}</p>
-                  <p className="text-gray-700">{g.message_text}</p>
+                <div className="bg-[var(--color-bg)] rounded-lg p-3 mb-3 transition-colors">
+                  <p className="text-xs text-[var(--color-text-tertiary)] uppercase mb-1">{g.category}</p>
+                  <p className="text-[var(--color-text)]">{g.message_text}</p>
                 </div>
-                {g.note && <p className="text-sm text-gray-400 italic mb-3">"{g.note}"</p>}
+                {g.note && <p className="text-sm text-[var(--color-text-tertiary)] italic mb-3">"{g.note}"</p>}
                 {g.status === 'pending' && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => acceptMutation.mutate(g.id)}
                       disabled={acceptMutation.isPending}
                       aria-label={`${g.sender_name || g.sender_email}님의 선물 수락`}
-                      className="flex-1 py-2 bg-[#FF7F6B] text-white rounded-lg font-medium hover:bg-[#E05A47] disabled:opacity-50 transition-all"
+                      className="flex-1 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-all"
                     >
                       수락
                     </button>
@@ -120,7 +120,7 @@ export default function GiftsPage() {
                       }}
                       disabled={rejectMutation.isPending}
                       aria-label={`${g.sender_name || g.sender_email}님의 선물 거절`}
-                      className="flex-1 py-2 bg-gray-100 text-gray-500 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 transition-all"
+                      className="flex-1 py-2 bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] rounded-lg font-medium hover:opacity-80 disabled:opacity-50 transition-all"
                     >
                       거절
                     </button>
@@ -133,32 +133,32 @@ export default function GiftsPage() {
 
       {tab === 'sent' &&
         (loadingSent ? (
-          <p role="status" className="text-gray-400 text-center py-12">
+          <p role="status" className="text-[var(--color-text-tertiary)] text-center py-12">
             로딩 중...
           </p>
         ) : !sent?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">📤</p>
-            <p className="text-gray-500 font-medium">보낸 선물이 없습니다</p>
+            <p className="text-[var(--color-text-secondary)] font-medium">보낸 선물이 없습니다</p>
           </div>
         ) : (
           <div className="grid gap-3">
             {sent.map((g: Gift) => (
-              <div key={g.id} className="bg-white rounded-xl p-5 border border-[#F2E8E5]">
+              <div key={g.id} className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)] transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-semibold text-gray-800">
+                    <p className="font-semibold text-[var(--color-text)]">
                       {g.recipient_name || '알 수 없음'}
                     </p>
-                    <p className="text-xs text-gray-400">{g.recipient_email}</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">{g.recipient_email}</p>
                   </div>
                   <span className={`text-xs font-semibold ${statusColor(g.status)}`}>
                     {statusLabel(g.status)}
                   </span>
                 </div>
-                <div className="bg-[#FFF5F3] rounded-lg p-3">
-                  <p className="text-xs text-gray-400 uppercase mb-1">{g.category}</p>
-                  <p className="text-gray-700">{g.message_text}</p>
+                <div className="bg-[var(--color-bg)] rounded-lg p-3 transition-colors">
+                  <p className="text-xs text-[var(--color-text-tertiary)] uppercase mb-1">{g.category}</p>
+                  <p className="text-[var(--color-text)]">{g.message_text}</p>
                 </div>
               </div>
             ))}

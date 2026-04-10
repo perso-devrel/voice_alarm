@@ -1,7 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile } from '../services/api';
 
-export default function SettingsPage() {
+type Theme = 'light' | 'dark' | 'system';
+
+interface Props {
+  darkMode: {
+    theme: Theme;
+    setTheme: (t: Theme) => void;
+    isDark: boolean;
+  };
+}
+
+const THEME_OPTIONS: { value: Theme; label: string; icon: string }[] = [
+  { value: 'system', label: '시스템 설정', icon: '💻' },
+  { value: 'light', label: '라이트', icon: '☀️' },
+  { value: 'dark', label: '다크', icon: '🌙' },
+];
+
+export default function SettingsPage({ darkMode }: Props) {
   const { data: profile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
@@ -16,38 +32,60 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">설정</h2>
-        <p className="text-gray-500 mt-1">계정 및 구독 관리</p>
+        <h2 className="text-3xl font-bold text-[var(--color-text)]">설정</h2>
+        <p className="text-[var(--color-text-secondary)] mt-1">계정 및 구독 관리</p>
+      </div>
+
+      {/* 테마 설정 */}
+      <div className="bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] mb-6 transition-colors">
+        <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">테마</h3>
+        <div className="flex gap-3">
+          {THEME_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => darkMode.setTheme(opt.value)}
+              aria-pressed={darkMode.theme === opt.value}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                darkMode.theme === opt.value
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                  : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
+              }`}
+            >
+              <span aria-hidden="true">{opt.icon}</span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 계정 정보 */}
-      <div className="bg-white rounded-2xl p-6 border border-[#F2E8E5] mb-6">
-        <h3 className="text-lg font-semibold mb-4">계정</h3>
+      <div className="bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] mb-6 transition-colors">
+        <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">계정</h3>
         <div className="space-y-3">
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-600">이메일</span>
-            <span className="text-gray-900">{profile?.user?.email || '-'}</span>
+          <div className="flex justify-between py-2 border-b border-[var(--color-border)]">
+            <span className="text-[var(--color-text-secondary)]">이메일</span>
+            <span className="text-[var(--color-text)]">{profile?.user?.email || '-'}</span>
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-600">구독 플랜</span>
-            <span className="text-[#FF7F6B] font-medium">
+          <div className="flex justify-between py-2 border-b border-[var(--color-border)]">
+            <span className="text-[var(--color-text-secondary)]">구독 플랜</span>
+            <span className="text-[var(--color-primary)] font-medium">
               {planLabels[profile?.user?.plan] || 'Free'}
             </span>
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-600">음성 프로필</span>
-            <span className="text-gray-900">{profile?.stats?.voice_profiles ?? 0}개</span>
+          <div className="flex justify-between py-2 border-b border-[var(--color-border)]">
+            <span className="text-[var(--color-text-secondary)]">음성 프로필</span>
+            <span className="text-[var(--color-text)]">{profile?.stats?.voice_profiles ?? 0}개</span>
           </div>
           <div className="flex justify-between py-2">
-            <span className="text-gray-600">알람</span>
-            <span className="text-gray-900">{profile?.stats?.alarms ?? 0}개</span>
+            <span className="text-[var(--color-text-secondary)]">알람</span>
+            <span className="text-[var(--color-text)]">{profile?.stats?.alarms ?? 0}개</span>
           </div>
         </div>
       </div>
 
       {/* 구독 */}
-      <div className="bg-white rounded-2xl p-6 border border-[#F2E8E5] mb-6">
-        <h3 className="text-lg font-semibold mb-4">구독 플랜</h3>
+      <div className="bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] mb-6 transition-colors">
+        <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">구독 플랜</h3>
         <div className="grid grid-cols-3 gap-4">
           {[
             {
@@ -74,13 +112,13 @@ export default function SettingsPage() {
               aria-current={profile?.user?.plan === tier.plan ? 'true' : undefined}
               className={`rounded-xl p-4 border-2 transition-colors ${
                 profile?.user?.plan === tier.plan
-                  ? 'border-[#FF7F6B] bg-[#FFF5F3]'
-                  : 'border-gray-200'
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
+                  : 'border-[var(--color-border)]'
               }`}
             >
-              <h4 className="font-semibold text-gray-900">{tier.name}</h4>
-              <p className="text-[#FF7F6B] font-bold text-lg mb-2">{tier.price}</p>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <h4 className="font-semibold text-[var(--color-text)]">{tier.name}</h4>
+              <p className="text-[var(--color-primary)] font-bold text-lg mb-2">{tier.price}</p>
+              <ul className="text-sm text-[var(--color-text-secondary)] space-y-1">
                 {tier.features.map((f, i) => (
                   <li key={i}>• {f}</li>
                 ))}
@@ -91,29 +129,29 @@ export default function SettingsPage() {
       </div>
 
       {/* 정보 */}
-      <div className="bg-white rounded-2xl p-6 border border-[#F2E8E5]">
-        <h3 className="text-lg font-semibold mb-4">정보</h3>
+      <div className="bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] transition-colors">
+        <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">정보</h3>
         <div className="space-y-2">
           <button
             aria-label="이용약관 보기"
-            className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="w-full text-left py-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors"
           >
             이용약관
           </button>
           <button
             aria-label="개인정보처리방침 보기"
-            className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="w-full text-left py-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors"
           >
             개인정보처리방침
           </button>
           <button
             aria-label="오픈소스 라이선스 보기"
-            className="w-full text-left py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="w-full text-left py-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors"
           >
             오픈소스 라이선스
           </button>
-          <div className="pt-2 border-t border-gray-100">
-            <p className="text-sm text-gray-400">VoiceAlarm v1.0.0</p>
+          <div className="pt-2 border-t border-[var(--color-border)]">
+            <p className="text-sm text-[var(--color-text-tertiary)]">VoiceAlarm v1.0.0</p>
           </div>
         </div>
       </div>

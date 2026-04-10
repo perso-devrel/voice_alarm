@@ -53,12 +53,11 @@ export default function FriendsPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">👥 친구</h2>
-          <p className="text-gray-400 text-sm mt-1">친구를 추가하고 선물을 주고받으세요</p>
+          <h2 className="text-2xl font-bold text-[var(--color-text)]">👥 친구</h2>
+          <p className="text-[var(--color-text-tertiary)] text-sm mt-1">친구를 추가하고 선물을 주고받으세요</p>
         </div>
       </div>
 
-      {/* 친구 추가 */}
       <div className="flex gap-3 mb-6">
         <input
           type="email"
@@ -67,13 +66,13 @@ export default function FriendsPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && email.trim() && sendMutation.mutate(email.trim())}
-          className="flex-1 px-4 py-3 rounded-xl border border-[#F2E8E5] focus:outline-none focus:border-[#FF7F6B] transition-colors"
+          className="flex-1 px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
           disabled={sendMutation.isPending}
         />
         <button
           onClick={() => email.trim() && sendMutation.mutate(email.trim())}
           disabled={!email.trim() || sendMutation.isPending}
-          className="px-6 py-3 bg-[#FF7F6B] text-white rounded-xl font-semibold hover:bg-[#E05A47] disabled:opacity-50 transition-all"
+          className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-xl font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
         >
           {sendMutation.isPending ? '...' : '추가'}
         </button>
@@ -90,7 +89,6 @@ export default function FriendsPage() {
         </p>
       )}
 
-      {/* 탭 */}
       <div role="tablist" aria-label="친구 목록" className="flex gap-2 mb-6">
         <button
           role="tab"
@@ -98,8 +96,8 @@ export default function FriendsPage() {
           onClick={() => setTab('friends')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'friends'
-              ? 'bg-[#FF7F6B] text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:opacity-80'
           }`}
         >
           내 친구 {friends?.length ? `(${friends.length})` : ''}
@@ -110,39 +108,38 @@ export default function FriendsPage() {
           onClick={() => setTab('pending')}
           className={`px-4 py-2 rounded-lg font-medium transition-all ${
             tab === 'pending'
-              ? 'bg-[#FF7F6B] text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:opacity-80'
           }`}
         >
           받은 요청 {pending?.length ? `(${pending.length})` : ''}
         </button>
       </div>
 
-      {/* 친구 목록 */}
       {tab === 'friends' &&
         (isLoading ? (
-          <p role="status" className="text-gray-400 text-center py-12">
+          <p role="status" className="text-[var(--color-text-tertiary)] text-center py-12">
             로딩 중...
           </p>
         ) : !friends?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🤝</p>
-            <p className="text-gray-500 font-medium">아직 친구가 없습니다</p>
-            <p className="text-gray-400 text-sm mt-1">이메일로 친구를 추가해 보세요</p>
+            <p className="text-[var(--color-text-secondary)] font-medium">아직 친구가 없습니다</p>
+            <p className="text-[var(--color-text-tertiary)] text-sm mt-1">이메일로 친구를 추가해 보세요</p>
           </div>
         ) : (
           <div className="grid gap-3">
             {friends.map((f: Friend) => (
               <div
                 key={f.id}
-                className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]"
+                className="flex items-center bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-[#FFB4A8] flex items-center justify-center text-[#E05A47] font-bold mr-4">
+                <div className="w-10 h-10 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center text-[var(--color-primary-dark)] font-bold mr-4">
                   {(f.friend_name || f.friend_email || '?')[0].toUpperCase()}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-800">{f.friend_name || '이름 없음'}</p>
-                  <p className="text-sm text-gray-400">{f.friend_email}</p>
+                  <p className="font-semibold text-[var(--color-text)]">{f.friend_name || '이름 없음'}</p>
+                  <p className="text-sm text-[var(--color-text-tertiary)]">{f.friend_email}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -160,39 +157,38 @@ export default function FriendsPage() {
           </div>
         ))}
 
-      {/* 받은 요청 */}
       {tab === 'pending' &&
         (!pending?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">📭</p>
-            <p className="text-gray-500 font-medium">대기 중인 요청이 없습니다</p>
+            <p className="text-[var(--color-text-secondary)] font-medium">대기 중인 요청이 없습니다</p>
           </div>
         ) : (
           <div className="grid gap-3">
             {pending.map((p: PendingFriendRequest) => (
               <div
                 key={p.id}
-                className="flex items-center bg-white rounded-xl p-4 border border-[#F2E8E5]"
+                className="flex items-center bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-[#FFB4A8] flex items-center justify-center text-[#E05A47] font-bold mr-4">
+                <div className="w-10 h-10 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center text-[var(--color-primary-dark)] font-bold mr-4">
                   {(p.requester_name || p.requester_email || '?')[0].toUpperCase()}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-800">{p.requester_name || '이름 없음'}</p>
-                  <p className="text-sm text-gray-400">{p.requester_email}</p>
+                  <p className="font-semibold text-[var(--color-text)]">{p.requester_name || '이름 없음'}</p>
+                  <p className="text-sm text-[var(--color-text-tertiary)]">{p.requester_email}</p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => acceptMutation.mutate(p.id)}
                     aria-label={`${p.requester_name || p.requester_email} 요청 수락`}
-                    className="px-4 py-2 bg-[#FF7F6B] text-white rounded-lg text-sm font-medium hover:bg-[#E05A47] transition-all"
+                    className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg text-sm font-medium hover:opacity-90 transition-all"
                   >
                     수락
                   </button>
                   <button
                     onClick={() => removeMutation.mutate(p.id)}
                     aria-label={`${p.requester_name || p.requester_email} 요청 거절`}
-                    className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all"
+                    className="px-4 py-2 bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] rounded-lg text-sm font-medium hover:opacity-80 transition-all"
                   >
                     거절
                   </button>

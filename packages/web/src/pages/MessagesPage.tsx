@@ -50,7 +50,6 @@ export default function MessagesPage() {
     mutationFn: generateTTS,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
-      // base64 오디오를 재생
       if (audioRef.current) {
         audioRef.current.src = `data:audio/mp3;base64,${data.audio_base64}`;
         audioRef.current.play();
@@ -74,8 +73,8 @@ export default function MessagesPage() {
 
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">메시지</h2>
-          <p className="text-gray-500 mt-1">음성 메시지를 작성하고 관리하세요</p>
+          <h2 className="text-3xl font-bold text-[var(--color-text)]">메시지</h2>
+          <p className="text-[var(--color-text-secondary)] mt-1">음성 메시지를 작성하고 관리하세요</p>
         </div>
         <div role="tablist" aria-label="메시지 탭" className="flex gap-2">
           <button
@@ -83,7 +82,9 @@ export default function MessagesPage() {
             aria-selected={tab === 'list'}
             onClick={() => setTab('list')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === 'list' ? 'bg-[#FF7F6B] text-white' : 'bg-white text-gray-600 border'
+              tab === 'list'
+                ? 'bg-[var(--color-primary)] text-white'
+                : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
             }`}
           >
             목록
@@ -93,7 +94,9 @@ export default function MessagesPage() {
             aria-selected={tab === 'create'}
             onClick={() => setTab('create')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === 'create' ? 'bg-[#FF7F6B] text-white' : 'bg-white text-gray-600 border'
+              tab === 'create'
+                ? 'bg-[var(--color-primary)] text-white'
+                : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
             }`}
           >
             + 새 메시지
@@ -103,9 +106,8 @@ export default function MessagesPage() {
 
       {tab === 'create' ? (
         <div className="max-w-2xl">
-          {/* 음성 선택 */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">누구의 목소리로?</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">누구의 목소리로?</label>
             <div className="flex gap-2 flex-wrap">
               {readyVoices.map((v: VoiceProfile) => (
                 <button
@@ -114,23 +116,22 @@ export default function MessagesPage() {
                   aria-pressed={selectedVoice === v.id}
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
                     selectedVoice === v.id
-                      ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
-                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
                   }`}
                 >
                   {v.name}
                 </button>
               ))}
               {readyVoices.length === 0 && (
-                <p className="text-gray-400 text-sm">먼저 음성을 등록해주세요</p>
+                <p className="text-[var(--color-text-tertiary)] text-sm">먼저 음성을 등록해주세요</p>
               )}
             </div>
           </div>
 
-          {/* 프리셋 */}
           {presets && (
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">프리셋 메시지</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">프리셋 메시지</label>
               <div className="flex gap-2 flex-wrap mb-3">
                 {presets.map((cat: PresetCategory) => (
                   <button
@@ -139,8 +140,8 @@ export default function MessagesPage() {
                     aria-pressed={category === cat.category}
                     className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
                       category === cat.category
-                        ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                        : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
                     }`}
                   >
                     {cat.emoji} {cat.category}
@@ -156,8 +157,8 @@ export default function MessagesPage() {
                       onClick={() => setMessageText(msg)}
                       className={`text-left px-4 py-3 rounded-lg border transition-colors ${
                         messageText === msg
-                          ? 'border-[#FF7F6B] bg-[#FFF5F3] text-[#FF7F6B]'
-                          : 'border-gray-200 hover:bg-gray-50'
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                          : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
                       }`}
                     >
                       {msg}
@@ -167,9 +168,8 @@ export default function MessagesPage() {
             </div>
           )}
 
-          {/* 직접 입력 */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
               메시지 ({messageText.length}/200)
             </label>
             <textarea
@@ -177,21 +177,21 @@ export default function MessagesPage() {
               onChange={(e) => e.target.value.length <= 200 && setMessageText(e.target.value)}
               placeholder="메시지를 입력하세요..."
               rows={3}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF7F6B] resize-none"
+              className="w-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none"
             />
           </div>
 
           <button
             onClick={handleGenerate}
             disabled={!selectedVoice || !messageText.trim() || ttsMutation.isPending}
-            className="bg-[#FF7F6B] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[#E05A47] transition-colors disabled:opacity-50"
+            className="bg-[var(--color-primary)] text-white px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition-colors disabled:opacity-50"
           >
             {ttsMutation.isPending ? '음성 생성 중...' : '🔊 음성 메시지 생성'}
           </button>
 
           {ttsMutation.isSuccess && (
             <p role="status" className="text-green-600 text-sm mt-3">
-              ✅ 음성 메시지가 생성되었습니다!
+              음성 메시지가 생성되었습니다!
             </p>
           )}
           {ttsMutation.isError && (
@@ -201,29 +201,28 @@ export default function MessagesPage() {
           )}
         </div>
       ) : (
-        /* 메시지 목록 */
         <div>
           {isLoading ? (
-            <div role="status" className="text-center py-12 text-gray-400">
+            <div role="status" className="text-center py-12 text-[var(--color-text-tertiary)]">
               로딩 중...
             </div>
           ) : !messages?.length ? (
-            <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
+            <div className="text-center py-16 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
               <p className="text-5xl mb-4">💌</p>
-              <p className="text-gray-500">아직 생성된 메시지가 없어요</p>
+              <p className="text-[var(--color-text-secondary)]">아직 생성된 메시지가 없어요</p>
             </div>
           ) : (
             <div className="space-y-3">
               {messages.map((msg: Message) => (
                 <div
                   key={msg.id}
-                  className="bg-white rounded-xl p-4 border border-[#F2E8E5] flex items-center gap-4"
+                  className="bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)] flex items-center gap-4 transition-colors"
                 >
                   <span className="text-2xl">{CATEGORY_EMOJIS[msg.category] || '💌'}</span>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-[#FF7F6B]">{msg.voice_name}</p>
-                    <p className="text-gray-900">"{msg.text}"</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-sm font-medium text-[var(--color-primary)]">{msg.voice_name}</p>
+                    <p className="text-[var(--color-text)]">"{msg.text}"</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
                       {new Date(msg.created_at).toLocaleDateString('ko-KR')}
                     </p>
                   </div>
@@ -246,7 +245,7 @@ export default function MessagesPage() {
                         alert(getApiErrorMessage(err, '선물 전송 실패'));
                       }
                     }}
-                    className="px-3 py-1.5 text-sm border border-[#FF6B8A] text-[#FF6B8A] rounded-lg hover:bg-[#FFF0ED] transition-colors"
+                    className="px-3 py-1.5 text-sm border border-[var(--color-primary)] text-[var(--color-primary)] rounded-lg hover:bg-[var(--color-primary)]/10 transition-colors"
                   >
                     🎁 선물
                   </button>

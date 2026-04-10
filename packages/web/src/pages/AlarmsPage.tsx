@@ -35,35 +35,35 @@ export default function AlarmsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">알람 설정</h2>
-        <p className="text-gray-500 mt-1">웹에서 알람을 관리하고 앱에 동기화하세요</p>
+        <h2 className="text-3xl font-bold text-[var(--color-text)]">알람 설정</h2>
+        <p className="text-[var(--color-text-secondary)] mt-1">웹에서 알람을 관리하고 앱에 동기화하세요</p>
       </div>
 
       {isLoading ? (
-        <div role="status" aria-live="polite" className="text-center py-12 text-gray-400">
+        <div role="status" aria-live="polite" className="text-center py-12 text-[var(--color-text-tertiary)]">
           로딩 중...
         </div>
       ) : !alarms?.length ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
+        <div className="text-center py-16 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
           <p className="text-5xl mb-4">⏰</p>
-          <p className="text-gray-500 text-lg">설정된 알람이 없어요</p>
-          <p className="text-gray-400 text-sm mt-1">앱에서 알람을 추가해주세요</p>
+          <p className="text-[var(--color-text-secondary)] text-lg">설정된 알람이 없어요</p>
+          <p className="text-[var(--color-text-tertiary)] text-sm mt-1">앱에서 알람을 추가해주세요</p>
         </div>
       ) : (
         <div className="space-y-4">
           {alarms.map((alarm: Alarm) => (
             <div
               key={alarm.id}
-              className={`bg-white rounded-2xl p-6 border border-[#F2E8E5] shadow-sm flex items-center gap-6 transition-opacity ${
+              className={`bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] shadow-sm flex items-center gap-6 transition-all ${
                 !alarm.is_active ? 'opacity-50' : ''
               }`}
             >
               <div className="flex-1">
-                <p className="text-4xl font-light text-gray-900">{alarm.time}</p>
-                <p className="text-sm text-gray-500 mt-1">{formatRepeat(alarm.repeat_days)}</p>
+                <p className="text-4xl font-light text-[var(--color-text)]">{alarm.time}</p>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeat(alarm.repeat_days)}</p>
                 <div className="mt-2">
-                  <span className="text-sm text-[#FF7F6B] font-medium">🗣️ {alarm.voice_name}</span>
-                  <p className="text-sm text-gray-600 mt-0.5">"{alarm.message_text}"</p>
+                  <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {alarm.voice_name}</span>
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">"{alarm.message_text}"</p>
                 </div>
               </div>
 
@@ -78,7 +78,7 @@ export default function AlarmsPage() {
                     aria-label={`${alarm.time} 알람 ${alarm.is_active ? '비활성화' : '활성화'}`}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-[#FF7F6B] rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#FF7F6B] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
+                  <div className="w-11 h-6 bg-[var(--color-surface-alt)] peer-focus:ring-2 peer-focus:ring-[var(--color-primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[var(--color-primary)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
                 </label>
 
                 <button

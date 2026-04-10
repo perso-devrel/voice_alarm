@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
+import { useDarkMode } from './hooks/useDarkMode';
 
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
@@ -22,6 +23,7 @@ const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
 export default function App() {
   const [page, setPage] = useState<Page>('voices');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const darkMode = useDarkMode();
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -55,20 +57,20 @@ export default function App() {
       case 'gifts':
         return <GiftsPage />;
       case 'settings':
-        return <SettingsPage />;
+        return <SettingsPage darkMode={darkMode} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-[var(--color-bg)]">
       {/* Sidebar */}
       <nav
         aria-label="메인 메뉴"
-        className="w-64 bg-white border-r border-[#F2E8E5] p-6 flex flex-col"
+        className="w-64 bg-[var(--color-surface)] border-r border-[var(--color-border)] p-6 flex flex-col transition-colors duration-200"
       >
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#FF7F6B]">VoiceAlarm</h1>
-          <p className="text-sm text-gray-400 mt-1">음성 관리 대시보드</p>
+          <h1 className="text-2xl font-bold text-[var(--color-primary)]">VoiceAlarm</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">음성 관리 대시보드</p>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -79,8 +81,8 @@ export default function App() {
               aria-current={page === item.key ? 'page' : undefined}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                 page === item.key
-                  ? 'bg-[#FFF0ED] text-[#FF7F6B] font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-semibold'
+                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
               }`}
             >
               <span className="text-xl" aria-hidden="true">
@@ -91,7 +93,7 @@ export default function App() {
           ))}
         </div>
 
-        <div className="mt-auto pt-6 border-t border-[#F2E8E5]">
+        <div className="mt-auto pt-6 border-t border-[var(--color-border)]">
           <button
             onClick={handleLogout}
             aria-label="로그아웃"
@@ -99,7 +101,7 @@ export default function App() {
           >
             로그아웃
           </button>
-          <p className="text-xs text-gray-400 mt-2">VoiceAlarm v1.0.0</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-2">VoiceAlarm v1.0.0</p>
         </div>
       </nav>
 
@@ -108,7 +110,7 @@ export default function App() {
         <Suspense
           fallback={
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF7F6B]" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]" />
             </div>
           }
         >

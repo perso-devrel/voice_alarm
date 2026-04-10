@@ -34,9 +34,9 @@ export default function VoicesPage() {
 
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      ready: 'bg-green-100 text-green-700',
-      processing: 'bg-yellow-100 text-yellow-700',
-      failed: 'bg-red-100 text-red-700',
+      ready: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      processing: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     };
     const labels: Record<string, string> = {
       ready: '사용 가능',
@@ -54,44 +54,43 @@ export default function VoicesPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">음성 프로필</h2>
-          <p className="text-gray-500 mt-1">소중한 사람의 목소리를 관리하세요</p>
+          <h2 className="text-3xl font-bold text-[var(--color-text)]">음성 프로필</h2>
+          <p className="text-[var(--color-text-secondary)] mt-1">소중한 사람의 목소리를 관리하세요</p>
         </div>
         <button
           onClick={() => setShowUpload(!showUpload)}
           aria-expanded={showUpload}
-          className="bg-[#FF7F6B] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#E05A47] transition-colors"
+          className="bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-colors"
         >
           + 음성 등록
         </button>
       </div>
 
-      {/* 업로드 폼 */}
       {showUpload && (
-        <div className="bg-white rounded-2xl p-6 mb-6 border border-[#F2E8E5] shadow-sm">
-          <h3 className="text-lg font-semibold mb-4">새 음성 등록</h3>
+        <div className="bg-[var(--color-surface)] rounded-2xl p-6 mb-6 border border-[var(--color-border)] shadow-sm transition-colors">
+          <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">새 음성 등록</h3>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">이름</label>
               <input
                 type="text"
                 value={uploadName}
                 onChange={(e) => setUploadName(e.target.value)}
                 placeholder="예: 엄마, 아빠"
-                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF7F6B] focus:border-transparent"
+                className="w-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">음성 AI</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">음성 AI</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setProvider('perso')}
                   aria-pressed={provider === 'perso'}
                   className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
                     provider === 'perso'
-                      ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
-                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
                   }`}
                 >
                   Perso.ai
@@ -101,8 +100,8 @@ export default function VoicesPage() {
                   aria-pressed={provider === 'elevenlabs'}
                   className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
                     provider === 'elevenlabs'
-                      ? 'bg-[#FF7F6B] text-white border-[#FF7F6B]'
-                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
                   }`}
                 >
                   ElevenLabs
@@ -115,7 +114,7 @@ export default function VoicesPage() {
             role="button"
             tabIndex={0}
             aria-label={uploadFile ? `선택된 파일: ${uploadFile.name}` : '오디오 파일 선택'}
-            className="border-2 border-dashed border-[#FFB4A8] rounded-xl p-8 text-center cursor-pointer hover:bg-[#FFF5F3] focus:outline-none focus:ring-2 focus:ring-[#FF7F6B] transition-colors mb-4"
+            className="border-2 border-dashed border-[var(--color-primary-light)] rounded-xl p-8 text-center cursor-pointer hover:bg-[var(--color-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-colors mb-4"
             onClick={() => fileInputRef.current?.click()}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -134,23 +133,23 @@ export default function VoicesPage() {
             <p className="text-4xl mb-2" aria-hidden="true">
               📁
             </p>
-            <p className="text-gray-600 font-medium">
+            <p className="text-[var(--color-text-secondary)] font-medium">
               {uploadFile ? uploadFile.name : '오디오 파일을 선택하세요'}
             </p>
-            <p className="text-gray-400 text-sm mt-1">MP3, WAV, M4A, AAC (최소 10초)</p>
+            <p className="text-[var(--color-text-tertiary)] text-sm mt-1">MP3, WAV, M4A, AAC (최소 10초)</p>
           </div>
 
           <div className="flex gap-2">
             <button
               onClick={() => cloneMutation.mutate()}
               disabled={!uploadFile || !uploadName || cloneMutation.isPending}
-              className="bg-[#FF7F6B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#E05A47] transition-colors disabled:opacity-50"
+              className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition-colors disabled:opacity-50"
             >
               {cloneMutation.isPending ? '생성 중...' : '음성 등록'}
             </button>
             <button
               onClick={() => setShowUpload(false)}
-              className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+              className="px-6 py-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
             >
               취소
             </button>
@@ -164,40 +163,39 @@ export default function VoicesPage() {
         </div>
       )}
 
-      {/* 프로필 목록 */}
       {isLoading ? (
-        <div role="status" className="text-center py-12 text-gray-400">
+        <div role="status" className="text-center py-12 text-[var(--color-text-tertiary)]">
           로딩 중...
         </div>
       ) : !profiles?.length ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-[#F2E8E5]">
+        <div className="text-center py-16 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
           <p className="text-5xl mb-4">🎵</p>
-          <p className="text-gray-500 text-lg">아직 등록된 음성이 없어요</p>
-          <p className="text-gray-400 text-sm mt-1">위의 버튼으로 음성을 등록해보세요</p>
+          <p className="text-[var(--color-text-secondary)] text-lg">아직 등록된 음성이 없어요</p>
+          <p className="text-[var(--color-text-tertiary)] text-sm mt-1">위의 버튼으로 음성을 등록해보세요</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {profiles.map((profile: VoiceProfile) => (
             <div
               key={profile.id}
-              className="bg-white rounded-2xl p-5 border border-[#F2E8E5] shadow-sm"
+              className="bg-[var(--color-surface)] rounded-2xl p-5 border border-[var(--color-border)] shadow-sm transition-colors"
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-[#FFB4A8] flex items-center justify-center text-xl font-bold text-[#E05A47]">
+                <div className="w-12 h-12 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center text-xl font-bold text-[var(--color-primary-dark)]">
                   {profile.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{profile.name}</h3>
+                  <h3 className="font-semibold text-[var(--color-text)]">{profile.name}</h3>
                   {statusBadge(profile.status)}
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mb-3">
+              <p className="text-xs text-[var(--color-text-tertiary)] mb-3">
                 {new Date(profile.created_at).toLocaleDateString('ko-KR')}
               </p>
               <div className="flex gap-2">
                 <button
                   aria-label={`${profile.name} 음성 테스트`}
-                  className="text-sm text-[#FF7F6B] font-medium hover:underline"
+                  className="text-sm text-[var(--color-primary)] font-medium hover:underline"
                 >
                   테스트
                 </button>
