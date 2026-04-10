@@ -8,6 +8,7 @@ import {
   deleteFriend,
 } from '../services/api';
 import type { Friend, PendingFriendRequest } from '../types';
+import { FriendSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
 
 export default function FriendsPage() {
@@ -170,9 +171,7 @@ export default function FriendsPage() {
 
       {tab === 'friends' &&
         (isLoading ? (
-          <p role="status" className="text-[var(--color-text-tertiary)] text-center py-12">
-            로딩 중...
-          </p>
+          <FriendSkeleton />
         ) : !friends?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🤝</p>

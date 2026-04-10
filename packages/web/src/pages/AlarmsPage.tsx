@@ -11,6 +11,7 @@ import {
   generateTTS,
 } from '../services/api';
 import type { Alarm, Message, VoiceProfile, PresetCategory } from '../types';
+import { AlarmSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -104,9 +105,7 @@ export default function AlarmsPage() {
       )}
 
       {isLoading ? (
-        <div role="status" aria-live="polite" className="text-center py-12 text-[var(--color-text-tertiary)]">
-          로딩 중...
-        </div>
+        <AlarmSkeleton />
       ) : !alarms?.length ? (
         <div className="text-center py-16 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
           <p className="text-5xl mb-4">⏰</p>

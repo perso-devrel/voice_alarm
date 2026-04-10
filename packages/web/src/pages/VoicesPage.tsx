@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, generateTTS } from '../services/api';
 import type { VoiceProfile } from '../types';
 import { getApiErrorMessage } from '../types';
+import { VoiceCardSkeleton } from '../components/Skeleton';
 
 export default function VoicesPage() {
   const queryClient = useQueryClient();
@@ -201,9 +202,7 @@ export default function VoicesPage() {
       )}
 
       {isLoading ? (
-        <div role="status" className="text-center py-12 text-[var(--color-text-tertiary)]">
-          로딩 중...
-        </div>
+        <VoiceCardSkeleton />
       ) : !profiles?.length ? (
         <div className="text-center py-16 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
           <p className="text-5xl mb-4">🎵</p>

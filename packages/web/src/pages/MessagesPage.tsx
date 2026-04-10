@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MessageSkeleton } from '../components/Skeleton';
 import {
   getVoiceProfiles,
   getMessages,
@@ -231,9 +232,7 @@ export default function MessagesPage() {
       ) : (
         <div>
           {isLoading ? (
-            <div role="status" className="text-center py-12 text-[var(--color-text-tertiary)]">
-              로딩 중...
-            </div>
+            <MessageSkeleton />
           ) : !messages?.length ? (
             <div className="text-center py-16 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] transition-colors">
               <p className="text-5xl mb-4">💌</p>

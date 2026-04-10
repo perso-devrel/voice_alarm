@@ -183,6 +183,13 @@
     "noMessagesDesc": "Create one yourself, or use presets below for a quick start!",
     "goCreate": "Create message"
   },
+  "alarmEdit": {
+    "title": "Edit Alarm",
+    "save": "✓ Save Changes",
+    "successTitle": "Alarm Updated!",
+    "successDesc": "Your changes have been applied.",
+    "editError": "Failed to update alarm."
+  },
   "messageCreate": {
     "whoseVoice": "Whose voice?",
     "emptyVoice": "Register a voice first →",

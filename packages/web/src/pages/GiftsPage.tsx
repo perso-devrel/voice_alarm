@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getReceivedGifts, getSentGifts, acceptGift, rejectGift } from '../services/api';
 import type { Gift } from '../types';
+import { GiftSkeleton } from '../components/Skeleton';
 
 export default function GiftsPage() {
   const queryClient = useQueryClient();
@@ -98,9 +99,7 @@ export default function GiftsPage() {
 
       {tab === 'received' &&
         (loadingReceived ? (
-          <p role="status" className="text-[var(--color-text-tertiary)] text-center py-12">
-            로딩 중...
-          </p>
+          <GiftSkeleton />
         ) : !received?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🎁</p>
@@ -155,9 +154,7 @@ export default function GiftsPage() {
 
       {tab === 'sent' &&
         (loadingSent ? (
-          <p role="status" className="text-[var(--color-text-tertiary)] text-center py-12">
-            로딩 중...
-          </p>
+          <GiftSkeleton />
         ) : !sent?.length ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">📤</p>

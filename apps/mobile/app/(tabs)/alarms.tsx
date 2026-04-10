@@ -203,6 +203,7 @@ export default function AlarmsScreen() {
       >
         <TouchableOpacity
           style={[styles.alarmCard, !item.is_active && styles.alarmCardInactive]}
+          onPress={() => router.push({ pathname: '/alarm/edit', params: { id: item.id } })}
           onLongPress={() => handleDelete(item.id)}
           activeOpacity={0.8}
         >

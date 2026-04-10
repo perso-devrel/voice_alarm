@@ -183,6 +183,13 @@
     "noMessagesDesc": "직접 만들거나, 아래 프리셋으로 빠르게 생성해보세요!",
     "goCreate": "메시지 만들기"
   },
+  "alarmEdit": {
+    "title": "알람 편집",
+    "save": "✓ 변경사항 저장",
+    "successTitle": "알람 수정 완료!",
+    "successDesc": "변경된 설정이 적용되었습니다.",
+    "editError": "알람 수정에 실패했습니다."
+  },
   "messageCreate": {
     "whoseVoice": "누구의 목소리로?",
     "emptyVoice": "먼저 음성을 등록해주세요 →",
