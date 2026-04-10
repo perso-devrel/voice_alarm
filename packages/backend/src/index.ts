@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Env, AppEnv } from './types';
 import { authMiddleware } from './middleware/auth';
+import { loggerMiddleware } from './middleware/logger';
 import { initDB } from './lib/db';
 import voiceRoutes from './routes/voice';
 import ttsRoutes from './routes/tts';
@@ -12,6 +13,9 @@ import friendRoutes from './routes/friend';
 import giftRoutes from './routes/gift';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Structured request logging
+app.use('*', loggerMiddleware);
 
 // CORS
 app.use(
@@ -133,5 +137,20 @@ api.route('/friend', friendRoutes);
 api.route('/gift', giftRoutes);
 
 app.route('/api', api);
+
+app.onError((err, c) => {
+  const requestId = c.res.headers.get('X-Request-Id') ?? 'unknown';
+  console.error(
+    JSON.stringify({
+      level: 'error',
+      rid: requestId,
+      method: c.req.method,
+      path: c.req.path,
+      error: err.message,
+      stack: err.stack?.split('\n').slice(0, 5).join(' | '),
+    }),
+  );
+  return c.json({ error: 'Internal server error', requestId }, 500);
+});
 
 export default app;
