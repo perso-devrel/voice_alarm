@@ -63,12 +63,12 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export default function DashboardPage({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { data: stats, isLoading } = useQuery<Stats>({
+  const { data: stats, isLoading, isError: statsError, refetch: refetchStats } = useQuery<Stats>({
     queryKey: ['stats'],
     queryFn: getStats,
   });
 
-  const { data: activities, isLoading: activitiesLoading } = useQuery<Activity[]>({
+  const { data: activities, isLoading: activitiesLoading, isError: activitiesError, refetch: refetchActivities } = useQuery<Activity[]>({
     queryKey: ['recentActivity'],
     queryFn: getRecentActivity,
   });
@@ -86,6 +86,13 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
         <h2 className="text-3xl font-bold text-[var(--color-text)]">대시보드</h2>
         <p className="text-[var(--color-text-secondary)] mt-1">VoiceAlarm 현황을 한눈에 확인하세요</p>
       </div>
+
+      {statsError && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center justify-between">
+          <p className="text-red-600 dark:text-red-400 text-sm">통계를 불러오지 못했어요</p>
+          <button onClick={() => refetchStats()} className="text-sm text-red-600 dark:text-red-400 font-semibold hover:underline">다시 시도</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <StatCard
@@ -196,7 +203,12 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
 
       <div>
         <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">최근 활동</h3>
-        {activitiesLoading ? (
+        {activitiesError ? (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center justify-between">
+            <p className="text-red-600 dark:text-red-400 text-sm">활동을 불러오지 못했어요</p>
+            <button onClick={() => refetchActivities()} className="text-sm text-red-600 dark:text-red-400 font-semibold hover:underline">다시 시도</button>
+          </div>
+        ) : activitiesLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-14 bg-[var(--color-surface-alt)] rounded-xl animate-pulse" />

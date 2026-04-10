@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import { saveAudioLocally, playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
 import type { VoiceProfile, Friend } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function CreateMessageScreen() {
   const router = useRouter();
@@ -41,24 +43,7 @@ export default function CreateMessageScreen() {
   const [giftFriends, setGiftFriends] = useState<Friend[]>([]);
   const [giftNote, setGiftNote] = useState('');
   const [giftSending, setGiftSending] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = useCallback((msg: string) => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    setToastMessage(msg);
-    Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-    toastTimer.current = setTimeout(() => {
-      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
-        setToastMessage(null);
-      });
-    }, 3000);
-  }, [toastOpacity]);
-
-  useEffect(() => {
-    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
-  }, []);
+  const toast = useToast();
 
   const { data: voiceProfiles } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -349,7 +334,7 @@ export default function CreateMessageScreen() {
                         note: giftNote.trim() || undefined,
                       });
                       setGiftModalVisible(false);
-                      showToast(t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }));
+                      toast.show(t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }));
                     } catch (err: unknown) {
                       Alert.alert(
                         t('common.error'),
@@ -381,11 +366,7 @@ export default function CreateMessageScreen() {
           </View>
         </View>
       </Modal>
-      {toastMessage && (
-        <Animated.View style={[styles.toast, { opacity: toastOpacity }]} pointerEvents="none">
-          <Text style={styles.toastText}>{toastMessage}</Text>
-        </Animated.View>
-      )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </ScrollView>
   );
 }
@@ -707,22 +688,6 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
-    fontWeight: '600',
-  },
-  toast: {
-    position: 'absolute',
-    bottom: 40,
-    left: Spacing.lg,
-    right: Spacing.lg,
-    backgroundColor: Colors.light.primaryDark,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    alignItems: 'center',
-  },
-  toastText: {
-    color: '#fff',
-    fontSize: FontSize.md,
     fontWeight: '600',
   },
 });

@@ -296,7 +296,14 @@
 - [x] 백엔드: bodyLimit.test.ts 신규 (4개 테스트 — 허용/초과/경계값)
 - [x] 백엔드: POST /api/voice name 최대 길이 제한 추가 (50자 초과 시 400)
 - [x] 웹: 401 인터셉터 — 이미 구현 확인 (api.ts interceptors.response에 401 → localStorage 클리어 + /login 리다이렉트)
-- [x] 모바일: ErrorView + retry — 이미 구현 확인 (QueryStateView.tsx에 ErrorView 컴포넌트, 전 탭 적용)
+- [x] 모바일: ErrorView + retry — friends 탭 누락분 추가 (friends/pending 에러 상태에 ErrorView + refetch 연결)
+
+## P37 - 자가 생성 항목 (에러 핸들링 + UX 일관성)
+
+- [x] 웹: DashboardPage 통계/활동 쿼리 에러 상태 UI 추가 (에러 메시지 + 재시도 버튼)
+- [x] 백엔드: CORS 미들웨어 테스트 (cors.test.ts 신규 — 6개 테스트)
+- [ ] 웹: SettingsPage에 계정 삭제 확인 다이얼로그 추가 (위험 동작 보호)
+- [ ] 모바일: 홈 탭 통계 카드 에러 상태 처리 (현재 에러 시 빈 화면)
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

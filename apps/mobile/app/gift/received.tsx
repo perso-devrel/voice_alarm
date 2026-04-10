@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,8 @@ import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getApiErrorMessage } from '../../src/types';
 import type { Gift } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 function SkeletonGiftCard() {
   const opacity = useRef(new Animated.Value(0.3)).current;
@@ -60,24 +62,7 @@ export default function ReceivedGiftsScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { t } = useTranslation();
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = useCallback((msg: string) => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    setToastMessage(msg);
-    Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-    toastTimer.current = setTimeout(() => {
-      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
-        setToastMessage(null);
-      });
-    }, 3000);
-  }, [toastOpacity]);
-
-  useEffect(() => {
-    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
-  }, []);
+  const toast = useToast();
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['gifts-received'],
@@ -97,13 +82,13 @@ export default function ReceivedGiftsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      showToast(t('giftReceived.acceptSuccess'));
+      toast.show(t('giftReceived.acceptSuccess'));
     },
     onError: (err: unknown, _id, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['gifts-received'], context.previous);
       }
-      showToast(getApiErrorMessage(err, t('giftReceived.acceptError')));
+      toast.show(getApiErrorMessage(err, t('giftReceived.acceptError')));
     },
   });
 
@@ -119,13 +104,13 @@ export default function ReceivedGiftsScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gifts-received'] });
-      showToast(t('giftReceived.rejectSuccess', '선물을 거절했습니다'));
+      toast.show(t('giftReceived.rejectSuccess', '선물을 거절했습니다'));
     },
     onError: (err: unknown, _id, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['gifts-received'], context.previous);
       }
-      showToast(getApiErrorMessage(err, t('giftReceived.rejectError')));
+      toast.show(getApiErrorMessage(err, t('giftReceived.rejectError')));
     },
   });
 
@@ -228,11 +213,7 @@ export default function ReceivedGiftsScreen() {
         )}
       />
       </View>
-      {toastMessage && (
-        <Animated.View style={[styles.toast, { opacity: toastOpacity }]} pointerEvents="none">
-          <Text style={styles.toastText}>{toastMessage}</Text>
-        </Animated.View>
-      )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </SafeAreaView>
   );
 }
@@ -383,21 +364,5 @@ const styles = StyleSheet.create({
     color: Colors.light.primary,
     fontWeight: '600',
     fontSize: FontSize.sm,
-  },
-  toast: {
-    position: 'absolute',
-    bottom: 40,
-    left: Spacing.lg,
-    right: Spacing.lg,
-    backgroundColor: Colors.light.primaryDark,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    alignItems: 'center',
-  },
-  toastText: {
-    color: '#fff',
-    fontSize: FontSize.md,
-    fontWeight: '600',
   },
 });

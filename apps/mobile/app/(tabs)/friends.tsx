@@ -243,6 +243,8 @@ export default function FriendsScreen() {
       {activeTab === 'friends' ? (
         friends.isLoading ? (
           <SkeletonList count={4} />
+        ) : friends.isError ? (
+          <ErrorView onRetry={() => friends.refetch()} />
         ) : (
           <View style={[styles.listWrap, friends.isRefetching && styles.listDimmed]}>
             <FlatList
@@ -306,6 +308,8 @@ export default function FriendsScreen() {
         )
       ) : pending.isLoading ? (
         <SkeletonList count={3} />
+      ) : pending.isError ? (
+        <ErrorView onRetry={() => pending.refetch()} />
       ) : (
         <View style={[styles.listWrap, pending.isRefetching && styles.listDimmed]}>
           <FlatList
