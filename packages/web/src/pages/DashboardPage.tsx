@@ -1,16 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { getStats, getRecentActivity } from '../services/api';
-import type { Stats, Activity } from '../services/api';
+import type { Stats, Activity, WeekTrend } from '../services/api';
 
 interface StatCardProps {
   emoji: string;
   label: string;
   value: number | undefined;
   isLoading: boolean;
+  trend?: WeekTrend;
   onClick?: () => void;
 }
 
-function StatCard({ emoji, label, value, isLoading, onClick }: StatCardProps) {
+function StatCard({ emoji, label, value, isLoading, trend, onClick }: StatCardProps) {
+  const diff = trend ? trend.thisWeek - trend.lastWeek : 0;
+  const showTrend = trend && (trend.thisWeek > 0 || trend.lastWeek > 0);
+
   return (
     <button
       onClick={onClick}
@@ -25,6 +29,14 @@ function StatCard({ emoji, label, value, isLoading, onClick }: StatCardProps) {
         )}
       </p>
       <p className="text-sm text-[var(--color-text-secondary)] mt-1">{label}</p>
+      {!isLoading && showTrend && (
+        <p className={`text-xs mt-2 font-medium ${
+          diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-400' : 'text-[var(--color-text-tertiary)]'
+        }`}>
+          {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '0'} vs 지난주
+          {diff > 0 ? ' ↑' : diff < 0 ? ' ↓' : ''}
+        </p>
+      )}
     </button>
   );
 }
@@ -71,6 +83,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
           label="알람"
           value={stats?.alarms.total}
           isLoading={isLoading}
+          trend={stats?.trends.alarms}
           onClick={() => onNavigate('alarms')}
         />
         <StatCard
@@ -78,6 +91,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
           label="메시지"
           value={stats?.messages.total}
           isLoading={isLoading}
+          trend={stats?.trends.messages}
           onClick={() => onNavigate('messages')}
         />
         <StatCard
@@ -85,6 +99,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
           label="음성 프로필"
           value={stats?.voices.total}
           isLoading={isLoading}
+          trend={stats?.trends.voices}
           onClick={() => onNavigate('voices')}
         />
         <StatCard
@@ -92,6 +107,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
           label="친구"
           value={stats?.friends.total}
           isLoading={isLoading}
+          trend={stats?.trends.friends}
           onClick={() => onNavigate('friends')}
         />
         <StatCard
@@ -99,6 +115,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: strin
           label="받은 선물"
           value={stats?.gifts.received}
           isLoading={isLoading}
+          trend={stats?.trends.gifts}
           onClick={() => onNavigate('gifts')}
         />
       </div>

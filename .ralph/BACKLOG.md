@@ -161,10 +161,10 @@
 ## P17 - 자가 생성 항목 (14차)
 
 - [x] 백엔드: GET /api/stats/activity 에 voice_profiles 활동 추가 (클론 생성/삭제 이벤트)
-- [ ] 웹: 대시보드 StatCard에 전주 대비 변화 표시 (↑↓ 트렌드)
+- [x] 웹: 대시보드 StatCard에 전주 대비 변화 표시 (↑↓ 트렌드)
 - [x] 모바일: 홈탭에 대시보드 요약 카드 (stats API 활용)
-- [ ] 백엔드: 사용자 검색 API GET /api/user/search?q= (친구 추가 시 이메일 자동완성용)
-- [ ] 웹: FriendsPage 친구 추가 시 이메일 자동완성 (검색 API 연동)
+- [x] 백엔드: 사용자 검색 API GET /api/user/search?q= (친구 추가 시 이메일 자동완성용)
+- [x] 웹: FriendsPage 친구 추가 시 이메일 자동완성 (검색 API 연동)
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

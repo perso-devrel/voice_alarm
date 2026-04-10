@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getFriendList,
@@ -6,7 +6,9 @@ import {
   sendFriendRequest,
   acceptFriendRequest,
   deleteFriend,
+  searchUsers,
 } from '../services/api';
+import type { UserSearchResult } from '../services/api';
 import type { Friend, PendingFriendRequest } from '../types';
 import { FriendSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
@@ -15,6 +17,24 @@ export default function FriendsPage() {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [tab, setTab] = useState<'friends' | 'pending'>('friends');
+  const [suggestions, setSuggestions] = useState<UserSearchResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (email.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      const results = await searchUsers(email.trim());
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [email]);
 
   const { data: friends, isLoading } = useQuery({
     queryKey: ['friends'],
@@ -112,16 +132,42 @@ export default function FriendsPage() {
       </div>
 
       <div className="flex gap-3 mb-6">
-        <input
-          type="email"
-          placeholder="이메일로 친구 추가"
-          aria-label="친구 이메일 주소"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && email.trim() && sendMutation.mutate(email.trim())}
-          className="flex-1 px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-          disabled={sendMutation.isPending}
-        />
+        <div className="flex-1 relative" ref={dropdownRef}>
+          <input
+            type="email"
+            placeholder="이메일로 친구 추가"
+            aria-label="친구 이메일 주소"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            onKeyDown={(e) => e.key === 'Enter' && email.trim() && sendMutation.mutate(email.trim())}
+            className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+            disabled={sendMutation.isPending}
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-lg z-10 overflow-hidden">
+              {suggestions.map((u) => (
+                <button
+                  key={u.id}
+                  className="w-full text-left px-4 py-3 hover:bg-[var(--color-bg)] flex items-center gap-3 transition-colors"
+                  onMouseDown={() => {
+                    setEmail(u.email);
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center text-sm font-bold text-[var(--color-primary-dark)]">
+                    {(u.name || u.email)[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text)]">{u.name || u.email}</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">{u.email}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           onClick={() => email.trim() && sendMutation.mutate(email.trim())}
           disabled={!email.trim() || sendMutation.isPending}
