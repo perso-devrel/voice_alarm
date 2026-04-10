@@ -1,0 +1,92 @@
+import { useState, useEffect } from 'react';
+import VoicesPage from './pages/VoicesPage';
+import MessagesPage from './pages/MessagesPage';
+import AlarmsPage from './pages/AlarmsPage';
+import SettingsPage from './pages/SettingsPage';
+import LoginPage from './components/LoginPage';
+
+type Page = 'voices' | 'messages' | 'alarms' | 'settings';
+
+const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
+  { key: 'voices', label: '음성 관리', emoji: '🎙️' },
+  { key: 'messages', label: '메시지', emoji: '💌' },
+  { key: 'alarms', label: '알람 설정', emoji: '⏰' },
+  { key: 'settings', label: '설정', emoji: '⚙️' },
+];
+
+export default function App() {
+  const [page, setPage] = useState<Page>('voices');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogin = (idToken: string) => {
+    localStorage.setItem('auth_token', idToken);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    setIsLoggedIn(false);
+  };
+
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  const renderPage = () => {
+    switch (page) {
+      case 'voices': return <VoicesPage />;
+      case 'messages': return <MessagesPage />;
+      case 'alarms': return <AlarmsPage />;
+      case 'settings': return <SettingsPage />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex">
+      {/* Sidebar */}
+      <nav className="w-64 bg-white border-r border-[#F2E8E5] p-6 flex flex-col">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-[#FF7F6B]">VoiceAlarm</h1>
+          <p className="text-sm text-gray-400 mt-1">음성 관리 대시보드</p>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setPage(item.key)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
+                page === item.key
+                  ? 'bg-[#FFF0ED] text-[#FF7F6B] font-semibold'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <span className="text-xl">{item.emoji}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-auto pt-6 border-t border-[#F2E8E5]">
+          <button
+            onClick={handleLogout}
+            className="text-xs text-red-400 hover:text-red-500 transition-colors"
+          >
+            로그아웃
+          </button>
+          <p className="text-xs text-gray-400 mt-2">VoiceAlarm v1.0.0</p>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="flex-1 p-8 overflow-y-auto">
+        {renderPage()}
+      </main>
+    </div>
+  );
+}

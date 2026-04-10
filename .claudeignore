@@ -1,0 +1,12 @@
+.env
+.env.*
+.dev.vars
+**/secrets/**
+**/*.pem
+**/*.key
+**/*.p12
+**/*.keystore
+~/.ssh/
+~/.aws/
+test/*
+!test/.gitkeep

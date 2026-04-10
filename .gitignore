@@ -1,0 +1,31 @@
+node_modules/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.dev.vars
+
+# Build outputs
+dist/
+.expo/
+*.tsbuildinfo
+.turbo/
+.wrangler/
+ios/
+android/
+
+# Logs
+*.log
+.DS_Store
+
+# Ralph harness (logs/heartbeat 만 ignore, 나머지는 버전 관리)
+.ralph/logs/
+.ralph/heartbeat
+.ralph/claude.pid
+
+# Test audio files (사용자가 로컬에 두는 음성 파일들 - 커밋 금지)
+test/*
+!test/.gitkeep
+!test/README.md

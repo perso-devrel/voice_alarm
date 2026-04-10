@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [packages/backend, packages/web, apps/mobile]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.package }}
+        run: npm ci || npm install
+
+      - name: Typecheck
+        working-directory: ${{ matrix.package }}
+        run: npx tsc --noEmit

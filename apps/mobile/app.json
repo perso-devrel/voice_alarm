@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "VoiceAlarm",
+    "slug": "voice-alarm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "scheme": "voicealarm",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF5F3"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.voicealarm.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "음성을 녹음하기 위해 마이크 접근이 필요합니다.",
+        "UIBackgroundModes": [
+          "audio",
+          "fetch"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFF5F3"
+      },
+      "package": "com.voicealarm.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/default_alarm.wav"
+          ]
+        }
+      ],
+      "expo-av",
+      "expo-document-picker",
+      "expo-image-picker",
+      "expo-sqlite",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "router": {
+        "root": "./app"
+      },
+      "eas": {
+        "projectId": "5165810a-b394-4623-816b-e64ec06d777b"
+      }
+    }
+  }
+}

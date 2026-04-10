@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p apps)",
+      "Bash(npx create-expo-app@latest mobile --template blank-typescript)",
+      "Bash(npm init:*)",
+      "Bash(chmod +x .ralph/run.sh .ralph/watchdog.sh .ralph/summary.sh)",
+      "Bash(git config:*)",
+      "Bash(git -c user.email=dev@voicealarm.local -c 'user.name=VoiceAlarm Dev' commit -m 'chore: initial snapshot before Ralph harness gas:*)"
+    ]
+  }
+}
