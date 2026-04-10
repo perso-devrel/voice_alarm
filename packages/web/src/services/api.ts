@@ -71,13 +71,18 @@ export async function getMessages(category?: string) {
   return data.messages;
 }
 
+export async function getMessagesByVoice(voiceProfileId: string) {
+  const { data } = await api.get('/tts/messages', { params: { voice_profile_id: voiceProfileId } });
+  return data.messages;
+}
+
 export async function getPresets() {
   const { data } = await api.get('/tts/presets');
   return data.presets;
 }
 
-export async function deleteMessage(id: string) {
-  await api.delete(`/tts/messages/${id}`);
+export async function deleteMessage(id: string, force?: boolean) {
+  await api.delete(`/tts/messages/${id}${force ? '?force=true' : ''}`);
 }
 
 export async function getAlarms() {

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, generateTTS } from '../services/api';
-import type { VoiceProfile } from '../types';
+import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, generateTTS, getMessagesByVoice, getAlarms } from '../services/api';
+import type { VoiceProfile, Message, Alarm } from '../types';
 import { getApiErrorMessage } from '../types';
 import { VoiceCardSkeleton } from '../components/Skeleton';
 
@@ -16,6 +16,7 @@ export default function VoicesPage() {
   const testAudioRef = useRef<HTMLAudioElement>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [detailProfile, setDetailProfile] = useState<VoiceProfile | null>(null);
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -268,7 +269,8 @@ export default function VoicesPage() {
           {filteredProfiles.map((profile: VoiceProfile) => (
             <div
               key={profile.id}
-              className="bg-[var(--color-surface)] rounded-2xl p-5 border border-[var(--color-border)] shadow-sm transition-colors"
+              className="bg-[var(--color-surface)] rounded-2xl p-5 border border-[var(--color-border)] shadow-sm transition-colors cursor-pointer hover:border-[var(--color-primary)]"
+              onClick={() => setDetailProfile(profile)}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center text-xl font-bold text-[var(--color-primary-dark)]">
@@ -287,14 +289,15 @@ export default function VoicesPage() {
                   aria-label={`${profile.name} 음성 테스트`}
                   className="text-sm text-[var(--color-primary)] font-medium hover:underline disabled:opacity-50"
                   disabled={testingId === profile.id || profile.status !== 'ready'}
-                  onClick={() => handleTest(profile.id)}
+                  onClick={(e) => { e.stopPropagation(); handleTest(profile.id); }}
                 >
                   {testingId === profile.id ? '생성 중...' : '테스트'}
                 </button>
                 <button
                   aria-label={`${profile.name} 프로필 삭제`}
                   className="text-sm text-red-400 font-medium hover:underline ml-auto"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (confirm(`"${profile.name}" 프로필을 삭제하시겠어요?`)) {
                       deleteMutation.mutate(profile.id);
                     }
@@ -307,6 +310,116 @@ export default function VoicesPage() {
           ))}
         </div>
       )}
+
+      {detailProfile && (
+        <VoiceDetailModal
+          profile={detailProfile}
+          onClose={() => setDetailProfile(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function VoiceDetailModal({ profile, onClose }: { profile: VoiceProfile; onClose: () => void }) {
+  const { data: messages, isLoading: loadingMessages } = useQuery({
+    queryKey: ['voiceMessages', profile.id],
+    queryFn: () => getMessagesByVoice(profile.id),
+  });
+
+  const { data: allAlarms, isLoading: loadingAlarms } = useQuery({
+    queryKey: ['alarms'],
+    queryFn: getAlarms,
+  });
+
+  const voiceAlarms = allAlarms?.filter((a: Alarm) => a.voice_name === profile.name) ?? [];
+  const isLoading = loadingMessages || loadingAlarms;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[var(--color-bg)] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 border-b border-[var(--color-border)] text-center">
+          <div className="w-16 h-16 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center text-2xl font-bold text-[var(--color-primary-dark)] mx-auto mb-3">
+            {profile.name.charAt(0)}
+          </div>
+          <h3 className="text-xl font-bold text-[var(--color-text)]">{profile.name}</h3>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
+            {new Date(profile.created_at).toLocaleDateString('ko-KR')}
+          </p>
+          <div className="flex justify-center gap-8 mt-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[var(--color-primary)]">{messages?.length ?? 0}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">메시지</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[var(--color-primary)]">{voiceAlarms.length}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">알람</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {isLoading ? (
+            <div className="text-center py-8 text-[var(--color-text-secondary)]">불러오는 중...</div>
+          ) : (messages?.length === 0 && voiceAlarms.length === 0) ? (
+            <div className="text-center py-8 text-[var(--color-text-secondary)]">
+              아직 이 음성으로 만든 메시지나 알람이 없어요
+            </div>
+          ) : (
+            <>
+              {messages && messages.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-3">메시지</h4>
+                  <div className="space-y-2">
+                    {messages.map((m: Message) => (
+                      <div key={m.id} className="bg-[var(--color-surface)] rounded-xl p-3 border border-[var(--color-border)]">
+                        <p className="text-xs text-[var(--color-text-tertiary)] mb-1">{m.category}</p>
+                        <p className="text-sm text-[var(--color-text)] line-clamp-2">{m.text}</p>
+                        <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
+                          {new Date(m.created_at).toLocaleDateString('ko-KR')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {voiceAlarms.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-3">알람</h4>
+                  <div className="space-y-2">
+                    {voiceAlarms.map((a: Alarm) => (
+                      <div key={a.id} className="bg-[var(--color-surface)] rounded-xl p-3 border border-[var(--color-border)]">
+                        <div className="flex items-center justify-between">
+                          <p className="text-lg font-light text-[var(--color-text)]">{a.time}</p>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${a.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                            {a.is_active ? '활성' : '비활성'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[var(--color-text-secondary)] mt-1 line-clamp-1">{a.message_text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-[var(--color-border)]">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors font-medium"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

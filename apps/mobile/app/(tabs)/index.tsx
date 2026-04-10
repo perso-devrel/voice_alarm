@@ -197,7 +197,11 @@ export default function HomeScreen() {
         {/* 다음 알람 카드 */}
         <TouchableOpacity
           style={styles.nextAlarmCard}
-          onPress={() => router.push('/(tabs)/alarms')}
+          onPress={() =>
+            nextAlarm
+              ? router.push({ pathname: '/alarm/edit', params: { id: nextAlarm.id } })
+              : router.push('/alarm/create')
+          }
           activeOpacity={0.8}
         >
           <View style={styles.nextAlarmGradient}>

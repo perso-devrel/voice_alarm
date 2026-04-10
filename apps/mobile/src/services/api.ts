@@ -188,6 +188,11 @@ export async function getAlarms() {
   return data.alarms;
 }
 
+export async function getAlarm(id: string) {
+  const data = await get<{ alarm: Alarm }>(`/alarm/${id}`);
+  return data.alarm;
+}
+
 export async function createAlarm(params: {
   message_id: string;
   time: string;

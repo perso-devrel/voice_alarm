@@ -193,6 +193,44 @@ voice.post('/diarize', async (c) => {
   }
 });
 
+/** 음성 프로필 통계 */
+voice.get('/:id/stats', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
+
+  const [profileRes, msgRes, alarmRes] = await Promise.all([
+    db.execute({
+      sql: 'SELECT id, name FROM voice_profiles WHERE id = ? AND user_id = ?',
+      args: [id, userId],
+    }),
+    db.execute({
+      sql: 'SELECT COUNT(*) as count FROM messages WHERE voice_profile_id = ? AND user_id = ?',
+      args: [id, userId],
+    }),
+    db.execute({
+      sql: `SELECT COUNT(*) as count FROM alarms a
+            JOIN messages m ON a.message_id = m.id
+            WHERE m.voice_profile_id = ? AND (a.user_id = ? OR a.target_user_id = ?)`,
+      args: [id, userId, userId],
+    }),
+  ]);
+
+  if (profileRes.rows.length === 0) {
+    return c.json({ error: 'Voice profile not found' }, 404);
+  }
+
+  return c.json({
+    voice_profile_id: id,
+    messages: Number((msgRes.rows[0] as Record<string, unknown>)?.count ?? 0),
+    alarms: Number((alarmRes.rows[0] as Record<string, unknown>)?.count ?? 0),
+  });
+});
+
 /** 음성 프로필 삭제 */
 voice.delete('/:id', async (c) => {
   const userId = c.get('userId');

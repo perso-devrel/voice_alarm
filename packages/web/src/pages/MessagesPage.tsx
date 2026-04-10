@@ -72,8 +72,8 @@ export default function MessagesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteMessage,
-    onMutate: async (id: string) => {
+    mutationFn: ({ id, force }: { id: string; force?: boolean }) => deleteMessage(id, force),
+    onMutate: async ({ id }: { id: string; force?: boolean }) => {
       await queryClient.cancelQueries({ queryKey: ['messages'] });
       const previous = queryClient.getQueryData<Message[]>(['messages']);
       queryClient.setQueryData<Message[]>(['messages'], (old) =>
@@ -81,10 +81,19 @@ export default function MessagesPage() {
       );
       return { previous };
     },
-    onError: (_err, _id, context) => {
+    onError: (err: unknown, { id }, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['messages'], context.previous);
       }
+      const resp = (err as { response?: { status?: number; data?: { alarm_count?: number } } })?.response;
+      if (resp?.status === 409) {
+        const count = resp.data?.alarm_count ?? 0;
+        if (confirm(`이 메시지는 ${count}개의 알람에서 사용 중입니다. 그래도 삭제하시겠어요?`)) {
+          deleteMutation.mutate({ id, force: true });
+        }
+        return;
+      }
+      alert(getApiErrorMessage(err, '메시지 삭제에 실패했습니다.'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -93,7 +102,7 @@ export default function MessagesPage() {
 
   const handleDelete = (msg: Message) => {
     if (confirm(`"${msg.text}" 메시지를 삭제하시겠어요?`)) {
-      deleteMutation.mutate(msg.id);
+      deleteMutation.mutate({ id: msg.id });
     }
   };
 

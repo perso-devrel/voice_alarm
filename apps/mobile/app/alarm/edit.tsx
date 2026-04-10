@@ -13,10 +13,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
-import { getMessages, getAlarms, updateAlarm } from '../../src/services/api';
+import { getMessages, getAlarm, getAlarms, updateAlarm } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
-import type { Alarm, Message } from '../../src/types';
+import type { Message } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 
 export default function EditAlarmScreen() {
@@ -33,10 +33,10 @@ export default function EditAlarmScreen() {
   const [snooze, setSnooze] = useState(5);
   const [loaded, setLoaded] = useState(false);
 
-  const { data: alarms } = useQuery({
-    queryKey: ['alarms'],
-    queryFn: getAlarms,
-    enabled: isAuthenticated,
+  const { data: alarm } = useQuery({
+    queryKey: ['alarm', id],
+    queryFn: () => getAlarm(id!),
+    enabled: isAuthenticated && !!id,
   });
 
   const { data: messages } = useQuery({
@@ -44,8 +44,6 @@ export default function EditAlarmScreen() {
     queryFn: () => getMessages(),
     enabled: isAuthenticated,
   });
-
-  const alarm = alarms?.find((a: Alarm) => a.id === id);
 
   useEffect(() => {
     if (alarm && !loaded) {
