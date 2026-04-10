@@ -58,10 +58,14 @@ user.patch('/plan', async (c) => {
     return c.json({ error: 'Invalid plan' }, 400);
   }
 
-  await db.execute({
+  const result = await db.execute({
     sql: `UPDATE users SET plan = ?, updated_at = datetime('now') WHERE google_id = ?`,
     args: [body.plan, userId],
   });
+
+  if (result.rowsAffected === 0) {
+    return c.json({ error: 'User not found' }, 404);
+  }
 
   return c.json({ success: true, plan: body.plan });
 });

@@ -9,6 +9,7 @@ import {
   getFriendList,
   sendGift,
   deleteMessage,
+  createAlarm,
 } from '../services/api';
 import type { VoiceProfile, Message, PresetCategory, Friend } from '../types';
 import { getApiErrorMessage } from '../types';
@@ -41,6 +42,9 @@ export default function MessagesPage() {
   const [giftNote, setGiftNote] = useState('');
   const [detailVoice, setDetailVoice] = useState<VoiceProfile | null>(null);
   const [detailMessage, setDetailMessage] = useState<Message | null>(null);
+  const [showAlarmForm, setShowAlarmForm] = useState(false);
+  const [alarmTime, setAlarmTime] = useState('07:00');
+  const [alarmRepeatDays, setAlarmRepeatDays] = useState<number[]>([]);
 
   const { data: voices } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -102,6 +106,32 @@ export default function MessagesPage() {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
   });
+
+  const alarmMutation = useMutation({
+    mutationFn: createAlarm,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alarms'] });
+      setShowAlarmForm(false);
+      setDetailMessage(null);
+      setAlarmTime('07:00');
+      setAlarmRepeatDays([]);
+    },
+  });
+
+  const handleCreateAlarm = () => {
+    if (!detailMessage) return;
+    alarmMutation.mutate({
+      message_id: detailMessage.id,
+      time: alarmTime,
+      repeat_days: alarmRepeatDays.length > 0 ? alarmRepeatDays : undefined,
+    });
+  };
+
+  const toggleRepeatDay = (day: number) => {
+    setAlarmRepeatDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort(),
+    );
+  };
 
   const handleDelete = (msg: Message) => {
     if (confirm(`"${msg.text}" 메시지를 삭제하시겠어요?`)) {
@@ -415,7 +445,7 @@ export default function MessagesPage() {
       {detailMessage && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setDetailMessage(null)}
+          onClick={() => { setDetailMessage(null); setShowAlarmForm(false); }}
         >
           <div
             className="bg-[var(--color-bg)] rounded-2xl w-full max-w-md overflow-hidden"
@@ -436,6 +466,7 @@ export default function MessagesPage() {
                     const profile = voices?.find((v: VoiceProfile) => v.name === detailMessage.voice_name);
                     if (profile) {
                       setDetailMessage(null);
+                      setShowAlarmForm(false);
                       setDetailVoice(profile);
                     }
                   }}
@@ -451,8 +482,57 @@ export default function MessagesPage() {
                 <p className="text-[var(--color-text)] leading-relaxed whitespace-pre-wrap">{detailMessage.text}</p>
               </div>
               {detailMessage.audio_url && <InlineAudioPlayer audioUrl={detailMessage.audio_url} />}
+              {showAlarmForm && (
+                <div className="mt-4 bg-[var(--color-surface)] rounded-xl p-4 border border-[var(--color-border)]">
+                  <h4 className="text-sm font-semibold text-[var(--color-text)] mb-3">알람 설정</h4>
+                  <input
+                    type="time"
+                    value={alarmTime}
+                    onChange={(e) => setAlarmTime(e.target.value)}
+                    className="w-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                  />
+                  <p className="text-xs text-[var(--color-text-secondary)] mb-2">반복 요일 (선택)</p>
+                  <div className="flex gap-1.5 mb-3">
+                    {['일', '월', '화', '수', '목', '금', '토'].map((label, i) => (
+                      <button
+                        key={i}
+                        onClick={() => toggleRepeatDay(i)}
+                        className={`w-9 h-9 rounded-full text-xs font-medium transition-colors ${
+                          alarmRepeatDays.includes(i)
+                            ? 'bg-[var(--color-primary)] text-white'
+                            : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleCreateAlarm}
+                    disabled={alarmMutation.isPending}
+                    className="w-full py-2.5 rounded-xl bg-[var(--color-primary)] text-white hover:opacity-90 font-medium transition-opacity disabled:opacity-50"
+                  >
+                    {alarmMutation.isPending ? '설정 중...' : '⏰ 알람 설정하기'}
+                  </button>
+                  {alarmMutation.isError && (
+                    <p role="alert" className="text-red-500 text-xs mt-2">
+                      {getApiErrorMessage(alarmMutation.error, '알람 설정 실패')}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="p-4 border-t border-[var(--color-border)] flex gap-2">
+              <button
+                onClick={() => setShowAlarmForm(!showAlarmForm)}
+                className={`flex-1 py-2.5 rounded-xl font-medium transition-colors ${
+                  showAlarmForm
+                    ? 'bg-[var(--color-primary)] text-white hover:opacity-90'
+                    : 'border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10'
+                }`}
+              >
+                ⏰ 알람 설정
+              </button>
               <button
                 onClick={() => {
                   if (!friends?.length) {
@@ -461,14 +541,15 @@ export default function MessagesPage() {
                   }
                   setGiftTarget(detailMessage);
                   setDetailMessage(null);
+                  setShowAlarmForm(false);
                 }}
                 className="flex-1 py-2.5 rounded-xl border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 font-medium transition-colors"
               >
                 🎁 선물하기
               </button>
               <button
-                onClick={() => setDetailMessage(null)}
-                className="flex-1 py-2.5 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors font-medium"
+                onClick={() => { setDetailMessage(null); setShowAlarmForm(false); }}
+                className="py-2.5 px-4 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors font-medium"
               >
                 닫기
               </button>
