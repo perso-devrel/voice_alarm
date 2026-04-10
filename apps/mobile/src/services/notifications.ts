@@ -40,6 +40,13 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
     const repeatDays: number[] = JSON.parse(alarm.repeat_days || '[]');
     const title = alarm.voice_name ? `🗣️ ${alarm.voice_name}` : '⏰ VoiceAlarm';
     const body = alarm.message_text || 'Alarm';
+    const notificationData = {
+      alarmId: alarm.id,
+      messageId: alarm.message_id,
+      text: alarm.message_text || '',
+      voiceName: alarm.voice_name || '',
+      category: alarm.category || '',
+    };
 
     if (repeatDays.length === 0) {
       await Notifications.scheduleNotificationAsync({
@@ -47,7 +54,7 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
           title,
           body,
           sound: 'default',
-          data: { alarmId: alarm.id, messageId: alarm.message_id },
+          data: notificationData,
           ...(Platform.OS === 'android' && { channelId: 'alarms' }),
         },
         trigger: {
@@ -64,7 +71,7 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
             title,
             body,
             sound: 'default',
-            data: { alarmId: alarm.id, messageId: alarm.message_id },
+            data: notificationData,
             ...(Platform.OS === 'android' && { channelId: 'alarms' }),
           },
           trigger: {

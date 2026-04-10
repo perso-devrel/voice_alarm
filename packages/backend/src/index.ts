@@ -4,7 +4,7 @@ import type { Env, AppEnv } from './types';
 import { authMiddleware } from './middleware/auth';
 import { loggerMiddleware } from './middleware/logger';
 import { rateLimitMiddleware } from './middleware/rateLimit';
-import { initDB } from './lib/db';
+import { getDB, initDB } from './lib/db';
 import voiceRoutes from './routes/voice';
 import ttsRoutes from './routes/tts';
 import alarmRoutes from './routes/alarm';
@@ -31,14 +31,23 @@ app.use(
   }),
 );
 
-// Health check
-app.get('/', (c) =>
-  c.json({
+// Health check with DB connectivity
+app.get('/', async (c) => {
+  let dbStatus: 'ok' | 'error' = 'error';
+  try {
+    const db = getDB(c.env);
+    await db.execute('SELECT 1');
+    dbStatus = 'ok';
+  } catch {
+    // DB unreachable — report but don't fail the health check
+  }
+  return c.json({
     name: 'VoiceAlarm API',
     version: '1.0.0',
-    status: 'ok',
-  }),
-);
+    status: dbStatus === 'ok' ? 'ok' : 'degraded',
+    db: dbStatus,
+  });
+});
 
 // DB 초기화 엔드포인트
 app.post('/api/init-db', async (c) => {

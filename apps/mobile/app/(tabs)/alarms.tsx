@@ -58,10 +58,18 @@ export default function AlarmsScreen() {
   const displayAlarms = alarms ?? cachedAlarms;
   const showingCached = !alarms && !!cachedAlarms && !isConnected;
 
+  const resyncNotifications = async () => {
+    const fresh = await queryClient.fetchQuery({ queryKey: ['alarms'], queryFn: getAlarms });
+    if (fresh) syncAlarmNotifications(fresh);
+  };
+
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
       updateAlarm(id, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alarms'] });
+      resyncNotifications();
+    },
     onError: (err: unknown) => {
       Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarms.toggleError')));
     },
@@ -69,7 +77,10 @@ export default function AlarmsScreen() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteAlarm,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alarms'] });
+      resyncNotifications();
+    },
     onError: (err: unknown) => {
       Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarms.deleteError')));
     },

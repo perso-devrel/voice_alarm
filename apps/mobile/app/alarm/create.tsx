@@ -13,8 +13,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
-import { getMessages, createAlarm, getFriendList } from '../../src/services/api';
+import { getMessages, getAlarms, createAlarm, getFriendList } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Friend, Message } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 
@@ -46,8 +47,10 @@ export default function CreateAlarmScreen() {
 
   const createMutation = useMutation({
     mutationFn: createAlarm,
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['alarms'] });
+      const alarms = await getAlarms();
+      syncAlarmNotifications(alarms);
       Alert.alert(t('alarmCreate.successTitle'), t('alarmCreate.successDesc'), [
         { text: t('common.confirm'), onPress: () => router.back() },
       ]);

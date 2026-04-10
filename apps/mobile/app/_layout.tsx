@@ -1,12 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
+import type * as Notifications from 'expo-notifications';
 import { useAppStore } from '../src/stores/useAppStore';
 import { setupAudioSession, ensureAudioDir } from '../src/services/audio';
-import { requestNotificationPermissions } from '../src/services/notifications';
+import {
+  requestNotificationPermissions,
+  addNotificationResponseListener,
+} from '../src/services/notifications';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import '../src/i18n';
 
@@ -22,12 +27,33 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const loadPersistedState = useAppStore((s) => s.loadPersistedState);
   const { t } = useTranslation();
+  const router = useRouter();
+  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
     loadPersistedState();
     setupAudioSession();
     ensureAudioDir();
     requestNotificationPermissions();
+
+    responseListener.current = addNotificationResponseListener((response) => {
+      const data = response.notification.request.content.data;
+      if (data?.messageId) {
+        router.push({
+          pathname: '/player',
+          params: {
+            messageId: String(data.messageId),
+            text: String(data.text || ''),
+            voiceName: String(data.voiceName || ''),
+            category: String(data.category || ''),
+          },
+        });
+      }
+    });
+
+    return () => {
+      responseListener.current?.remove();
+    };
   }, []);
 
   return (
