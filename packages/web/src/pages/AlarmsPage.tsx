@@ -294,6 +294,8 @@ function AlarmCreateForm({
   const [presetText, setPresetText] = useState<string | null>(null);
   const [presetVoiceId, setPresetVoiceId] = useState<string | null>(null);
 
+  const [msgSearch, setMsgSearch] = useState('');
+
   const { data: messages } = useQuery({
     queryKey: ['messages'],
     queryFn: () => getMessages(),
@@ -312,6 +314,16 @@ function AlarmCreateForm({
   });
 
   const readyVoices = voices?.filter((v: VoiceProfile) => v.status === 'ready') ?? [];
+
+  const filteredMsgs = (() => {
+    if (!messages) return [];
+    const q = msgSearch.toLowerCase().trim();
+    if (!q) return messages;
+    return messages.filter((m: Message) =>
+      m.text.toLowerCase().includes(q) ||
+      (m.voice_name ?? '').toLowerCase().includes(q)
+    );
+  })();
 
   const ttsMutation = useMutation({
     mutationFn: generateTTS,
@@ -378,22 +390,40 @@ function AlarmCreateForm({
       <div className="mb-4">
         <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">알람 메시지</label>
         {messages && messages.length > 0 ? (
-          <div className="grid gap-2 max-h-48 overflow-y-auto">
-            {messages.map((msg: Message) => (
-              <button
-                key={msg.id}
-                onClick={() => setSelectedMessageId(msg.id)}
-                className={`text-left p-3 rounded-lg border transition-colors ${
-                  selectedMessageId === msg.id
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                    : 'border-[var(--color-border)] hover:bg-[var(--color-bg)]'
-                }`}
-              >
-                <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {msg.voice_name}</span>
-                <p className="text-sm text-[var(--color-text)] mt-0.5 truncate">"{msg.text}"</p>
-              </button>
-            ))}
-          </div>
+          <>
+            {messages.length > 3 && (
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  value={msgSearch}
+                  onChange={(e) => setMsgSearch(e.target.value)}
+                  placeholder="메시지 검색..."
+                  aria-label="알람 메시지 검색"
+                  className="w-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] rounded-lg px-3 py-2 pl-8 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] text-xs">🔍</span>
+              </div>
+            )}
+            <div className="grid gap-2 max-h-48 overflow-y-auto">
+              {filteredMsgs.map((msg: Message) => (
+                <button
+                  key={msg.id}
+                  onClick={() => setSelectedMessageId(msg.id)}
+                  className={`text-left p-3 rounded-lg border transition-colors ${
+                    selectedMessageId === msg.id
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                      : 'border-[var(--color-border)] hover:bg-[var(--color-bg)]'
+                  }`}
+                >
+                  <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {msg.voice_name}</span>
+                  <p className="text-sm text-[var(--color-text)] mt-0.5 truncate">"{msg.text}"</p>
+                </button>
+              ))}
+              {filteredMsgs.length === 0 && msgSearch && (
+                <p className="text-sm text-[var(--color-text-tertiary)] text-center py-3">검색 결과가 없습니다</p>
+              )}
+            </div>
+          </>
         ) : (
           <div className="text-center py-6 bg-[var(--color-bg)] rounded-xl border border-dashed border-[var(--color-border)]">
             <p className="text-2xl mb-1">💬</p>
@@ -536,11 +566,22 @@ function AlarmEditInline({
   });
   const [selectedMessageId, setSelectedMessageId] = useState(alarm.message_id);
   const [snoozeMinutes, setSnoozeMinutes] = useState(alarm.snooze_minutes ?? 5);
+  const [editMsgSearch, setEditMsgSearch] = useState('');
 
   const { data: messages } = useQuery({
     queryKey: ['messages'],
     queryFn: () => getMessages(),
   });
+
+  const editFilteredMsgs = (() => {
+    if (!messages) return [];
+    const q = editMsgSearch.toLowerCase().trim();
+    if (!q) return messages;
+    return messages.filter((m: Message) =>
+      m.text.toLowerCase().includes(q) ||
+      (m.voice_name ?? '').toLowerCase().includes(q)
+    );
+  })();
 
   const toggleDay = (day: number) => {
     setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
@@ -625,22 +666,40 @@ function AlarmEditInline({
       <div className="mb-4">
         <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">알람 메시지</label>
         {messages && messages.length > 0 ? (
-          <div className="grid gap-2 max-h-48 overflow-y-auto">
-            {messages.map((msg: Message) => (
-              <button
-                key={msg.id}
-                onClick={() => setSelectedMessageId(msg.id)}
-                className={`text-left p-3 rounded-lg border transition-colors ${
-                  selectedMessageId === msg.id
-                    ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
-                    : 'border-[var(--color-border)] hover:bg-[var(--color-bg)]'
-                }`}
-              >
-                <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {msg.voice_name}</span>
-                <p className="text-sm text-[var(--color-text)] mt-0.5 truncate">"{msg.text}"</p>
-              </button>
-            ))}
-          </div>
+          <>
+            {messages.length > 3 && (
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  value={editMsgSearch}
+                  onChange={(e) => setEditMsgSearch(e.target.value)}
+                  placeholder="메시지 검색..."
+                  aria-label="알람 메시지 검색"
+                  className="w-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] rounded-lg px-3 py-2 pl-8 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] text-xs">🔍</span>
+              </div>
+            )}
+            <div className="grid gap-2 max-h-48 overflow-y-auto">
+              {editFilteredMsgs.map((msg: Message) => (
+                <button
+                  key={msg.id}
+                  onClick={() => setSelectedMessageId(msg.id)}
+                  className={`text-left p-3 rounded-lg border transition-colors ${
+                    selectedMessageId === msg.id
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                      : 'border-[var(--color-border)] hover:bg-[var(--color-bg)]'
+                  }`}
+                >
+                  <span className="text-sm text-[var(--color-primary)] font-medium">🗣️ {msg.voice_name}</span>
+                  <p className="text-sm text-[var(--color-text)] mt-0.5 truncate">"{msg.text}"</p>
+                </button>
+              ))}
+              {editFilteredMsgs.length === 0 && editMsgSearch && (
+                <p className="text-sm text-[var(--color-text-tertiary)] text-center py-3">검색 결과가 없습니다</p>
+              )}
+            </div>
+          </>
         ) : (
           <p className="text-sm text-[var(--color-text-tertiary)]">메시지가 없습니다</p>
         )}

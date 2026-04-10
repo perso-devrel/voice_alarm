@@ -261,6 +261,20 @@ voice.delete('/:id', async (c) => {
 
   const profile = result.rows[0];
 
+  const msgCheck = await db.execute({
+    sql: 'SELECT COUNT(*) as cnt FROM messages WHERE voice_profile_id = ?',
+    args: [id],
+  });
+  const msgCount = Number((msgCheck.rows[0] as Record<string, unknown>)?.cnt ?? 0);
+
+  if (msgCount > 0 && c.req.query('force') !== 'true') {
+    return c.json({
+      warning: true,
+      message_count: msgCount,
+      message: `This voice profile has ${msgCount} message(s). Add ?force=true to delete anyway.`,
+    }, 409);
+  }
+
   // 외부 API에서도 삭제
   try {
     if (profile.perso_voice_id) {

@@ -139,6 +139,15 @@ export default function FriendProfileScreen() {
         >
           <Text style={styles.actionButtonText}>{t('friendProfile.setAlarm', '이 친구에게 알람 보내기')}</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.giftActionButton, { borderColor: colors.primary }]}
+          onPress={() => router.push({ pathname: '/message/create', params: { giftTo: friendEmail } })}
+        >
+          <Text style={[styles.giftActionButtonText, { color: colors.primary }]}>
+            {t('friendProfile.sendGift', '이 친구에게 선물하기')}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -216,4 +225,12 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   actionButtonText: { color: '#FFFFFF', fontSize: FontSize.md, fontWeight: '700' },
+  giftActionButton: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center' as const,
+    marginTop: Spacing.sm,
+    borderWidth: 1,
+  },
+  giftActionButtonText: { fontSize: FontSize.md, fontWeight: '700' as const },
 });
