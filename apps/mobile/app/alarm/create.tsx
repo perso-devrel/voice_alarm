@@ -12,11 +12,19 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { DAYS_OF_WEEK } from '../../src/constants/presets';
-import { getMessages, getAlarms, createAlarm, getFriendList } from '../../src/services/api';
+import { DAYS_OF_WEEK, PRESET_CATEGORIES } from '../../src/constants/presets';
+import type { PresetCategory } from '../../src/constants/presets';
+import {
+  getMessages,
+  getAlarms,
+  createAlarm,
+  getFriendList,
+  getVoiceProfiles,
+  generateTTS,
+} from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
-import type { Friend, Message } from '../../src/types';
+import type { Friend, Message, VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 
 export default function CreateAlarmScreen() {
@@ -33,6 +41,10 @@ export default function CreateAlarmScreen() {
   const [snooze, setSnooze] = useState(defaultSnoozeMinutes);
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [targetName, setTargetName] = useState<string | null>(null);
+  const [showPreset, setShowPreset] = useState(false);
+  const [presetCategory, setPresetCategory] = useState<string>('morning');
+  const [presetText, setPresetText] = useState<string | null>(null);
+  const [presetVoiceId, setPresetVoiceId] = useState<string | null>(null);
 
   const { data: messages } = useQuery({
     queryKey: ['messages'],
@@ -40,11 +52,41 @@ export default function CreateAlarmScreen() {
     enabled: isAuthenticated,
   });
 
+  const { data: voices } = useQuery({
+    queryKey: ['voiceProfiles'],
+    queryFn: getVoiceProfiles,
+    enabled: isAuthenticated && showPreset,
+  });
+
+  const readyVoices = voices?.filter((v: VoiceProfile) => v.status === 'ready') ?? [];
+
   const { data: friends } = useQuery({
     queryKey: ['friends'],
     queryFn: getFriendList,
     enabled: isAuthenticated,
   });
+
+  const ttsMutation = useMutation({
+    mutationFn: generateTTS,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      setSelectedMessageId(data.message_id);
+      setShowPreset(false);
+      setPresetText(null);
+    },
+    onError: (err: unknown) => {
+      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarmCreate.ttsError')));
+    },
+  });
+
+  const handlePresetGenerate = () => {
+    if (!presetVoiceId || !presetText) return;
+    ttsMutation.mutate({
+      voice_profile_id: presetVoiceId,
+      text: presetText,
+      category: presetCategory,
+    });
+  };
 
   const createMutation = useMutation({
     mutationFn: createAlarm,
@@ -216,14 +258,7 @@ export default function CreateAlarmScreen() {
 
       {/* 메시지 선택 */}
       <Text style={styles.sectionTitle}>{t('alarmCreate.message')}</Text>
-      {!messages || messages.length === 0 ? (
-        <TouchableOpacity
-          style={styles.emptyMessage}
-          onPress={() => router.push('/message/create')}
-        >
-          <Text style={styles.emptyMessageText}>{t('alarmCreate.emptyMessage')}</Text>
-        </TouchableOpacity>
-      ) : (
+      {messages && messages.length > 0 && (
         <View style={styles.messageList}>
           {messages.map((msg: Message) => (
             <TouchableOpacity
@@ -243,6 +278,96 @@ export default function CreateAlarmScreen() {
               {selectedMessageId === msg.id && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
+        </View>
+      )}
+
+      {/* 프리셋으로 빠르게 만들기 */}
+      <TouchableOpacity
+        style={styles.presetToggle}
+        onPress={() => setShowPreset((v) => !v)}
+      >
+        <Text style={styles.presetToggleText}>
+          {showPreset ? '▲' : '▼'} {t('alarmCreate.quickCreate')}
+        </Text>
+      </TouchableOpacity>
+
+      {showPreset && (
+        <View style={styles.presetSection}>
+          {/* 음성 선택 */}
+          <Text style={styles.presetLabel}>{t('alarmCreate.selectVoice')}</Text>
+          {readyVoices.length === 0 ? (
+            <TouchableOpacity
+              style={styles.emptyMessage}
+              onPress={() => router.push('/voice/record')}
+            >
+              <Text style={styles.emptyMessageText}>{t('alarmCreate.emptyVoice')}</Text>
+            </TouchableOpacity>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetRow}>
+              {readyVoices.map((v: VoiceProfile) => (
+                <TouchableOpacity
+                  key={v.id}
+                  style={[styles.targetChip, presetVoiceId === v.id && styles.targetChipActive]}
+                  onPress={() => setPresetVoiceId(v.id)}
+                >
+                  <Text style={[styles.targetText, presetVoiceId === v.id && styles.targetTextActive]}>
+                    {v.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* 카테고리 선택 */}
+          <Text style={styles.presetLabel}>{t('alarmCreate.presetCategory')}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetRow}>
+            {PRESET_CATEGORIES.map((cat: PresetCategory) => (
+              <TouchableOpacity
+                key={cat.key}
+                style={[styles.targetChip, presetCategory === cat.key && styles.targetChipActive]}
+                onPress={() => {
+                  setPresetCategory(cat.key);
+                  setPresetText(null);
+                }}
+              >
+                <Text style={[styles.targetText, presetCategory === cat.key && styles.targetTextActive]}>
+                  {cat.emoji} {cat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* 프리셋 메시지 목록 */}
+          <View style={styles.messageList}>
+            {PRESET_CATEGORIES.find((c) => c.key === presetCategory)?.messages.map((msg, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.messageItem, presetText === msg && styles.messageItemSelected]}
+                onPress={() => setPresetText(msg)}
+              >
+                <View style={styles.messageInfo}>
+                  <Text style={styles.messageText} numberOfLines={2}>"{msg}"</Text>
+                </View>
+                {presetText === msg && <Text style={styles.checkmark}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* 생성 버튼 */}
+          <TouchableOpacity
+            style={[
+              styles.presetGenerateBtn,
+              (!presetVoiceId || !presetText || ttsMutation.isPending) && styles.disabled,
+            ]}
+            onPress={handlePresetGenerate}
+            disabled={!presetVoiceId || !presetText || ttsMutation.isPending}
+          >
+            {ttsMutation.isPending ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <Text style={styles.presetGenerateText}>{t('alarmCreate.generatePreset')}</Text>
+            )}
+          </TouchableOpacity>
         </View>
       )}
 
@@ -467,5 +592,43 @@ const styles = StyleSheet.create({
     color: Colors.light.accent,
     fontWeight: '500',
     marginBottom: Spacing.sm,
+  },
+  presetToggle: {
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+  },
+  presetToggleText: {
+    fontSize: FontSize.md,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  presetSection: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  presetLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  presetRow: {
+    marginBottom: Spacing.sm,
+  },
+  presetGenerateBtn: {
+    backgroundColor: Colors.light.accent,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    alignItems: 'center',
+    marginTop: Spacing.md,
+  },
+  presetGenerateText: {
+    color: '#FFF',
+    fontSize: FontSize.md,
+    fontWeight: '700',
   },
 });

@@ -76,6 +76,10 @@ export async function getPresets() {
   return data.presets;
 }
 
+export async function deleteMessage(id: string) {
+  await api.delete(`/tts/messages/${id}`);
+}
+
 export async function getAlarms() {
   const { data } = await api.get('/alarm');
   return data.alarms;

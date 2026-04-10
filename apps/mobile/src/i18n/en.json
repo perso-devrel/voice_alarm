@@ -172,7 +172,13 @@
     "successDesc": "We'll wake you with a special voice every day.",
     "selectMessage": "Please select a voice message for the alarm.",
     "selectMessageTitle": "Select message",
-    "createError": "Failed to create alarm."
+    "createError": "Failed to create alarm.",
+    "quickCreate": "Quick create from preset",
+    "selectVoice": "Select voice",
+    "emptyVoice": "Register a voice first →",
+    "presetCategory": "Category",
+    "generatePreset": "🔊 Generate this message",
+    "ttsError": "Failed to generate voice."
   },
   "messageCreate": {
     "whoseVoice": "Whose voice?",

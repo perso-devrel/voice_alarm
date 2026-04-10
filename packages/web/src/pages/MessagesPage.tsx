@@ -7,6 +7,7 @@ import {
   generateTTS,
   getFriendList,
   sendGift,
+  deleteMessage,
 } from '../services/api';
 import type { VoiceProfile, Message, PresetCategory, Friend } from '../types';
 import { getApiErrorMessage } from '../types';
@@ -58,6 +59,32 @@ export default function MessagesPage() {
       setMessageText('');
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteMessage,
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['messages'] });
+      const previous = queryClient.getQueryData<Message[]>(['messages']);
+      queryClient.setQueryData<Message[]>(['messages'], (old) =>
+        old ? old.filter((m) => m.id !== id) : [],
+      );
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['messages'], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    },
+  });
+
+  const handleDelete = (msg: Message) => {
+    if (confirm(`"${msg.text}" 메시지를 삭제하시겠어요?`)) {
+      deleteMutation.mutate(msg.id);
+    }
+  };
 
   const handleGenerate = () => {
     if (!selectedVoice || !messageText.trim()) return;
@@ -228,29 +255,38 @@ export default function MessagesPage() {
                       {new Date(msg.created_at).toLocaleDateString('ko-KR')}
                     </p>
                   </div>
-                  <button
-                    aria-label={`"${msg.text}" 메시지를 선물로 보내기`}
-                    onClick={async () => {
-                      try {
-                        const friends = await getFriendList();
-                        if (!friends?.length) {
-                          alert('먼저 친구를 추가해주세요.');
-                          return;
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      aria-label={`"${msg.text}" 메시지를 선물로 보내기`}
+                      onClick={async () => {
+                        try {
+                          const friends = await getFriendList();
+                          if (!friends?.length) {
+                            alert('먼저 친구를 추가해주세요.');
+                            return;
+                          }
+                          const name = prompt(
+                            `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: Friend) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`,
+                          );
+                          if (!name) return;
+                          await sendGift({ recipient_email: name, message_id: msg.id });
+                          alert('선물을 보냈습니다!');
+                        } catch (err: unknown) {
+                          alert(getApiErrorMessage(err, '선물 전송 실패'));
                         }
-                        const name = prompt(
-                          `선물할 친구의 이메일을 입력하세요:\n${friends.map((f: Friend) => `- ${f.friend_email} (${f.friend_name || ''})`).join('\n')}`,
-                        );
-                        if (!name) return;
-                        await sendGift({ recipient_email: name, message_id: msg.id });
-                        alert('선물을 보냈습니다!');
-                      } catch (err: unknown) {
-                        alert(getApiErrorMessage(err, '선물 전송 실패'));
-                      }
-                    }}
-                    className="px-3 py-1.5 text-sm border border-[var(--color-primary)] text-[var(--color-primary)] rounded-lg hover:bg-[var(--color-primary)]/10 transition-colors"
-                  >
-                    🎁 선물
-                  </button>
+                      }}
+                      className="px-3 py-1.5 text-sm border border-[var(--color-primary)] text-[var(--color-primary)] rounded-lg hover:bg-[var(--color-primary)]/10 transition-colors"
+                    >
+                      🎁 선물
+                    </button>
+                    <button
+                      aria-label={`"${msg.text}" 메시지 삭제`}
+                      onClick={() => handleDelete(msg)}
+                      className="px-3 py-1.5 text-sm border border-red-400 text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

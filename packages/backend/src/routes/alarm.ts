@@ -10,20 +10,33 @@ const alarm = new Hono<AppEnv>();
 alarm.get('/', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
 
-  const result = await db.execute({
-    sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name,
-            creator.email as creator_email, creator.name as creator_name
-          FROM alarms a
-          JOIN messages m ON a.message_id = m.id
-          JOIN voice_profiles vp ON m.voice_profile_id = vp.id
-          LEFT JOIN users creator ON creator.google_id = a.user_id
-          WHERE a.user_id = ? OR a.target_user_id = ?
-          ORDER BY a.time ASC`,
-    args: [userId, userId],
-  });
+  const whereClause = 'WHERE a.user_id = ? OR a.target_user_id = ?';
+  const whereArgs = [userId, userId];
 
-  return c.json({ alarms: result.rows });
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: `SELECT COUNT(*) as total FROM alarms a ${whereClause}`,
+      args: whereArgs,
+    }),
+    db.execute({
+      sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name,
+              creator.email as creator_email, creator.name as creator_name
+            FROM alarms a
+            JOIN messages m ON a.message_id = m.id
+            JOIN voice_profiles vp ON m.voice_profile_id = vp.id
+            LEFT JOIN users creator ON creator.google_id = a.user_id
+            ${whereClause}
+            ORDER BY a.time ASC
+            LIMIT ? OFFSET ?`,
+      args: [...whereArgs, limit, offset],
+    }),
+  ]);
+
+  const total = Number(countRes.rows[0].total);
+  return c.json({ alarms: result.rows, total, limit, offset });
 });
 
 /** 알람 생성 */

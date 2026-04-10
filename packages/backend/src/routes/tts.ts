@@ -182,6 +182,33 @@ tts.get('/messages', async (c) => {
   return c.json({ messages: result.rows });
 });
 
+/** 메시지 삭제 */
+tts.delete('/messages/:id', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid message ID format' }, 400);
+  }
+
+  await db.execute({
+    sql: 'DELETE FROM message_library WHERE message_id = ? AND user_id = ?',
+    args: [id, userId],
+  });
+
+  const result = await db.execute({
+    sql: 'DELETE FROM messages WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
+
+  if (result.rowsAffected === 0) {
+    return c.json({ error: 'Message not found' }, 404);
+  }
+
+  return c.json({ ok: true });
+});
+
 /** 프리셋 메시지 목록 */
 tts.get('/presets', async (c) => {
   const presets = [

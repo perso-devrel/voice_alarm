@@ -172,7 +172,13 @@
     "successDesc": "매일 소중한 목소리로 깨워드릴게요.",
     "selectMessage": "알람에 사용할 음성 메시지를 선택해주세요.",
     "selectMessageTitle": "메시지 선택",
-    "createError": "알람 생성에 실패했습니다."
+    "createError": "알람 생성에 실패했습니다.",
+    "quickCreate": "프리셋으로 빠르게 만들기",
+    "selectVoice": "목소리 선택",
+    "emptyVoice": "먼저 음성을 등록해주세요 →",
+    "presetCategory": "카테고리",
+    "generatePreset": "🔊 이 메시지로 생성",
+    "ttsError": "음성 생성에 실패했습니다."
   },
   "messageCreate": {
     "whoseVoice": "누구의 목소리로?",
