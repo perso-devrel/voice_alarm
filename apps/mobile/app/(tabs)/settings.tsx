@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
-import { getUserProfile } from '../../src/services/api';
+import { getUserProfile, deleteAccount } from '../../src/services/api';
 import { useState, useEffect } from 'react';
 import { Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -46,11 +46,26 @@ export default function SettingsScreen() {
     return labels[plan] || plan;
   };
 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
   const handleLogout = () => {
     Alert.alert(t('common.logout'), t('settings.logoutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.logout'), style: 'destructive', onPress: () => clearAuth() },
     ]);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      clearAuth();
+    } catch {
+      setDeleting(false);
+      Alert.alert(t('common.error'), t('settings.deleteAccountError'));
+    }
   };
 
   return (
@@ -175,9 +190,60 @@ export default function SettingsScreen() {
         </View>
 
         {isAuthenticated && (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>{t('common.logout')}</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutText}>{t('common.logout')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.deleteAccountButton}
+              onPress={() => setShowDeleteDialog(true)}
+            >
+              <Text style={styles.deleteAccountText}>{t('settings.deleteAccount')}</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {showDeleteDialog && (
+          <View style={styles.deleteDialog}>
+            <Text style={styles.deleteDialogTitle}>{t('settings.deleteAccount')}</Text>
+            <Text style={styles.deleteDialogWarning}>{t('settings.deleteAccountWarning')}</Text>
+            <Text style={styles.deleteDialogPrompt}>{t('settings.deleteAccountConfirmPrompt')}</Text>
+            <TextInput
+              style={styles.deleteDialogInput}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!deleting}
+            />
+            <View style={styles.deleteDialogButtons}>
+              <TouchableOpacity
+                style={styles.deleteDialogCancel}
+                onPress={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteConfirmText('');
+                }}
+                disabled={deleting}
+              >
+                <Text style={styles.deleteDialogCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.deleteDialogConfirm,
+                  deleteConfirmText !== t('settings.deleteAccountConfirmWord') && styles.disabled,
+                ]}
+                onPress={handleDeleteAccount}
+                disabled={deleteConfirmText !== t('settings.deleteAccountConfirmWord') || deleting}
+              >
+                {deleting ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.deleteDialogConfirmText}>{t('settings.deleteAccount')}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -269,5 +335,79 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.light.error,
     fontWeight: '600',
+  },
+  deleteAccountButton: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  deleteAccountText: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+  },
+  deleteDialog: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginTop: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.error,
+  },
+  deleteDialogTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.light.error,
+    marginBottom: Spacing.sm,
+  },
+  deleteDialogWarning: {
+    fontSize: FontSize.sm,
+    color: Colors.light.text,
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  deleteDialogPrompt: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.sm,
+  },
+  deleteDialogInput: {
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
+  },
+  deleteDialogButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  deleteDialogCancel: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.surfaceVariant,
+  },
+  deleteDialogCancelText: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    fontWeight: '600',
+  },
+  deleteDialogConfirm: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.error,
+  },
+  deleteDialogConfirmText: {
+    fontSize: FontSize.md,
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

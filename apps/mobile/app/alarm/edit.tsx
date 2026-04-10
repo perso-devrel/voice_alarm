@@ -18,6 +18,8 @@ import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Message } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function EditAlarmScreen() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function EditAlarmScreen() {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAppStore();
   const { t } = useTranslation();
+  const toast = useToast();
 
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
@@ -73,7 +76,7 @@ export default function EditAlarmScreen() {
       ]);
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarmEdit.editError')));
+      toast.show(getApiErrorMessage(err, t('alarmEdit.editError')));
     },
   });
 
@@ -83,7 +86,7 @@ export default function EditAlarmScreen() {
 
   const handleSubmit = () => {
     if (!selectedMessageId) {
-      Alert.alert(t('alarmCreate.selectMessageTitle'), t('alarmCreate.selectMessage'));
+      toast.show(t('alarmCreate.selectMessage'));
       return;
     }
 
@@ -240,6 +243,7 @@ export default function EditAlarmScreen() {
           <Text style={styles.saveText}>{t('alarmEdit.save')}</Text>
         )}
       </TouchableOpacity>
+      <Toast message={toast.message} opacity={toast.opacity} />
     </ScrollView>
   );
 }

@@ -17,11 +17,14 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { diarizeAudio, createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 import type { Speaker } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function DiarizeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const toast = useToast();
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [selectedSpeaker, setSelectedSpeaker] = useState<string | null>(null);
@@ -40,10 +43,7 @@ export default function DiarizeScreen() {
       setStep('select');
     },
     onError: (err: unknown) => {
-      Alert.alert(
-        t('voiceDiarize.analyzeErrorTitle'),
-        getApiErrorMessage(err, t('voiceDiarize.analyzeError')),
-      );
+      toast.show(getApiErrorMessage(err, t('voiceDiarize.analyzeError')));
     },
   });
 
@@ -67,7 +67,7 @@ export default function DiarizeScreen() {
       ]);
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceDiarize.cloneError')));
+      toast.show(getApiErrorMessage(err, t('voiceDiarize.cloneError')));
     },
   });
 
@@ -94,7 +94,7 @@ export default function DiarizeScreen() {
 
   const handleSubmit = () => {
     if (!name.trim()) {
-      Alert.alert(t('voiceDiarize.nameRequiredTitle'), t('voiceDiarize.nameRequired'));
+      toast.show(t('voiceDiarize.nameRequired'));
       return;
     }
     cloneMutation.mutate({ name: name.trim() });
@@ -224,6 +224,7 @@ export default function DiarizeScreen() {
           </TouchableOpacity>
         </>
       )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </ScrollView>
   );
 }

@@ -339,3 +339,7 @@ export async function searchUsers(q: string) {
   const data = await get<{ users: UserSearchResult[] }>('/user/search', { q });
   return data.users;
 }
+
+export async function deleteAccount() {
+  return del<{ success: boolean }>('/user/me');
+}

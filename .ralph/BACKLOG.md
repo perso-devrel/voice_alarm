@@ -308,7 +308,7 @@
 ## P38 - 자가 생성 항목 (계정/보안 + 테스트)
 
 - [x] 백엔드: user.test.ts에 DELETE /api/user/me 테스트 추가 (전체 데이터 삭제 검증)
-- [ ] 모바일: 설정 화면에 계정 삭제 기능 추가 (웹과 동일, Alert 확인 다이얼로그)
+- [x] 모바일: 설정 화면에 계정 삭제 기능 추가 (웹과 동일, Alert 확인 다이얼로그)
 - [ ] 웹: SettingsPage 계정 삭제 후 토스트 대신 로그아웃 처리 확인 + 에러 토스트 개선
 - [ ] 백엔드: auth 미들웨어에 토큰 만료/무효 시 명확한 에러 메시지 반환
 
@@ -319,8 +319,8 @@
 - [x] 모바일: alarms 탭 에러 Alert → toast 변환 (토글/삭제 에러)
 - [x] 모바일: voices 탭 에러 Alert → toast 변환 (삭제 에러)
 - [x] 모바일: library 탭 에러 Alert → toast 변환 (즐겨찾기/삭제 에러)
-- [ ] 모바일: alarm/create, alarm/edit 에러 Alert → toast 변환
-- [ ] 모바일: voice/record, voice/upload, voice/diarize 에러 Alert → toast 변환
+- [x] 모바일: alarm/create, alarm/edit 에러 Alert → toast 변환
+- [x] 모바일: voice/record, voice/upload, voice/diarize 에러 Alert → toast 변환
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)
 - 추가 리팩터, 성능 프로파일링, Sentry 연동

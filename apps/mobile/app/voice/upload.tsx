@@ -15,11 +15,14 @@ import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function UploadScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const toast = useToast();
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [name, setName] = useState('');
   const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
@@ -42,7 +45,7 @@ export default function UploadScreen() {
       ]);
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceUpload.uploadError')));
+      toast.show(getApiErrorMessage(err, t('voiceUpload.uploadError')));
     },
   });
 
@@ -59,7 +62,7 @@ export default function UploadScreen() {
 
   const handleSubmit = () => {
     if (!selectedFile || !name.trim()) {
-      Alert.alert(t('voiceUpload.inputRequiredTitle'), t('voiceUpload.inputRequired'));
+      toast.show(t('voiceUpload.inputRequired'));
       return;
     }
     cloneMutation.mutate({ file: selectedFile, name: name.trim() });
@@ -134,6 +137,7 @@ export default function UploadScreen() {
           )}
         </TouchableOpacity>
       </View>
+      <Toast message={toast.message} opacity={toast.opacity} />
     </View>
   );
 }

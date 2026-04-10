@@ -17,6 +17,8 @@ import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/the
 import { requestMicPermission, startRecording, stopRecording } from '../../src/services/audio';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 const LEVEL_BAR_COUNT = 20;
 const LEVEL_HISTORY_SIZE = 20;
@@ -30,6 +32,7 @@ export default function RecordScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const toast = useToast();
   const guideSentences = t('voiceRecord.sentences', { returnObjects: true }) as string[];
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -68,7 +71,7 @@ export default function RecordScreen() {
       ]);
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('voiceRecord.cloneError')));
+      toast.show(getApiErrorMessage(err, t('voiceRecord.cloneError')));
     },
   });
 
@@ -103,7 +106,7 @@ export default function RecordScreen() {
         ]),
       ).start();
     } catch {
-      Alert.alert(t('common.error'), t('voiceRecord.recordError'));
+      toast.show(t('voiceRecord.recordError'));
     }
   };
 
@@ -122,11 +125,11 @@ export default function RecordScreen() {
 
   const handleSubmit = () => {
     if (!recordedUri || !name.trim()) {
-      Alert.alert(t('voiceRecord.inputRequiredTitle'), t('voiceRecord.inputRequired'));
+      toast.show(t('voiceRecord.inputRequired'));
       return;
     }
     if (duration < 10) {
-      Alert.alert(t('voiceRecord.tooShortTitle'), t('voiceRecord.tooShort'));
+      toast.show(t('voiceRecord.tooShort'));
       return;
     }
     cloneMutation.mutate({ uri: recordedUri, name: name.trim() });
@@ -261,6 +264,7 @@ export default function RecordScreen() {
           </TouchableOpacity>
         </View>
       )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </View>
   );
 }

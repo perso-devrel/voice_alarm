@@ -26,6 +26,8 @@ import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Friend, Message, VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function CreateAlarmScreen() {
   const queryClient = useQueryClient();
   const { isAuthenticated, userId, defaultSnoozeMinutes } = useAppStore();
   const { t } = useTranslation();
+  const toast = useToast();
 
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
@@ -75,7 +78,7 @@ export default function CreateAlarmScreen() {
       setPresetText(null);
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarmCreate.ttsError')));
+      toast.show(getApiErrorMessage(err, t('alarmCreate.ttsError')));
     },
   });
 
@@ -99,7 +102,7 @@ export default function CreateAlarmScreen() {
       ]);
     },
     onError: (err: unknown) => {
-      Alert.alert(t('common.error'), getApiErrorMessage(err, t('alarmCreate.createError')));
+      toast.show(getApiErrorMessage(err, t('alarmCreate.createError')));
     },
   });
 
@@ -109,7 +112,7 @@ export default function CreateAlarmScreen() {
 
   const handleSubmit = () => {
     if (!selectedMessageId) {
-      Alert.alert(t('alarmCreate.selectMessageTitle'), t('alarmCreate.selectMessage'));
+      toast.show(t('alarmCreate.selectMessage'));
       return;
     }
 
@@ -400,6 +403,7 @@ export default function CreateAlarmScreen() {
           <Text style={styles.createText}>{t('alarmCreate.submit')}</Text>
         )}
       </TouchableOpacity>
+      <Toast message={toast.message} opacity={toast.opacity} />
     </ScrollView>
   );
 }
