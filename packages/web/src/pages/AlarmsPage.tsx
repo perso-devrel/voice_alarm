@@ -15,12 +15,38 @@ export default function AlarmsPage() {
   const toggleMutation = useMutation({
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
       updateAlarm(id, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
+    onMutate: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      await queryClient.cancelQueries({ queryKey: ['alarms'] });
+      const previous = queryClient.getQueryData<Alarm[]>(['alarms']);
+      queryClient.setQueryData<Alarm[]>(['alarms'], (old) =>
+        old ? old.map((a) => (a.id === id ? { ...a, is_active } : a)) : [],
+      );
+      return { previous };
+    },
+    onError: (_err: unknown, _vars: { id: string; is_active: boolean }, context: { previous?: Alarm[] } | undefined) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['alarms'], context.previous);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAlarm,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['alarms'] });
+      const previous = queryClient.getQueryData<Alarm[]>(['alarms']);
+      queryClient.setQueryData<Alarm[]>(['alarms'], (old) =>
+        old ? old.filter((a) => a.id !== id) : [],
+      );
+      return { previous };
+    },
+    onError: (_err: unknown, _id: string, context: { previous?: Alarm[] } | undefined) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['alarms'], context.previous);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['alarms'] }),
   });
 
   const formatRepeat = (days: string) => {

@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
@@ -21,6 +21,7 @@ import { getApiErrorMessage } from '../../src/types';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
+  const { message_id: paramMessageId } = useLocalSearchParams<{ message_id?: string }>();
   const queryClient = useQueryClient();
   const { isAuthenticated, userId, defaultSnoozeMinutes } = useAppStore();
   const { t } = useTranslation();
@@ -28,7 +29,7 @@ export default function CreateAlarmScreen() {
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(paramMessageId ?? null);
   const [snooze, setSnooze] = useState(defaultSnoozeMinutes);
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [targetName, setTargetName] = useState<string | null>(null);

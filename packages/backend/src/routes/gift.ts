@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const gift = new Hono<AppEnv>();
 
 async function areFriends(
@@ -31,8 +33,8 @@ gift.post('/', async (c) => {
   if (!body.recipient_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.recipient_email)) {
     return c.json({ error: '유효한 이메일 주소를 입력해주세요.' }, 400);
   }
-  if (!body.message_id) {
-    return c.json({ error: 'message_id is required' }, 400);
+  if (!body.message_id || !UUID_RE.test(body.message_id)) {
+    return c.json({ error: 'Invalid or missing message_id' }, 400);
   }
   if (body.note && body.note.length > 200) {
     return c.json({ error: '메모는 200자 이내로 작성해주세요.' }, 400);
@@ -137,6 +139,9 @@ gift.patch('/:id/accept', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid gift ID format' }, 400);
+  }
 
   const existing = await db.execute({
     sql: "SELECT id, message_id FROM gifts WHERE id = ? AND recipient_id = ? AND status = 'pending'",
@@ -166,6 +171,9 @@ gift.patch('/:id/reject', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid gift ID format' }, 400);
+  }
 
   const existing = await db.execute({
     sql: "SELECT id FROM gifts WHERE id = ? AND recipient_id = ? AND status = 'pending'",

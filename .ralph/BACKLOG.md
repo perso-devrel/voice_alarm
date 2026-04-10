@@ -120,9 +120,9 @@
 
 ## P12 - 자가 생성 항목 (9차)
 
-- [ ] 모바일: 음성 목록(voices 탭)에서 스와이프 삭제 제스처 지원 (alarms와 동일 패턴)
-- [ ] 백엔드: message 라우트에 UUID 형식 검증 추가 (alarm/voice와 동일 패턴)
-- [ ] 웹: 알람 목록에서 삭제 시 낙관적 업데이트 (optimistic update)
+- [x] 모바일: 음성 목록(voices 탭)에서 스와이프 삭제 제스처 지원 (alarms와 동일 패턴)
+- [x] 백엔드: friend/gift/library 라우트에 UUID 형식 검증 추가 (alarm/voice와 동일 패턴)
+- [x] 웹: 알람 목록에서 삭제/토글 시 낙관적 업데이트 (optimistic update)
 - [ ] 모바일: 선물 받은 화면에서 수락한 메시지를 즉시 알람으로 설정하는 바로가기
 
 ## 자가 생성 가능 풀 (위 목록 고갈 시)

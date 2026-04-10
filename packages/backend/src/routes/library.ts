@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const library = new Hono<AppEnv>();
 
 /** 라이브러리 목록 조회 */
@@ -53,6 +55,9 @@ library.patch('/:id/favorite', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid library item ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'SELECT is_favorite FROM message_library WHERE id = ? AND user_id = ?',

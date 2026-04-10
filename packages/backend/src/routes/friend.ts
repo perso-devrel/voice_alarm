@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const friend = new Hono<AppEnv>();
 
 /** 이메일로 친구 요청 */
@@ -129,6 +131,9 @@ friend.patch('/:id/accept', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid friendship ID format' }, 400);
+  }
 
   const existing = await db.execute({
     sql: "SELECT id FROM friendships WHERE id = ? AND user_b = ? AND status = 'pending'",
@@ -152,6 +157,9 @@ friend.delete('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid friendship ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'DELETE FROM friendships WHERE id = ? AND (user_a = ? OR user_b = ?)',

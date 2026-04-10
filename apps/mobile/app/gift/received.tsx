@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
@@ -56,6 +57,7 @@ function SkeletonGiftList({ count = 3 }: { count?: number }) {
 
 export default function ReceivedGiftsScreen() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { t } = useTranslation();
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
@@ -168,6 +170,17 @@ export default function ReceivedGiftsScreen() {
                   <Text style={styles.rejectBtnText}>{t('common.reject')}</Text>
                 </TouchableOpacity>
               </View>
+            )}
+
+            {item.status === 'accepted' && (
+              <TouchableOpacity
+                style={styles.setAlarmBtn}
+                onPress={() =>
+                  router.push({ pathname: '/alarm/create', params: { message_id: item.message_id } })
+                }
+              >
+                <Text style={styles.setAlarmBtnText}>{t('giftReceived.setAsAlarm')}</Text>
+              </TouchableOpacity>
             )}
           </View>
         )}

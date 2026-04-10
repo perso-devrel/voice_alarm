@@ -4,6 +4,8 @@ import { PersoClient } from '../lib/perso';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const tts = new Hono<AppEnv>();
 
 /** TTS 생성 - 텍스트를 클론된 음성으로 변환 */
@@ -22,6 +24,10 @@ tts.post('/generate', async (c) => {
 
   if (!body.voice_profile_id || !body.text) {
     return c.json({ error: 'voice_profile_id and text are required' }, 400);
+  }
+
+  if (!UUID_RE.test(body.voice_profile_id)) {
+    return c.json({ error: 'Invalid voice_profile_id format' }, 400);
   }
 
   if (body.text.length > 200) {
