@@ -67,7 +67,8 @@
     "daily": "Daily",
     "weekday": "Weekdays",
     "weekend": "Weekends",
-    "nextIn": "Next alarm in"
+    "nextIn": "Next alarm in",
+    "searchPlaceholder": "Search by time, voice, message"
   },
   "voices": {
     "title": "Voice Profiles",
@@ -86,7 +87,8 @@
     "deleteError": "Failed to delete voice profile.",
     "statusReady": "Ready",
     "statusProcessing": "Processing...",
-    "statusFailed": "Failed"
+    "statusFailed": "Failed",
+    "searchPlaceholder": "Search by name"
   },
   "friends": {
     "title": "Friends",
@@ -230,6 +232,7 @@
     "gift": "🎁 Gift to a friend",
     "giftTitle": "Send gift",
     "giftWho": "Who to send to?",
+    "giftNotePlaceholder": "Add a note (optional)",
     "noFriends": "Add a friend first.",
     "noFriendsTitle": "No friends",
     "giftSent": "Gift sent to {{name}}!",

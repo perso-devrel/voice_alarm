@@ -67,7 +67,8 @@
     "daily": "매일",
     "weekday": "평일",
     "weekend": "주말",
-    "nextIn": "다음 알람까지"
+    "nextIn": "다음 알람까지",
+    "searchPlaceholder": "시간, 음성, 메시지로 검색"
   },
   "voices": {
     "title": "음성 프로필",
@@ -86,7 +87,8 @@
     "deleteError": "음성 프로필 삭제에 실패했어요.",
     "statusReady": "사용 가능",
     "statusProcessing": "생성 중...",
-    "statusFailed": "실패"
+    "statusFailed": "실패",
+    "searchPlaceholder": "이름으로 검색"
   },
   "friends": {
     "title": "친구",
@@ -230,6 +232,7 @@
     "gift": "🎁 친구에게 선물하기",
     "giftTitle": "선물하기",
     "giftWho": "누구에게 보낼까요?",
+    "giftNotePlaceholder": "메모를 남겨보세요 (선택사항)",
     "noFriends": "먼저 친구를 추가해주세요.",
     "noFriendsTitle": "친구 없음",
     "giftSent": "{{name}}님에게 선물을 보냈습니다!",

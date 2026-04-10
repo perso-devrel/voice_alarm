@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   FlatList,
   TouchableOpacity,
@@ -75,6 +76,7 @@ export default function AlarmsScreen() {
   const { t } = useTranslation();
   const isConnected = useNetworkStatus();
   const [cachedAlarms, setCachedAlarms] = useState<Alarm[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [countdownText, setCountdownText] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
@@ -124,6 +126,17 @@ export default function AlarmsScreen() {
 
   const displayAlarms = alarms ?? cachedAlarms;
   const showingCached = !alarms && !!cachedAlarms && !isConnected;
+
+  const filteredAlarms = useMemo(() => {
+    if (!displayAlarms) return displayAlarms;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return displayAlarms;
+    return displayAlarms.filter((a) =>
+      a.time.includes(q) ||
+      (a.voice_name && a.voice_name.toLowerCase().includes(q)) ||
+      (a.message_text && a.message_text.toLowerCase().includes(q))
+    );
+  }, [displayAlarms, searchQuery]);
 
   const resyncNotifications = async () => {
     const fresh = await queryClient.fetchQuery({ queryKey: ['alarms'], queryFn: getAlarms });
@@ -249,6 +262,20 @@ export default function AlarmsScreen() {
         </TouchableOpacity>
       </View>
 
+      {displayAlarms && displayAlarms.length > 0 && (
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('alarms.searchPlaceholder')}
+            placeholderTextColor={Colors.light.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
+          />
+        </View>
+      )}
+
       {countdownText && (
         <View style={styles.countdownBanner}>
           <Text style={styles.countdownLabel}>{t('alarms.nextIn')}</Text>
@@ -266,7 +293,7 @@ export default function AlarmsScreen() {
         <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
       ) : isError && !cachedAlarms ? (
         <ErrorView onRetry={refetch} />
-      ) : displayAlarms?.length === 0 ? (
+      ) : filteredAlarms?.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>⏰</Text>
           <Text style={styles.emptyTitle}>{t('alarms.emptyTitle')}</Text>
@@ -277,7 +304,7 @@ export default function AlarmsScreen() {
         </View>
       ) : (
         <FlatList
-          data={displayAlarms}
+          data={filteredAlarms}
           keyExtractor={(item) => item.id}
           renderItem={renderAlarm}
           contentContainerStyle={styles.list}
@@ -315,6 +342,18 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: FontSize.md,
     fontWeight: '600',
+  },
+  searchContainer: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  searchInput: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
   },
   countdownBanner: {
     flexDirection: 'row',

@@ -37,6 +37,7 @@ export default function MessagesPage() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [giftTarget, setGiftTarget] = useState<Message | null>(null);
   const [giftSending, setGiftSending] = useState(false);
+  const [giftNote, setGiftNote] = useState('');
 
   const { data: voices } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -109,8 +110,9 @@ export default function MessagesPage() {
     if (!giftTarget || giftSending) return;
     setGiftSending(true);
     try {
-      await sendGift({ recipient_email: friend.friend_email, message_id: giftTarget.id });
+      await sendGift({ recipient_email: friend.friend_email, message_id: giftTarget.id, note: giftNote.trim() || undefined });
       setGiftTarget(null);
+      setGiftNote('');
       alert('선물을 보냈습니다!');
     } catch (err: unknown) {
       alert(getApiErrorMessage(err, '선물 전송 실패'));
@@ -377,7 +379,7 @@ export default function MessagesPage() {
       {giftTarget && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setGiftTarget(null)}
+          onClick={() => { setGiftTarget(null); setGiftNote(''); }}
         >
           <div
             className="bg-[var(--color-surface)] rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto border border-[var(--color-border)]"
@@ -387,6 +389,14 @@ export default function MessagesPage() {
             <p className="text-sm text-[var(--color-text-secondary)] mb-4">
               "{giftTarget.text}" 메시지를 선물할 친구를 선택하세요
             </p>
+            <input
+              type="text"
+              value={giftNote}
+              onChange={(e) => setGiftNote(e.target.value)}
+              placeholder="메모를 남겨보세요 (선택사항)"
+              maxLength={200}
+              className="w-full mb-4 px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-primary)]"
+            />
             <div className="space-y-2">
               {friends?.map((f: Friend) => (
                 <button
@@ -406,7 +416,7 @@ export default function MessagesPage() {
               ))}
             </div>
             <button
-              onClick={() => setGiftTarget(null)}
+              onClick={() => { setGiftTarget(null); setGiftNote(''); }}
               className="w-full mt-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors"
             >
               취소

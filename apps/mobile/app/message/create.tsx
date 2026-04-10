@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,6 +35,10 @@ export default function CreateMessageScreen() {
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [generatedAudioId, setGeneratedAudioId] = useState<string | null>(null);
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
+  const [giftModalVisible, setGiftModalVisible] = useState(false);
+  const [giftFriends, setGiftFriends] = useState<Friend[]>([]);
+  const [giftNote, setGiftNote] = useState('');
+  const [giftSending, setGiftSending] = useState(false);
 
   const { data: voiceProfiles } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -279,29 +284,9 @@ export default function CreateMessageScreen() {
                   Alert.alert(t('messageCreate.noFriendsTitle'), t('messageCreate.noFriends'));
                   return;
                 }
-                const buttons = friends.slice(0, 5).map((f: Friend) => ({
-                  text: f.friend_name || f.friend_email || '?',
-                  onPress: async () => {
-                    try {
-                      await sendGift({
-                        recipient_email: f.friend_email ?? '',
-                        message_id: generatedAudioId!,
-                        note: messageText ?? undefined,
-                      });
-                      Alert.alert(
-                        t('messageCreate.giftSentTitle'),
-                        t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }),
-                      );
-                    } catch (err: unknown) {
-                      Alert.alert(
-                        t('common.error'),
-                        getApiErrorMessage(err, t('messageCreate.giftError')),
-                      );
-                    }
-                  },
-                }));
-                buttons.push({ text: t('common.cancel'), onPress: async () => {} });
-                Alert.alert(t('messageCreate.giftTitle'), t('messageCreate.giftWho'), buttons);
+                setGiftFriends(friends);
+                setGiftNote('');
+                setGiftModalVisible(true);
               } catch {
                 Alert.alert(t('common.error'), t('messageCreate.friendListError'));
               }
@@ -311,6 +296,74 @@ export default function CreateMessageScreen() {
           </TouchableOpacity>
         </View>
       )}
+      <Modal
+        visible={giftModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setGiftModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('messageCreate.giftTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('messageCreate.giftWho')}</Text>
+            <TextInput
+              style={styles.giftNoteInput}
+              placeholder={t('messageCreate.giftNotePlaceholder')}
+              placeholderTextColor={Colors.light.textTertiary}
+              value={giftNote}
+              onChangeText={(v) => v.length <= 200 && setGiftNote(v)}
+              maxLength={200}
+            />
+            <ScrollView style={styles.friendList}>
+              {giftFriends.map((f) => (
+                <TouchableOpacity
+                  key={f.id}
+                  style={styles.friendItem}
+                  disabled={giftSending}
+                  onPress={async () => {
+                    setGiftSending(true);
+                    try {
+                      await sendGift({
+                        recipient_email: f.friend_email ?? '',
+                        message_id: generatedAudioId!,
+                        note: giftNote.trim() || undefined,
+                      });
+                      setGiftModalVisible(false);
+                      Alert.alert(
+                        t('messageCreate.giftSentTitle'),
+                        t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }),
+                      );
+                    } catch (err: unknown) {
+                      Alert.alert(
+                        t('common.error'),
+                        getApiErrorMessage(err, t('messageCreate.giftError')),
+                      );
+                    } finally {
+                      setGiftSending(false);
+                    }
+                  }}
+                >
+                  <View style={styles.friendAvatar}>
+                    <Text style={styles.friendAvatarText}>
+                      {(f.friend_name || f.friend_email || '?')[0].toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.friendInfo}>
+                    <Text style={styles.friendName}>{f.friend_name || t('common.noName')}</Text>
+                    <Text style={styles.friendEmail}>{f.friend_email}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setGiftModalVisible(false)}
+            >
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -552,5 +605,86 @@ const styles = StyleSheet.create({
     color: Colors.light.accent,
     fontWeight: '600',
     fontSize: FontSize.md,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.background,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: Spacing.xs,
+  },
+  modalSubtitle: {
+    fontSize: FontSize.md,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  giftNoteInput: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: Spacing.md,
+  },
+  friendList: {
+    maxHeight: 300,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.surface,
+    marginBottom: Spacing.sm,
+  },
+  friendAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  friendAvatarText: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.light.primaryDark,
+  },
+  friendInfo: {
+    marginLeft: Spacing.md,
+    flex: 1,
+  },
+  friendName: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  friendEmail: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textTertiary,
+  },
+  modalCancel: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  modalCancelText: {
+    fontSize: FontSize.md,
+    color: Colors.light.textSecondary,
+    fontWeight: '600',
   },
 });

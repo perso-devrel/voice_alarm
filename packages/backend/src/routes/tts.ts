@@ -205,6 +205,20 @@ tts.delete('/messages/:id', async (c) => {
     return c.json({ error: 'Invalid message ID format' }, 400);
   }
 
+  const alarmCheck = await db.execute({
+    sql: 'SELECT COUNT(*) as cnt FROM alarms WHERE message_id = ?',
+    args: [id],
+  });
+  const alarmCount = Number((alarmCheck.rows[0] as Record<string, unknown>)?.cnt ?? 0);
+
+  if (alarmCount > 0 && c.req.query('force') !== 'true') {
+    return c.json({
+      warning: true,
+      alarm_count: alarmCount,
+      message: `This message is used by ${alarmCount} alarm(s). Add ?force=true to delete anyway.`,
+    }, 409);
+  }
+
   await db.execute({
     sql: 'DELETE FROM message_library WHERE message_id = ? AND user_id = ?',
     args: [id, userId],
@@ -219,7 +233,7 @@ tts.delete('/messages/:id', async (c) => {
     return c.json({ error: 'Message not found' }, 404);
   }
 
-  return c.json({ ok: true });
+  return c.json({ ok: true, alarms_affected: alarmCount });
 });
 
 /** 프리셋 메시지 목록 */

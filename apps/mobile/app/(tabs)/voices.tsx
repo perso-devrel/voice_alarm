@@ -1,6 +1,8 @@
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   FlatList,
   TouchableOpacity,
@@ -27,6 +29,7 @@ export default function VoicesScreen() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const {
     data: profiles,
@@ -39,6 +42,13 @@ export default function VoicesScreen() {
     queryFn: getVoiceProfiles,
     enabled: isAuthenticated,
   });
+
+  const filteredProfiles = useMemo(() => {
+    if (!profiles) return profiles;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return profiles;
+    return profiles.filter((p) => p.name.toLowerCase().includes(q));
+  }, [profiles, searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteVoiceProfile,
@@ -171,11 +181,22 @@ export default function VoicesScreen() {
         <Text style={styles.listTitle}>
           {t('voices.registered')} ({profiles?.length ?? 0})
         </Text>
+        {profiles && profiles.length > 0 && (
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('voices.searchPlaceholder')}
+            placeholderTextColor={Colors.light.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
+          />
+        )}
         {isLoading ? (
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
         ) : isError ? (
           <ErrorView onRetry={refetch} />
-        ) : profiles?.length === 0 ? (
+        ) : filteredProfiles?.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🎵</Text>
             <Text style={styles.emptyText}>
@@ -186,7 +207,7 @@ export default function VoicesScreen() {
           </View>
         ) : (
           <FlatList
-            data={profiles}
+            data={filteredProfiles}
             keyExtractor={(item) => item.id}
             renderItem={renderProfile}
             scrollEnabled={false}
@@ -259,6 +280,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.light.text,
     marginBottom: Spacing.md,
+  },
+  searchInput: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   profileCard: {
     flexDirection: 'row',
