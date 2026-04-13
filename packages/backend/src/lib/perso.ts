@@ -8,7 +8,7 @@ export class PersoClient {
     const res = await fetch(url, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         ...options.headers,
       },
@@ -31,7 +31,7 @@ export class PersoClient {
     const res = await fetch(`${PERSO_BASE_URL}/v1/voices/clone`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
       },
       body: formData,
     });
@@ -45,10 +45,14 @@ export class PersoClient {
   }
 
   /** 클론된 음성으로 TTS 생성 */
-  async textToSpeech(voiceId: string, text: string, options?: {
-    speed?: number;
-    pitch?: number;
-  }): Promise<ArrayBuffer> {
+  async textToSpeech(
+    voiceId: string,
+    text: string,
+    options?: {
+      speed?: number;
+      pitch?: number;
+    },
+  ): Promise<ArrayBuffer> {
     const res = await this.request('/v1/tts', {
       method: 'POST',
       body: JSON.stringify({

@@ -1,11 +1,11 @@
 export const Colors = {
   light: {
-    primary: '#FF7F6B',      // 코랄
-    primaryLight: '#FFB4A8',  // 라이트 코랄
+    primary: '#FF7F6B', // 코랄
+    primaryLight: '#FFB4A8', // 라이트 코랄
     primaryDark: '#E05A47',
-    secondary: '#FFCBA4',     // 피치
-    accent: '#FF6B8A',        // 핑크 악센트
-    background: '#FFF5F3',    // 따뜻한 배경
+    secondary: '#FFCBA4', // 피치
+    accent: '#FF6B8A', // 핑크 악센트
+    background: '#FFF5F3', // 따뜻한 배경
     surface: '#FFFFFF',
     surfaceVariant: '#FFF0ED',
     text: '#2D2D2D',

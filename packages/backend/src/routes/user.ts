@@ -1,15 +1,14 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
-const user = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: string } }>();
+const user = new Hono<AppEnv>();
 
-/** 사용자 프로필 조회 (없으면 자동 생성) */
 user.get('/me', async (c) => {
-  const userId = (c as any).get('userId');
-  const email = (c as any).get('userEmail') || '';
-  const name = (c as any).get('userName') || '';
-  const picture = (c as any).get('userPicture') || '';
+  const userId = c.get('userId');
+  const email = c.get('userEmail') || '';
+  const name = c.get('userName') || '';
+  const picture = c.get('userPicture') || '';
   const db = getDB(c.env);
 
   let result = await db.execute({
@@ -50,9 +49,8 @@ user.get('/me', async (c) => {
   });
 });
 
-/** 구독 플랜 업데이트 */
 user.patch('/plan', async (c) => {
-  const userId = (c as any).get('userId');
+  const userId = c.get('userId');
   const db = getDB(c.env);
   const body = await c.req.json<{ plan: 'free' | 'plus' | 'family' }>();
 
@@ -60,12 +58,64 @@ user.patch('/plan', async (c) => {
     return c.json({ error: 'Invalid plan' }, 400);
   }
 
-  await db.execute({
+  const result = await db.execute({
     sql: `UPDATE users SET plan = ?, updated_at = datetime('now') WHERE google_id = ?`,
     args: [body.plan, userId],
   });
 
+  if (result.rowsAffected === 0) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
   return c.json({ success: true, plan: body.plan });
+});
+
+user.delete('/me', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const tables = [
+    'DELETE FROM alarms WHERE user_id = ?',
+    'DELETE FROM message_library WHERE user_id = ?',
+    'DELETE FROM messages WHERE user_id = ?',
+    'DELETE FROM voice_profiles WHERE user_id = ?',
+    "DELETE FROM friendships WHERE user_a = ? OR user_b = ?",
+    "DELETE FROM gifts WHERE sender_id = ? OR recipient_id = ?",
+    'DELETE FROM users WHERE google_id = ?',
+  ];
+
+  for (const sql of tables) {
+    const needsTwoArgs = sql.includes('OR');
+    await db.execute({ sql, args: needsTwoArgs ? [userId, userId] : [userId] });
+  }
+
+  return c.json({ success: true });
+});
+
+user.get('/search', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const q = (c.req.query('q') || '').trim();
+
+  if (q.length < 2) {
+    return c.json({ users: [] });
+  }
+
+  const result = await db.execute({
+    sql: `SELECT google_id, email, name, picture FROM users
+          WHERE google_id != ? AND email LIKE ?
+          LIMIT 10`,
+    args: [userId, `%${q}%`],
+  });
+
+  return c.json({
+    users: result.rows.map((r) => ({
+      id: r.google_id,
+      email: r.email,
+      name: r.name,
+      picture: r.picture,
+    })),
+  });
 });
 
 export default user;

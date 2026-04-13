@@ -1,5 +1,5 @@
 import type { Context, Next } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 
 interface TokenPayload {
   sub: string;
@@ -15,42 +15,52 @@ interface TokenPayload {
  * Google / Apple ID Token 검증 미들웨어
  * Firebase 없이 직접 검증
  */
-export async function authMiddleware(c: Context<{ Bindings: Env }>, next: Next) {
+export async function authMiddleware(c: Context<AppEnv>, next: Next) {
   const authHeader = c.req.header('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'Missing or invalid Authorization header' }, 401);
+  if (!authHeader) {
+    return c.json({ error: 'Authorization header required', code: 'AUTH_MISSING' }, 401);
+  }
+  if (!authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Authorization header must use Bearer scheme', code: 'AUTH_INVALID_SCHEME' }, 401);
   }
 
   const token = authHeader.slice(7);
+  if (!token) {
+    return c.json({ error: 'Token is empty', code: 'AUTH_EMPTY_TOKEN' }, 401);
+  }
 
   try {
-    // JWT 헤더에서 issuer 판별
     const payload = decodeJwtPayload(token);
 
     let verified: TokenPayload;
 
     if (payload.iss === 'https://appleid.apple.com') {
-      // Apple ID Token
       verified = await verifyAppleToken(token);
     } else {
-      // Google ID Token
       verified = await verifyGoogleToken(token, c.env.GOOGLE_CLIENT_ID);
     }
 
-    (c as any).set('userId', verified.sub);
-    (c as any).set('userEmail', verified.email || '');
-    (c as any).set('userName', verified.name || '');
-    (c as any).set('userPicture', verified.picture || '');
+    c.set('userId', verified.sub);
+    c.set('userEmail', verified.email || '');
+    c.set('userName', verified.name || '');
+    c.set('userPicture', verified.picture || '');
     await next();
   } catch (err) {
-    return c.json({
-      error: 'Invalid or expired token',
-      detail: err instanceof Error ? err.message : 'Unknown',
-    }, 401);
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    const code = message.includes('expired')
+      ? 'AUTH_TOKEN_EXPIRED'
+      : message.includes('audience')
+        ? 'AUTH_AUDIENCE_MISMATCH'
+        : message.includes('issuer')
+          ? 'AUTH_INVALID_ISSUER'
+          : message.includes('format')
+            ? 'AUTH_MALFORMED_TOKEN'
+            : 'AUTH_VERIFICATION_FAILED';
+    return c.json({ error: message, code }, 401);
   }
 }
 
-function decodeJwtPayload(token: string): any {
+function decodeJwtPayload(token: string): TokenPayload {
   const parts = token.split('.');
   if (parts.length !== 3) throw new Error('Invalid token format');
   const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -61,7 +71,7 @@ async function verifyGoogleToken(idToken: string, expectedClientId: string): Pro
   const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
   if (!res.ok) throw new Error('Google token verification failed');
 
-  const payload: any = await res.json();
+  const payload = (await res.json()) as TokenPayload;
 
   if (expectedClientId && payload.aud !== expectedClientId) {
     throw new Error('Token audience mismatch');
@@ -70,7 +80,7 @@ async function verifyGoogleToken(idToken: string, expectedClientId: string): Pro
     throw new Error('Token expired');
   }
 
-  return payload as TokenPayload;
+  return payload;
 }
 
 async function verifyAppleToken(idToken: string): Promise<TokenPayload> {

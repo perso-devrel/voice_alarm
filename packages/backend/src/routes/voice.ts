@@ -1,22 +1,42 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { PersoClient } from '../lib/perso';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 
-const voice = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const voice = new Hono<AppEnv>();
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** 음성 프로필 목록 조회 */
 voice.get('/', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
+  const status = c.req.query('status');
 
-  const result = await db.execute({
-    sql: 'SELECT * FROM voice_profiles WHERE user_id = ? ORDER BY created_at DESC',
-    args: [userId],
-  });
+  const validStatuses = ['ready', 'processing', 'failed'];
+  let statusClause = '';
+  const baseArgs: (string | number)[] = [userId];
+  if (status && validStatuses.includes(status)) {
+    statusClause = ' AND status = ?';
+    baseArgs.push(status);
+  }
 
-  return c.json({ profiles: result.rows });
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: `SELECT COUNT(*) as total FROM voice_profiles WHERE user_id = ?${statusClause}`,
+      args: baseArgs,
+    }),
+    db.execute({
+      sql: `SELECT * FROM voice_profiles WHERE user_id = ?${statusClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      args: [...baseArgs, limit, offset],
+    }),
+  ]);
+
+  const total = Number(countRes.rows[0].total);
+  return c.json({ profiles: result.rows, total, limit, offset });
 });
 
 /** 음성 프로필 상세 조회 */
@@ -24,6 +44,10 @@ voice.get('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'SELECT * FROM voice_profiles WHERE id = ? AND user_id = ?',
@@ -58,9 +82,12 @@ voice.post('/clone', async (c) => {
 
     const limits: Record<string, number> = { free: 1, plus: 3, family: 10 };
     if (count >= (limits[plan] ?? 1)) {
-      return c.json({
-        error: `${plan} 플랜은 최대 ${limits[plan]}개의 음성 프로필을 지원합니다. 업그레이드해주세요.`
-      }, 403);
+      return c.json(
+        {
+          error: `${plan} 플랜은 최대 ${limits[plan]}개의 음성 프로필을 지원합니다. 업그레이드해주세요.`,
+        },
+        403,
+      );
     }
   }
 
@@ -71,6 +98,14 @@ voice.post('/clone', async (c) => {
 
   if (!audioFile || !name) {
     return c.json({ error: 'audio file and name are required' }, 400);
+  }
+
+  if (name.length > 50) {
+    return c.json({ error: 'Name must be 50 characters or less' }, 400);
+  }
+
+  if (provider !== 'perso' && provider !== 'elevenlabs') {
+    return c.json({ error: 'provider must be "perso" or "elevenlabs"' }, 400);
   }
 
   const audioBuffer = await audioFile.arrayBuffer();
@@ -108,26 +143,32 @@ voice.post('/clone', async (c) => {
       });
     }
 
-    return c.json({
-      profile: {
-        id: profileId,
-        name,
-        voice_id: voiceId,
-        provider,
-        status: 'ready',
-      }
-    }, 201);
+    return c.json(
+      {
+        profile: {
+          id: profileId,
+          name,
+          voice_id: voiceId,
+          provider,
+          status: 'ready',
+        },
+      },
+      201,
+    );
   } catch (err) {
     await db.execute({
       sql: `UPDATE voice_profiles SET status = 'failed', updated_at = datetime('now') WHERE id = ?`,
       args: [profileId],
     });
 
-    return c.json({
-      error: 'Voice cloning failed',
-      detail: err instanceof Error ? err.message : 'Unknown error',
-      profile_id: profileId,
-    }, 500);
+    return c.json(
+      {
+        error: 'Voice cloning failed',
+        detail: err instanceof Error ? err.message : 'Unknown error',
+        profile_id: profileId,
+      },
+      500,
+    );
   }
 });
 
@@ -155,11 +196,52 @@ voice.post('/diarize', async (c) => {
       })),
     });
   } catch (err) {
-    return c.json({
-      error: 'Speaker diarization failed',
-      detail: err instanceof Error ? err.message : 'Unknown error',
-    }, 500);
+    return c.json(
+      {
+        error: 'Speaker diarization failed',
+        detail: err instanceof Error ? err.message : 'Unknown error',
+      },
+      500,
+    );
   }
+});
+
+/** 음성 프로필 통계 */
+voice.get('/:id/stats', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
+
+  const [profileRes, msgRes, alarmRes] = await Promise.all([
+    db.execute({
+      sql: 'SELECT id, name FROM voice_profiles WHERE id = ? AND user_id = ?',
+      args: [id, userId],
+    }),
+    db.execute({
+      sql: 'SELECT COUNT(*) as count FROM messages WHERE voice_profile_id = ? AND user_id = ?',
+      args: [id, userId],
+    }),
+    db.execute({
+      sql: `SELECT COUNT(*) as count FROM alarms a
+            JOIN messages m ON a.message_id = m.id
+            WHERE m.voice_profile_id = ? AND (a.user_id = ? OR a.target_user_id = ?)`,
+      args: [id, userId, userId],
+    }),
+  ]);
+
+  if (profileRes.rows.length === 0) {
+    return c.json({ error: 'Voice profile not found' }, 404);
+  }
+
+  return c.json({
+    voice_profile_id: id,
+    messages: Number((msgRes.rows[0] as Record<string, unknown>)?.count ?? 0),
+    alarms: Number((alarmRes.rows[0] as Record<string, unknown>)?.count ?? 0),
+  });
 });
 
 /** 음성 프로필 삭제 */
@@ -167,6 +249,10 @@ voice.delete('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'SELECT * FROM voice_profiles WHERE id = ? AND user_id = ?',
@@ -178,6 +264,20 @@ voice.delete('/:id', async (c) => {
   }
 
   const profile = result.rows[0];
+
+  const msgCheck = await db.execute({
+    sql: 'SELECT COUNT(*) as cnt FROM messages WHERE voice_profile_id = ?',
+    args: [id],
+  });
+  const msgCount = Number((msgCheck.rows[0] as Record<string, unknown>)?.cnt ?? 0);
+
+  if (msgCount > 0 && c.req.query('force') !== 'true') {
+    return c.json({
+      warning: true,
+      message_count: msgCount,
+      message: `This voice profile has ${msgCount} message(s). Add ?force=true to delete anyway.`,
+    }, 409);
+  }
 
   // 외부 API에서도 삭제
   try {
@@ -193,12 +293,27 @@ voice.delete('/:id', async (c) => {
     // 외부 API 삭제 실패해도 로컬은 삭제 진행
   }
 
+  if (msgCount > 0) {
+    await db.execute({
+      sql: 'DELETE FROM alarms WHERE message_id IN (SELECT id FROM messages WHERE voice_profile_id = ?)',
+      args: [id],
+    });
+    await db.execute({
+      sql: 'DELETE FROM message_library WHERE message_id IN (SELECT id FROM messages WHERE voice_profile_id = ?)',
+      args: [id],
+    });
+    await db.execute({
+      sql: 'DELETE FROM messages WHERE voice_profile_id = ?',
+      args: [id],
+    });
+  }
+
   await db.execute({
     sql: 'DELETE FROM voice_profiles WHERE id = ?',
     args: [id],
   });
 
-  return c.json({ success: true });
+  return c.json({ success: true, messages_deleted: msgCount });
 });
 
 export default voice;

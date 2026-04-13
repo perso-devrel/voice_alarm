@@ -1,25 +1,84 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 
-const alarm = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const alarm = new Hono<AppEnv>();
 
 /** 알람 목록 조회 */
 alarm.get('/', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') || '50', 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') || '0', 10) || 0, 0);
+  const isActiveParam = c.req.query('is_active');
+  const voiceProfileId = c.req.query('voice_profile_id');
+
+  let whereClause = 'WHERE (a.user_id = ? OR a.target_user_id = ?)';
+  const whereArgs: (string | number)[] = [userId, userId];
+
+  if (isActiveParam === 'true' || isActiveParam === 'false') {
+    whereClause += ' AND a.is_active = ?';
+    whereArgs.push(isActiveParam === 'true' ? 1 : 0);
+  }
+
+  if (voiceProfileId) {
+    whereClause += ' AND m.voice_profile_id = ?';
+    whereArgs.push(voiceProfileId);
+  }
+
+  const [countRes, result] = await Promise.all([
+    db.execute({
+      sql: `SELECT COUNT(*) as total FROM alarms a
+            JOIN messages m ON a.message_id = m.id
+            ${whereClause}`,
+      args: whereArgs,
+    }),
+    db.execute({
+      sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name,
+              creator.email as creator_email, creator.name as creator_name
+            FROM alarms a
+            JOIN messages m ON a.message_id = m.id
+            JOIN voice_profiles vp ON m.voice_profile_id = vp.id
+            LEFT JOIN users creator ON creator.google_id = a.user_id
+            ${whereClause}
+            ORDER BY a.time ASC
+            LIMIT ? OFFSET ?`,
+      args: [...whereArgs, limit, offset],
+    }),
+  ]);
+
+  const total = Number(countRes.rows[0].total);
+  return c.json({ alarms: result.rows, total, limit, offset });
+});
+
+/** 단일 알람 조회 */
+alarm.get('/:id', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid alarm ID format' }, 400);
+  }
 
   const result = await db.execute({
-    sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name
+    sql: `SELECT a.*, m.text as message_text, m.category, vp.name as voice_name,
+            creator.email as creator_email, creator.name as creator_name
           FROM alarms a
           JOIN messages m ON a.message_id = m.id
           JOIN voice_profiles vp ON m.voice_profile_id = vp.id
-          WHERE a.user_id = ?
-          ORDER BY a.time ASC`,
-    args: [userId],
+          LEFT JOIN users creator ON creator.google_id = a.user_id
+          WHERE a.id = ? AND (a.user_id = ? OR a.target_user_id = ?)`,
+    args: [id, userId, userId],
   });
 
-  return c.json({ alarms: result.rows });
+  if (result.rows.length === 0) {
+    return c.json({ error: 'Alarm not found' }, 404);
+  }
+
+  return c.json({ alarm: result.rows[0] });
 });
 
 /** 알람 생성 */
@@ -32,34 +91,74 @@ alarm.post('/', async (c) => {
     time: string; // HH:mm
     repeat_days?: number[];
     snooze_minutes?: number;
+    target_user_id?: string;
   }>();
 
   if (!body.message_id || !body.time) {
     return c.json({ error: 'message_id and time are required' }, 400);
   }
 
-  // HH:mm 형식 검증
+  if (!UUID_RE.test(body.message_id)) {
+    return c.json({ error: 'Invalid message_id format' }, 400);
+  }
+
+  if (body.target_user_id && typeof body.target_user_id !== 'string') {
+    return c.json({ error: 'Invalid target_user_id' }, 400);
+  }
+
   if (!/^\d{2}:\d{2}$/.test(body.time)) {
     return c.json({ error: 'time must be in HH:mm format' }, 400);
   }
 
-  // 무료 플랜 알람 개수 제한
+  const [h, m] = body.time.split(':').map(Number);
+  if (h < 0 || h > 23 || m < 0 || m > 59) {
+    return c.json({ error: 'Invalid time value' }, 400);
+  }
+
+  if (
+    body.repeat_days &&
+    (!Array.isArray(body.repeat_days) ||
+      body.repeat_days.some((d) => !Number.isInteger(d) || d < 0 || d > 6))
+  ) {
+    return c.json({ error: 'repeat_days must be an array of integers 0-6' }, 400);
+  }
+
+  if (
+    body.snooze_minutes !== undefined &&
+    (!Number.isInteger(body.snooze_minutes) || body.snooze_minutes < 1 || body.snooze_minutes > 30)
+  ) {
+    return c.json({ error: 'snooze_minutes must be an integer between 1 and 30' }, 400);
+  }
+
+  if (body.target_user_id && body.target_user_id !== userId) {
+    const friendship = await db.execute({
+      sql: `SELECT id FROM friendships
+            WHERE ((user_a = ? AND user_b = ?) OR (user_a = ? AND user_b = ?))
+              AND status = 'accepted'`,
+      args: [userId, body.target_user_id, body.target_user_id, userId],
+    });
+    if (friendship.rows.length === 0) {
+      return c.json({ error: '친구 관계인 사용자에게만 알람을 설정할 수 있습니다.' }, 403);
+    }
+  }
+
+  const alarmOwner = body.target_user_id || userId;
+
   const user = await db.execute({
     sql: 'SELECT plan FROM users WHERE google_id = ?',
-    args: [userId],
+    args: [alarmOwner],
   });
 
   if (user.rows.length > 0 && user.rows[0].plan === 'free') {
     const alarmCount = await db.execute({
-      sql: 'SELECT COUNT(*) as count FROM alarms WHERE user_id = ?',
-      args: [userId],
+      sql: 'SELECT COUNT(*) as count FROM alarms WHERE user_id = ? OR target_user_id = ?',
+      args: [alarmOwner, alarmOwner],
     });
     if (Number(alarmCount.rows[0].count) >= 2) {
       return c.json({ error: '무료 플랜은 최대 2개의 알람만 설정 가능합니다.' }, 403);
     }
   }
 
-  // 메시지 소유 확인
   const msg = await db.execute({
     sql: 'SELECT id FROM messages WHERE id = ? AND user_id = ?',
     args: [body.message_id, userId],
@@ -70,11 +169,12 @@ alarm.post('/', async (c) => {
 
   const alarmId = crypto.randomUUID();
   await db.execute({
-    sql: `INSERT INTO alarms (id, user_id, message_id, time, repeat_days, snooze_minutes)
-          VALUES (?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO alarms (id, user_id, target_user_id, message_id, time, repeat_days, snooze_minutes)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
     args: [
       alarmId,
       userId,
+      body.target_user_id ?? null,
       body.message_id,
       body.time,
       JSON.stringify(body.repeat_days ?? []),
@@ -91,6 +191,10 @@ alarm.patch('/:id', async (c) => {
   const db = getDB(c.env);
   const id = c.req.param('id');
 
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid alarm ID format' }, 400);
+  }
+
   const body = await c.req.json<{
     time?: string;
     repeat_days?: number[];
@@ -99,6 +203,10 @@ alarm.patch('/:id', async (c) => {
     message_id?: string;
   }>();
 
+  if (body.message_id !== undefined && !UUID_RE.test(body.message_id)) {
+    return c.json({ error: 'Invalid message_id format' }, 400);
+  }
+
   // 알람 소유 확인
   const existing = await db.execute({
     sql: 'SELECT id FROM alarms WHERE id = ? AND user_id = ?',
@@ -106,6 +214,35 @@ alarm.patch('/:id', async (c) => {
   });
   if (existing.rows.length === 0) {
     return c.json({ error: 'Alarm not found' }, 404);
+  }
+
+  if (body.time !== undefined) {
+    if (!/^\d{2}:\d{2}$/.test(body.time)) {
+      return c.json({ error: 'time must be in HH:mm format' }, 400);
+    }
+    const [h, m] = body.time.split(':').map(Number);
+    if (h < 0 || h > 23 || m < 0 || m > 59) {
+      return c.json({ error: 'Invalid time value' }, 400);
+    }
+  }
+
+  if (
+    body.repeat_days !== undefined &&
+    (!Array.isArray(body.repeat_days) ||
+      body.repeat_days.some((d) => !Number.isInteger(d) || d < 0 || d > 6))
+  ) {
+    return c.json({ error: 'repeat_days must be an array of integers 0-6' }, 400);
+  }
+
+  if (
+    body.snooze_minutes !== undefined &&
+    (!Number.isInteger(body.snooze_minutes) || body.snooze_minutes < 1 || body.snooze_minutes > 30)
+  ) {
+    return c.json({ error: 'snooze_minutes must be an integer between 1 and 30' }, 400);
+  }
+
+  if (body.is_active !== undefined && typeof body.is_active !== 'boolean') {
+    return c.json({ error: 'is_active must be a boolean' }, 400);
   }
 
   const updates: string[] = [];
@@ -144,7 +281,22 @@ alarm.patch('/:id', async (c) => {
     args,
   });
 
-  return c.json({ success: true });
+  const updated = await db.execute({
+    sql: `SELECT id, user_id, target_user_id, message_id, time, repeat_days,
+                 is_active, snooze_minutes, created_at, updated_at
+          FROM alarms WHERE id = ?`,
+    args: [id],
+  });
+
+  const row = updated.rows[0];
+  return c.json({
+    success: true,
+    alarm: {
+      ...row,
+      repeat_days: row.repeat_days ? JSON.parse(row.repeat_days as string) : [],
+      is_active: row.is_active === 1,
+    },
+  });
 });
 
 /** 알람 삭제 */
@@ -152,6 +304,10 @@ alarm.delete('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
   const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid alarm ID format' }, 400);
+  }
 
   const result = await db.execute({
     sql: 'DELETE FROM alarms WHERE id = ? AND user_id = ?',

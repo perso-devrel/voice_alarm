@@ -44,17 +44,21 @@ export class ElevenLabsClient {
   }
 
   /** TTS - 텍스트를 음성으로 변환 */
-  async textToSpeech(voiceId: string, text: string, options?: {
-    stability?: number;
-    similarity_boost?: number;
-    style?: number;
-    model_id?: string;
-  }): Promise<ArrayBuffer> {
+  async textToSpeech(
+    voiceId: string,
+    text: string,
+    options?: {
+      stability?: number;
+      similarity_boost?: number;
+      style?: number;
+      model_id?: string;
+    },
+  ): Promise<ArrayBuffer> {
     const res = await this.request(`/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg',
+        Accept: 'audio/mpeg',
       },
       body: JSON.stringify({
         text,

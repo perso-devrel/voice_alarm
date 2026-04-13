@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,140 +6,233 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
+  RefreshControl,
+  Animated as RNAnimated,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { getLibrary, toggleFavorite } from '../../src/services/api';
-import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
+import { getLibrary, toggleFavorite, deleteLibraryItem } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
+import { cacheLibrary, getCachedLibrary } from '../../src/services/offlineCache';
+import { ErrorView } from '../../src/components/QueryStateView';
+import { MiniWaveformPlayer } from '../../src/components/MiniWaveformPlayer';
 import { Audio } from 'expo-av';
+import type { LibraryItem } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 type FilterType = 'all' | 'favorite';
 
+const CATEGORIES = [
+  { key: 'all', emoji: '📋' },
+  { key: 'morning', emoji: '🌅' },
+  { key: 'lunch', emoji: '🍽️' },
+  { key: 'afternoon', emoji: '☕' },
+  { key: 'evening', emoji: '🌙' },
+  { key: 'night', emoji: '😴' },
+  { key: 'cheer', emoji: '💪' },
+  { key: 'love', emoji: '❤️' },
+  { key: 'health', emoji: '🏥' },
+  { key: 'custom', emoji: '✏️' },
+] as const;
+
 export default function LibraryScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { setPlaying, currentPlayingId } = useAppStore();
   const [filter, setFilter] = useState<FilterType>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
+  const { t } = useTranslation();
+  const toast = useToast();
+  const isConnected = useNetworkStatus();
+  const [cachedItems, setCachedItems] = useState<LibraryItem[] | null>(null);
 
-  const { data: items, isLoading } = useQuery({
+  useEffect(() => {
+    getCachedLibrary().then(setCachedItems);
+  }, []);
+
+  const {
+    data: items,
+    isLoading,
+    isError,
+    isRefetching,
+    refetch,
+  } = useQuery({
     queryKey: ['library', filter],
     queryFn: () => getLibrary(filter === 'favorite' ? 'favorite' : undefined),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
+
+  useEffect(() => {
+    if (items && items.length > 0 && filter === 'all') {
+      cacheLibrary(items);
+      setCachedItems(items);
+    }
+  }, [items, filter]);
+
+  const baseItems = items ?? (filter === 'all' ? cachedItems : null);
+  const displayItems = categoryFilter === 'all'
+    ? baseItems
+    : baseItems?.filter((item: LibraryItem) => item.category === categoryFilter) ?? null;
+  const showingCached = !items && !!cachedItems && !isConnected && filter === 'all';
 
   const favoriteMutation = useMutation({
     mutationFn: toggleFavorite,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
+    onError: () => {
+      toast.show(t('library.favoriteError'));
+    },
   });
 
-  const handlePlay = async (messageId: string) => {
+  const deleteMutation = useMutation({
+    mutationFn: deleteLibraryItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['library'] });
+    },
+    onError: (err: unknown) => {
+      toast.show(getApiErrorMessage(err, t('library.deleteError')));
+    },
+  });
+
+  const handleDelete = (id: string) => {
+    Alert.alert(t('library.deleteTitle'), t('library.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => deleteMutation.mutate(id),
+      },
+    ]);
+  };
+
+  const renderDeleteAction = (
+    _progress: RNAnimated.AnimatedInterpolation<number>,
+    dragX: RNAnimated.AnimatedInterpolation<number>,
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, -50, 0],
+      outputRange: [1, 0.8, 0],
+      extrapolate: 'clamp',
+    });
+    return (
+      <View style={styles.swipeDeleteContainer}>
+        <RNAnimated.Text style={[styles.swipeDeleteText, { transform: [{ scale }] }]}>
+          {t('common.delete')}
+        </RNAnimated.Text>
+      </View>
+    );
+  };
+
+  const handleMiniPlay = (messageId: string, sound: Audio.Sound) => {
     if (currentSound) {
-      await currentSound.unloadAsync();
-      setCurrentSound(null);
+      currentSound.unloadAsync();
     }
+    setCurrentSound(sound);
+    setPlaying(messageId);
+  };
 
-    if (currentPlayingId === messageId) {
-      setPlaying(null);
-      return;
-    }
-
-    const cached = await isAudioCached(messageId);
-    if (cached) {
-      const localPath = getLocalAudioPath(messageId);
-      const sound = await playAudio(localPath);
-      setCurrentSound(sound);
-      setPlaying(messageId);
-
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if ('didJustFinish' in status && status.didJustFinish) {
-          setPlaying(null);
-          setCurrentSound(null);
-        }
-      });
-    }
+  const handleMiniStop = () => {
+    setPlaying(null);
+    setCurrentSound(null);
   };
 
   const getCategoryEmoji = (category: string) => {
     const map: Record<string, string> = {
-      morning: '🌅', lunch: '🍽️', afternoon: '☕',
-      evening: '🌙', night: '😴', cheer: '💪',
-      love: '❤️', health: '🏥', custom: '✏️',
+      morning: '🌅',
+      lunch: '🍽️',
+      afternoon: '☕',
+      evening: '🌙',
+      night: '😴',
+      cheer: '💪',
+      love: '❤️',
+      health: '🏥',
+      custom: '✏️',
     };
     return map[category] || '💌';
   };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.messageCard}
-      onPress={() => handlePlay(item.message_id)}
-      activeOpacity={0.8}
-    >
-      <View style={styles.messageLeft}>
-        <View style={styles.avatarSmall}>
-          <Text style={styles.avatarLetter}>
-            {item.voice_name?.charAt(0) || '?'}
-          </Text>
-        </View>
-        <View style={styles.messageContent}>
-          <View style={styles.messageHeader}>
-            <Text style={styles.voiceName}>{item.voice_name}</Text>
-            <Text style={styles.categoryBadge}>
-              {getCategoryEmoji(item.category)}
-            </Text>
-          </View>
-          <Text style={styles.messageText} numberOfLines={2}>
-            "{item.text}"
-          </Text>
-          <Text style={styles.messageDate}>
-            {new Date(item.received_at).toLocaleDateString('ko-KR', {
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.messageActions}>
-        {currentPlayingId === item.message_id && (
-          <Text style={styles.playingIndicator}>♫</Text>
-        )}
+  const renderItem = ({ item }: { item: LibraryItem }) => {
+    const isActive = currentPlayingId === item.message_id;
+    return (
+      <Swipeable
+        renderRightActions={renderDeleteAction}
+        onSwipeableOpen={() => handleDelete(item.id)}
+        overshootRight={false}
+      >
         <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            favoriteMutation.mutate(item.id);
-          }}
-          hitSlop={8}
+          style={styles.messageCard}
+          onPress={() => router.push(`/message/${item.message_id}`)}
+          activeOpacity={0.7}
         >
-          <Text style={styles.favoriteIcon}>
-            {item.is_favorite ? '❤️' : '🤍'}
-          </Text>
+          <View style={styles.messageLeft}>
+            <View style={styles.avatarSmall}>
+              <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
+            </View>
+            <View style={styles.messageContent}>
+              <View style={styles.messageHeader}>
+                <Text style={styles.voiceName}>{item.voice_name}</Text>
+                <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
+              </View>
+              <Text style={styles.messageText} numberOfLines={2}>
+                "{item.text}"
+              </Text>
+              <View style={styles.miniPlayerRow}>
+                <MiniWaveformPlayer
+                  messageId={item.message_id}
+                  isActive={isActive}
+                  onPlay={handleMiniPlay}
+                  onStop={handleMiniStop}
+                />
+              </View>
+              <Text style={styles.messageDate}>
+                {new Date(item.received_at).toLocaleDateString('ko-KR', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.messageActions}>
+            <TouchableOpacity
+              onPress={() => favoriteMutation.mutate(item.id)}
+              hitSlop={8}
+            >
+              <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
+            </TouchableOpacity>
+          </View>
         </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+      </Swipeable>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>보관함</Text>
-        <Text style={styles.subtitle}>받았던 모든 음성 메시지</Text>
+        <Text style={styles.title}>{t('library.title')}</Text>
+        <Text style={styles.subtitle}>{t('library.subtitle')}</Text>
       </View>
 
-      {/* 필터 */}
       <View style={styles.filterRow}>
         <TouchableOpacity
           style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
           onPress={() => setFilter('all')}
         >
           <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
-            전체
+            {t('library.all')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -147,31 +240,57 @@ export default function LibraryScreen() {
           onPress={() => setFilter('favorite')}
         >
           <Text style={[styles.filterText, filter === 'favorite' && styles.filterTextActive]}>
-            ❤️ 즐겨찾기
+            ❤️ {t('library.favorites')}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {isLoading ? (
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={CATEGORIES}
+        keyExtractor={(item) => item.key}
+        contentContainerStyle={styles.categoryRow}
+        renderItem={({ item: cat }) => (
+          <TouchableOpacity
+            style={[styles.categoryChip, categoryFilter === cat.key && styles.categoryChipActive]}
+            onPress={() => setCategoryFilter(cat.key)}
+          >
+            <Text style={styles.categoryChipText}>
+              {cat.emoji} {cat.key === 'all' ? t('library.all') : cat.key}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {showingCached && (
+        <View style={styles.cachedBanner}>
+          <Text style={styles.cachedText}>{t('offline.cachedData')}</Text>
+        </View>
+      )}
+
+      {isLoading && !cachedItems ? (
         <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
-      ) : items?.length === 0 ? (
+      ) : isError && !cachedItems ? (
+        <ErrorView onRetry={refetch} />
+      ) : displayItems?.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>📭</Text>
           <Text style={styles.emptyText}>
-            {filter === 'favorite'
-              ? '즐겨찾기한 메시지가 없어요'
-              : '아직 받은 메시지가 없어요'}
+            {filter === 'favorite' ? t('library.emptyFavorites') : t('library.emptyAll')}
           </Text>
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={displayItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         />
       )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </SafeAreaView>
   );
 }
@@ -201,6 +320,29 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     gap: Spacing.sm,
   },
+  categoryRow: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  categoryChip: {
+    paddingHorizontal: Spacing.sm + 4,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginRight: Spacing.xs,
+  },
+  categoryChipActive: {
+    backgroundColor: Colors.light.primaryLight,
+    borderColor: Colors.light.primary,
+  },
+  categoryChipText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.text,
+    fontWeight: '500',
+  },
   filterChip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
@@ -220,6 +362,19 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: '#FFF',
+  },
+  cachedBanner: {
+    backgroundColor: Colors.light.surfaceVariant,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+  },
+  cachedText: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
   },
   list: {
     padding: Spacing.lg,
@@ -273,6 +428,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 18,
   },
+  miniPlayerRow: {
+    marginTop: Spacing.xs,
+  },
   messageDate: {
     fontSize: FontSize.xs,
     color: Colors.light.textTertiary,
@@ -282,10 +440,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-  },
-  playingIndicator: {
-    fontSize: 18,
-    color: Colors.light.primary,
   },
   favoriteIcon: {
     fontSize: 20,
@@ -303,5 +457,18 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
     textAlign: 'center',
+  },
+  swipeDeleteContainer: {
+    backgroundColor: Colors.light.error,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
+  },
+  swipeDeleteText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: FontSize.md,
   },
 });
