@@ -8,28 +8,41 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { PRESET_CATEGORIES } from '../../src/constants/presets';
-import { getVoiceProfiles, generateTTS } from '../../src/services/api';
+import { getVoiceProfiles, generateTTS, getFriendList, sendGift } from '../../src/services/api';
 import { saveAudioLocally, playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
+import type { VoiceProfile, Friend } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function CreateMessageScreen() {
   const router = useRouter();
+  const { voice_id } = useLocalSearchParams<{ voice_id?: string }>();
   const queryClient = useQueryClient();
   const { isAuthenticated, incrementTtsCount } = useAppStore();
+  const { t } = useTranslation();
 
   const [tab, setTab] = useState<'preset' | 'custom'>('preset');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [customText, setCustomText] = useState('');
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(voice_id ?? null);
   const [generatedAudioId, setGeneratedAudioId] = useState<string | null>(null);
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
+  const [giftModalVisible, setGiftModalVisible] = useState(false);
+  const [giftFriends, setGiftFriends] = useState<Friend[]>([]);
+  const [giftNote, setGiftNote] = useState('');
+  const [giftSending, setGiftSending] = useState(false);
+  const toast = useToast();
 
   const { data: voiceProfiles } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -37,13 +50,17 @@ export default function CreateMessageScreen() {
     enabled: isAuthenticated,
   });
 
-  const readyProfiles = voiceProfiles?.filter((p: any) => p.status === 'ready') ?? [];
+  const readyProfiles = voiceProfiles?.filter((p: VoiceProfile) => p.status === 'ready') ?? [];
 
   const ttsMutation = useMutation({
     mutationFn: generateTTS,
     onSuccess: async (data) => {
       // base64 오디오를 로컬에 저장
-      const localPath = await saveAudioLocally(data.audio_base64, data.message_id, data.audio_format);
+      const localPath = await saveAudioLocally(
+        data.audio_base64,
+        data.message_id,
+        data.audio_format,
+      );
       setGeneratedAudioId(data.message_id);
       incrementTtsCount();
 
@@ -59,8 +76,11 @@ export default function CreateMessageScreen() {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
     },
-    onError: (err: any) => {
-      Alert.alert('TTS 생성 실패', err.response?.data?.error || '다시 시도해주세요.');
+    onError: (err: unknown) => {
+      Alert.alert(
+        t('messageCreate.generateErrorTitle'),
+        getApiErrorMessage(err, t('messageCreate.generateError')),
+      );
     },
   });
 
@@ -68,11 +88,11 @@ export default function CreateMessageScreen() {
 
   const handleGenerate = () => {
     if (!selectedVoiceId) {
-      Alert.alert('음성 선택', '음성 프로필을 선택해주세요.');
+      Alert.alert(t('messageCreate.selectVoiceTitle'), t('messageCreate.selectVoice'));
       return;
     }
     if (!messageText?.trim()) {
-      Alert.alert('메시지 입력', '메시지를 입력하거나 프리셋을 선택해주세요.');
+      Alert.alert(t('messageCreate.enterMessageTitle'), t('messageCreate.enterMessage'));
       return;
     }
 
@@ -106,25 +126,17 @@ export default function CreateMessageScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* 음성 프로필 선택 */}
-      <Text style={styles.sectionTitle}>누구의 목소리로?</Text>
+      <Text style={styles.sectionTitle}>{t('messageCreate.whoseVoice')}</Text>
       {readyProfiles.length === 0 ? (
-        <TouchableOpacity
-          style={styles.emptyVoice}
-          onPress={() => router.push('/voice/record')}
-        >
-          <Text style={styles.emptyVoiceText}>
-            먼저 음성을 등록해주세요 →
-          </Text>
+        <TouchableOpacity style={styles.emptyVoice} onPress={() => router.push('/voice/record')}>
+          <Text style={styles.emptyVoiceText}>{t('messageCreate.emptyVoice')}</Text>
         </TouchableOpacity>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.voiceRow}>
-          {readyProfiles.map((profile: any) => (
+          {readyProfiles.map((profile: VoiceProfile) => (
             <TouchableOpacity
               key={profile.id}
-              style={[
-                styles.voiceChip,
-                selectedVoiceId === profile.id && styles.voiceChipSelected,
-              ]}
+              style={[styles.voiceChip, selectedVoiceId === profile.id && styles.voiceChipSelected]}
               onPress={() => setSelectedVoiceId(profile.id)}
             >
               <Text style={styles.voiceChipAvatar}>{profile.name.charAt(0)}</Text>
@@ -148,7 +160,7 @@ export default function CreateMessageScreen() {
           onPress={() => setTab('preset')}
         >
           <Text style={[styles.tabText, tab === 'preset' && styles.tabTextActive]}>
-            프리셋 메시지
+            {t('messageCreate.presetTab')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -156,7 +168,7 @@ export default function CreateMessageScreen() {
           onPress={() => setTab('custom')}
         >
           <Text style={[styles.tabText, tab === 'custom' && styles.tabTextActive]}>
-            직접 입력
+            {t('messageCreate.customTab')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -194,28 +206,20 @@ export default function CreateMessageScreen() {
           {/* 메시지 선택 */}
           {selectedCategory && (
             <View style={styles.presetList}>
-              {PRESET_CATEGORIES.find((c) => c.key === selectedCategory)?.messages.map(
-                (msg, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={[
-                      styles.presetItem,
-                      selectedPreset === msg && styles.presetItemSelected,
-                    ]}
-                    onPress={() => setSelectedPreset(msg)}
+              {PRESET_CATEGORIES.find((c) => c.key === selectedCategory)?.messages.map((msg, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.presetItem, selectedPreset === msg && styles.presetItemSelected]}
+                  onPress={() => setSelectedPreset(msg)}
+                >
+                  <Text
+                    style={[styles.presetText, selectedPreset === msg && styles.presetTextSelected]}
                   >
-                    <Text
-                      style={[
-                        styles.presetText,
-                        selectedPreset === msg && styles.presetTextSelected,
-                      ]}
-                    >
-                      {msg}
-                    </Text>
-                    {selectedPreset === msg && <Text style={styles.checkmark}>✓</Text>}
-                  </TouchableOpacity>
-                )
-              )}
+                    {msg}
+                  </Text>
+                  {selectedPreset === msg && <Text style={styles.checkmark}>✓</Text>}
+                </TouchableOpacity>
+              ))}
             </View>
           )}
         </>
@@ -226,9 +230,9 @@ export default function CreateMessageScreen() {
         <View style={styles.customSection}>
           <TextInput
             style={styles.customInput}
-            placeholder="메시지를 입력해주세요 (최대 200자)"
+            placeholder={t('messageCreate.customPlaceholder')}
             value={customText}
-            onChangeText={(t) => t.length <= 200 && setCustomText(t)}
+            onChangeText={(v) => v.length <= 200 && setCustomText(v)}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
@@ -250,41 +254,118 @@ export default function CreateMessageScreen() {
         {ttsMutation.isPending ? (
           <View style={styles.loadingRow}>
             <ActivityIndicator color="#FFF" />
-            <Text style={styles.generateText}> 음성 생성 중...</Text>
+            <Text style={styles.generateText}>{t('messageCreate.generating')}</Text>
           </View>
         ) : (
-          <Text style={styles.generateText}>🔊 음성 메시지 생성</Text>
+          <Text style={styles.generateText}>{t('messageCreate.generate')}</Text>
         )}
       </TouchableOpacity>
 
       {/* 생성 결과 */}
       {generatedAudioId && (
         <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>✅ 음성 메시지 생성 완료!</Text>
+          <Text style={styles.resultTitle}>{t('messageCreate.resultTitle')}</Text>
           <Text style={styles.resultMessage}>"{messageText}"</Text>
           <View style={styles.resultActions}>
             <TouchableOpacity style={styles.previewButton} onPress={handlePreview}>
               <Text style={styles.previewText}>
-                {currentSound ? '⏸️ 정지' : '▶️ 미리듣기'}
+                {currentSound ? t('messageCreate.stop') : t('messageCreate.preview')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.useButton}
-              onPress={() => {
-                Alert.alert('저장 완료', '이 메시지로 알람을 설정하시겠어요?', [
-                  { text: '나중에', style: 'cancel' },
-                  {
-                    text: '알람 설정',
-                    onPress: () => router.push('/alarm/create'),
-                  },
-                ]);
-              }}
+              onPress={() => router.push(`/alarm/create?message_id=${generatedAudioId}`)}
             >
-              <Text style={styles.useText}>⏰ 알람에 사용</Text>
+              <Text style={styles.useText}>{t('messageCreate.useForAlarm')}</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.giftButton}
+            onPress={async () => {
+              try {
+                const friends = await getFriendList();
+                if (!friends || friends.length === 0) {
+                  Alert.alert(t('messageCreate.noFriendsTitle'), t('messageCreate.noFriends'));
+                  return;
+                }
+                setGiftFriends(friends);
+                setGiftNote('');
+                setGiftModalVisible(true);
+              } catch {
+                Alert.alert(t('common.error'), t('messageCreate.friendListError'));
+              }
+            }}
+          >
+            <Text style={styles.giftText}>{t('messageCreate.gift')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      <Modal
+        visible={giftModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setGiftModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('messageCreate.giftTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('messageCreate.giftWho')}</Text>
+            <TextInput
+              style={styles.giftNoteInput}
+              placeholder={t('messageCreate.giftNotePlaceholder')}
+              placeholderTextColor={Colors.light.textTertiary}
+              value={giftNote}
+              onChangeText={(v) => v.length <= 200 && setGiftNote(v)}
+              maxLength={200}
+            />
+            <ScrollView style={styles.friendList}>
+              {giftFriends.map((f) => (
+                <TouchableOpacity
+                  key={f.id}
+                  style={styles.friendItem}
+                  disabled={giftSending}
+                  onPress={async () => {
+                    setGiftSending(true);
+                    try {
+                      await sendGift({
+                        recipient_email: f.friend_email ?? '',
+                        message_id: generatedAudioId!,
+                        note: giftNote.trim() || undefined,
+                      });
+                      setGiftModalVisible(false);
+                      toast.show(t('messageCreate.giftSent', { name: f.friend_name || f.friend_email }));
+                    } catch (err: unknown) {
+                      Alert.alert(
+                        t('common.error'),
+                        getApiErrorMessage(err, t('messageCreate.giftError')),
+                      );
+                    } finally {
+                      setGiftSending(false);
+                    }
+                  }}
+                >
+                  <View style={styles.friendAvatar}>
+                    <Text style={styles.friendAvatarText}>
+                      {(f.friend_name || f.friend_email || '?')[0].toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.friendInfo}>
+                    <Text style={styles.friendName}>{f.friend_name || t('common.noName')}</Text>
+                    <Text style={styles.friendEmail}>{f.friend_email}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setGiftModalVisible(false)}
+            >
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
-      )}
+      </Modal>
+      <Toast message={toast.message} opacity={toast.opacity} />
     </ScrollView>
   );
 }
@@ -512,6 +593,100 @@ const styles = StyleSheet.create({
   },
   useText: {
     color: '#FFF',
+    fontWeight: '600',
+  },
+  giftButton: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.accent,
+    padding: Spacing.sm + 2,
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+  },
+  giftText: {
+    color: Colors.light.accent,
+    fontWeight: '600',
+    fontSize: FontSize.md,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.background,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: Spacing.xs,
+  },
+  modalSubtitle: {
+    fontSize: FontSize.md,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  giftNoteInput: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: Spacing.md,
+  },
+  friendList: {
+    maxHeight: 300,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.surface,
+    marginBottom: Spacing.sm,
+  },
+  friendAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  friendAvatarText: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.light.primaryDark,
+  },
+  friendInfo: {
+    marginLeft: Spacing.md,
+    flex: 1,
+  },
+  friendName: {
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  friendEmail: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textTertiary,
+  },
+  modalCancel: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  modalCancelText: {
+    fontSize: FontSize.md,
+    color: Colors.light.textSecondary,
     fontWeight: '600',
   },
 });

@@ -12,25 +12,28 @@ import {
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import {
-  requestMicPermission,
-  startRecording,
-  stopRecording,
-} from '../../src/services/audio';
+import { requestMicPermission, startRecording, stopRecording } from '../../src/services/audio';
 import { createVoiceClone } from '../../src/services/api';
+import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
-const GUIDE_SENTENCES = [
-  '안녕하세요, 오늘 하루도 좋은 하루 되세요.',
-  '점심 잘 챙겨 먹고, 오후도 힘내세요.',
-  '오늘도 고생 많았어, 이제 푹 쉬어.',
-  '사랑해, 항상 건강하고 행복해.',
-  '내일도 좋은 일만 가득할 거야, 파이팅!',
-];
+const LEVEL_BAR_COUNT = 20;
+const LEVEL_HISTORY_SIZE = 20;
+
+function dbToNormalized(db: number): number {
+  const clamped = Math.max(-60, Math.min(0, db));
+  return (clamped + 60) / 60;
+}
 
 export default function RecordScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const toast = useToast();
+  const guideSentences = t('voiceRecord.sentences', { returnObjects: true }) as string[];
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -38,14 +41,19 @@ export default function RecordScreen() {
   const [duration, setDuration] = useState(0);
   const [name, setName] = useState('');
   const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
+  const [levelHistory, setLevelHistory] = useState<number[]>(
+    () => new Array(LEVEL_HISTORY_SIZE).fill(0),
+  );
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const meteringRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     requestMicPermission().then(setHasPermission);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (meteringRef.current) clearInterval(meteringRef.current);
     };
   }, []);
 
@@ -54,46 +62,58 @@ export default function RecordScreen() {
       createVoiceClone(
         { uri: params.uri, name: 'recording.wav', type: 'audio/wav' },
         params.name,
-        provider
+        provider,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
-      Alert.alert(
-        '음성 등록 완료!',
-        '음성 클론이 생성되고 있어요. 잠시 후 사용할 수 있습니다.',
-        [{ text: '확인', onPress: () => router.back() }]
-      );
+      Alert.alert(t('voiceRecord.successTitle'), t('voiceRecord.successDesc'), [
+        { text: t('common.confirm'), onPress: () => router.back() },
+      ]);
     },
-    onError: (err: any) => {
-      Alert.alert('오류', err.response?.data?.error || '음성 클론 생성에 실패했습니다.');
+    onError: (err: unknown) => {
+      toast.show(getApiErrorMessage(err, t('voiceRecord.cloneError')));
     },
   });
 
   const handleStartRecording = async () => {
     try {
-      const rec = await startRecording();
+      const rec = await startRecording(true);
       setRecording(rec);
       setIsRecording(true);
       setDuration(0);
+      setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
 
       timerRef.current = setInterval(() => {
         setDuration((d) => d + 1);
       }, 1000);
 
+      meteringRef.current = setInterval(async () => {
+        try {
+          const status = await rec.getStatusAsync();
+          if (status.isRecording && status.metering != null) {
+            const level = dbToNormalized(status.metering);
+            setLevelHistory((prev) => [...prev.slice(1), level]);
+          }
+        } catch {
+          // recording may have stopped
+        }
+      }, 100);
+
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.3, duration: 800, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ])
+        ]),
       ).start();
-    } catch (err) {
-      Alert.alert('오류', '녹음을 시작할 수 없습니다.');
+    } catch {
+      toast.show(t('voiceRecord.recordError'));
     }
   };
 
   const handleStopRecording = async () => {
     if (!recording) return;
     if (timerRef.current) clearInterval(timerRef.current);
+    if (meteringRef.current) clearInterval(meteringRef.current);
     pulseAnim.stopAnimation();
     pulseAnim.setValue(1);
 
@@ -105,11 +125,11 @@ export default function RecordScreen() {
 
   const handleSubmit = () => {
     if (!recordedUri || !name.trim()) {
-      Alert.alert('입력 필요', '이름을 입력하고 녹음을 완료해주세요.');
+      toast.show(t('voiceRecord.inputRequired'));
       return;
     }
     if (duration < 10) {
-      Alert.alert('녹음 너무 짧음', '최소 10초 이상 녹음해주세요.');
+      toast.show(t('voiceRecord.tooShort'));
       return;
     }
     cloneMutation.mutate({ uri: recordedUri, name: name.trim() });
@@ -124,9 +144,7 @@ export default function RecordScreen() {
   if (hasPermission === false) {
     return (
       <View style={styles.center}>
-        <Text style={styles.permissionText}>
-          마이크 권한이 필요합니다.{'\n'}설정에서 마이크 접근을 허용해주세요.
-        </Text>
+        <Text style={styles.permissionText}>{t('voiceRecord.permissionRequired')}</Text>
       </View>
     );
   }
@@ -135,16 +153,14 @@ export default function RecordScreen() {
     <View style={styles.container}>
       {/* 가이드 문장 */}
       <View style={styles.guideSection}>
-        <Text style={styles.guideTitle}>아래 문장을 편안하게 읽어주세요</Text>
-        {GUIDE_SENTENCES.map((sentence, i) => (
+        <Text style={styles.guideTitle}>{t('voiceRecord.guideTitle')}</Text>
+        {guideSentences.map((sentence, i) => (
           <View key={i} style={styles.guideSentence}>
             <Text style={styles.guideNumber}>{i + 1}</Text>
             <Text style={styles.guideText}>{sentence}</Text>
           </View>
         ))}
-        <Text style={styles.guideTip}>
-          💡 최소 10초, 권장 30초~1분 녹음해주세요
-        </Text>
+        <Text style={styles.guideTip}>{t('voiceRecord.guideTip')}</Text>
       </View>
 
       {/* 녹음 컨트롤 */}
@@ -166,19 +182,43 @@ export default function RecordScreen() {
           </TouchableOpacity>
         </Animated.View>
 
+        {isRecording && (
+          <View style={styles.levelContainer}>
+            {levelHistory.map((level, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.levelBar,
+                  {
+                    height: Math.max(3, level * 40),
+                    backgroundColor:
+                      level > 0.7
+                        ? Colors.light.primary
+                        : level > 0.3
+                          ? Colors.light.primaryLight
+                          : Colors.light.border,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        )}
+
         <Text style={styles.recordHint}>
-          {isRecording ? '녹음 중... 탭하여 중지' : '탭하여 녹음 시작'}
+          {isRecording ? t('voiceRecord.recording') : t('voiceRecord.tapToRecord')}
         </Text>
       </View>
 
       {/* 녹음 완료 후 */}
       {recordedUri && !isRecording && (
         <View style={styles.resultSection}>
-          <Text style={styles.resultTitle}>녹음 완료! ({formatTime(duration)})</Text>
+          <Text style={styles.resultTitle}>
+            {t('voiceRecord.resultTitle', { time: formatTime(duration) })}
+          </Text>
 
           <TextInput
             style={styles.nameInput}
-            placeholder="이름을 입력해주세요 (예: 엄마, 아빠)"
+            placeholder={t('voiceRecord.namePlaceholder')}
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.light.textTertiary}
@@ -190,7 +230,9 @@ export default function RecordScreen() {
               style={[styles.providerChip, provider === 'perso' && styles.providerActive]}
               onPress={() => setProvider('perso')}
             >
-              <Text style={[styles.providerText, provider === 'perso' && styles.providerTextActive]}>
+              <Text
+                style={[styles.providerText, provider === 'perso' && styles.providerTextActive]}
+              >
                 Perso.ai
               </Text>
             </TouchableOpacity>
@@ -198,7 +240,12 @@ export default function RecordScreen() {
               style={[styles.providerChip, provider === 'elevenlabs' && styles.providerActive]}
               onPress={() => setProvider('elevenlabs')}
             >
-              <Text style={[styles.providerText, provider === 'elevenlabs' && styles.providerTextActive]}>
+              <Text
+                style={[
+                  styles.providerText,
+                  provider === 'elevenlabs' && styles.providerTextActive,
+                ]}
+              >
                 ElevenLabs
               </Text>
             </TouchableOpacity>
@@ -212,11 +259,12 @@ export default function RecordScreen() {
             {cloneMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.submitText}>음성 등록하기</Text>
+              <Text style={styles.submitText}>{t('voiceRecord.submit')}</Text>
             )}
           </TouchableOpacity>
         </View>
       )}
+      <Toast message={toast.message} opacity={toast.opacity} />
     </View>
   );
 }
@@ -313,6 +361,20 @@ const styles = StyleSheet.create({
   micIcon: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  levelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    gap: 2,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
+  levelBar: {
+    width: 3,
+    borderRadius: 1.5,
+    minHeight: 3,
   },
   recordHint: {
     fontSize: FontSize.sm,

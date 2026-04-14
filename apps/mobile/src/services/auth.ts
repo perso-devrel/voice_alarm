@@ -35,7 +35,7 @@ export function useGoogleAuth() {
     {
       authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
       tokenEndpoint: 'https://oauth2.googleapis.com/token',
-    }
+    },
   );
 
   return { request, response, promptAsync, redirectUri };
@@ -71,8 +71,13 @@ export async function signInWithApple(): Promise<{
         name,
       },
     };
-  } catch (err: any) {
-    if (err.code === 'ERR_REQUEST_CANCELED') return null;
+  } catch (err: unknown) {
+    if (
+      err instanceof Error &&
+      'code' in err &&
+      (err as { code: string }).code === 'ERR_REQUEST_CANCELED'
+    )
+      return null;
     throw err;
   }
 }

@@ -9,6 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../src/constants/theme';
 import { useAppStore } from '../src/stores/useAppStore';
 
@@ -17,23 +18,20 @@ const { width } = Dimensions.get('window');
 const ONBOARDING_PAGES = [
   {
     emoji: '🎙️',
-    title: '누구의 목소리를\n듣고 싶나요?',
-    description:
-      '엄마, 아빠, 연인, 친구...\n소중한 사람의 목소리를 등록해보세요.\n짧은 녹음이나 통화 녹음만 있으면 돼요.',
+    titleKey: 'onboarding.page1Title',
+    descKey: 'onboarding.page1Desc',
     color: '#FFF5F3',
   },
   {
     emoji: '💌',
-    title: '매일 따뜻한\n메시지가 찾아와요',
-    description:
-      '"점심 잘 챙겨 먹어"\n"오늘도 고생 많았어"\n그 사람의 목소리로 응원을 받아보세요.',
+    titleKey: 'onboarding.page2Title',
+    descKey: 'onboarding.page2Desc',
     color: '#FFF0ED',
   },
   {
     emoji: '⏰',
-    title: '소중한 목소리로\n하루를 시작하세요',
-    description:
-      '알람부터 퇴근 알림까지,\n하루 종일 소중한 사람의 목소리와 함께.\n지금 바로 시작해볼까요?',
+    titleKey: 'onboarding.page3Title',
+    descKey: 'onboarding.page3Desc',
     color: '#FFEAE5',
   },
 ];
@@ -41,6 +39,7 @@ const ONBOARDING_PAGES = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -60,11 +59,11 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)');
   };
 
-  const renderPage = ({ item, index }: { item: typeof ONBOARDING_PAGES[0]; index: number }) => (
+  const renderPage = ({ item }: { item: (typeof ONBOARDING_PAGES)[0] }) => (
     <View style={[styles.page, { width, backgroundColor: item.color }]}>
       <Text style={styles.emoji}>{item.emoji}</Text>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+      <Text style={styles.title}>{t(item.titleKey)}</Text>
+      <Text style={styles.description}>{t(item.descKey)}</Text>
     </View>
   );
 
@@ -73,7 +72,7 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={styles.skipText}>건너뛰기</Text>
+        <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -83,10 +82,9 @@ export default function OnboardingScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+          useNativeDriver: false,
+        })}
         onMomentumScrollEnd={(e) => {
           const index = Math.round(e.nativeEvent.contentOffset.x / width);
           setCurrentIndex(index);
@@ -108,21 +106,13 @@ export default function OnboardingScreen() {
             outputRange: [0.3, 1, 0.3],
             extrapolate: 'clamp',
           });
-          return (
-            <Animated.View
-              key={i}
-              style={[
-                styles.dot,
-                { width: dotWidth, opacity },
-              ]}
-            />
-          );
+          return <Animated.View key={i} style={[styles.dot, { width: dotWidth, opacity }]} />;
         })}
       </View>
 
       <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
         <Text style={styles.nextText}>
-          {isLastPage ? '시작하기' : '다음'}
+          {isLastPage ? t('onboarding.start') : t('onboarding.next')}
         </Text>
       </TouchableOpacity>
     </View>

@@ -6,25 +6,50 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { getAlarms, getMessages } from '../../src/services/api';
+import { getAlarms, getMessages, getStats } from '../../src/services/api';
+import type { Stats, WeekTrend } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import LoginButtons from '../../src/components/LoginButtons';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
+import {
+  cacheAlarms,
+  getCachedAlarms,
+  cacheMessages,
+  getCachedMessages,
+} from '../../src/services/offlineCache';
 import { Audio } from 'expo-av';
+import type { Alarm, Message } from '../../src/types';
+
+function TrendBadge({ trend }: { trend: WeekTrend }) {
+  const diff = trend.thisWeek - trend.lastWeek;
+  if (trend.thisWeek === 0 && trend.lastWeek === 0) return null;
+  const color = diff > 0 ? '#22c55e' : diff < 0 ? '#f87171' : Colors.light.textSecondary;
+  const label = diff > 0 ? `+${diff} ↑` : diff < 0 ? `${diff} ↓` : '0';
+  return <Text style={{ fontSize: FontSize.xs, color, marginTop: 2 }}>{label}</Text>;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { isAuthenticated, hasCompletedOnboarding, setPlaying, currentPlayingId } = useAppStore();
+  const isConnected = useNetworkStatus();
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
+  const [cachedAlarmsList, setCachedAlarmsList] = useState<Alarm[] | null>(null);
+  const [cachedMessagesList, setCachedMessagesList] = useState<Message[] | null>(null);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
+    getCachedAlarms().then(setCachedAlarmsList);
+    getCachedMessages().then(setCachedMessagesList);
   }, []);
   useEffect(() => {
     if (mounted && !hasCompletedOnboarding) {
@@ -39,7 +64,7 @@ export default function HomeScreen() {
   } = useQuery({
     queryKey: ['alarms'],
     queryFn: getAlarms,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
 
   const {
@@ -49,8 +74,35 @@ export default function HomeScreen() {
   } = useQuery({
     queryKey: ['messages'],
     queryFn: () => getMessages(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
+
+  const {
+    data: stats,
+    isError: statsError,
+    refetch: refetchStats,
+  } = useQuery<Stats>({
+    queryKey: ['stats'],
+    queryFn: getStats,
+    enabled: isAuthenticated && isConnected,
+  });
+
+  useEffect(() => {
+    if (alarms && alarms.length > 0) {
+      cacheAlarms(alarms);
+      setCachedAlarmsList(alarms);
+    }
+  }, [alarms]);
+
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      cacheMessages(messages);
+      setCachedMessagesList(messages);
+    }
+  }, [messages]);
+
+  const displayAlarms = alarms ?? cachedAlarmsList;
+  const displayMessages = messages ?? cachedMessagesList;
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -62,16 +114,16 @@ export default function HomeScreen() {
 
   const getTimeGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 6) return { emoji: '🌙', text: '좋은 밤이에요' };
-    if (hour < 12) return { emoji: '🌅', text: '좋은 아침이에요' };
-    if (hour < 17) return { emoji: '☀️', text: '좋은 오후에요' };
-    if (hour < 21) return { emoji: '🌆', text: '좋은 저녁이에요' };
-    return { emoji: '🌙', text: '좋은 밤이에요' };
+    if (hour < 6) return { emoji: '🌙', text: t('greeting.night') };
+    if (hour < 12) return { emoji: '🌅', text: t('greeting.morning') };
+    if (hour < 17) return { emoji: '☀️', text: t('greeting.afternoon') };
+    if (hour < 21) return { emoji: '🌆', text: t('greeting.evening') };
+    return { emoji: '🌙', text: t('greeting.night') };
   };
 
   const greeting = getTimeGreeting();
-  const nextAlarm = alarms?.find((a: any) => a.is_active);
-  const latestMessage = messages?.[0];
+  const nextAlarm = displayAlarms?.find((a: Alarm) => a.is_active);
+  const latestMessage = displayMessages?.[0];
 
   const handlePlayMessage = async (messageId: string) => {
     if (currentSound) {
@@ -112,17 +164,62 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>
             {greeting.emoji} {greeting.text}
           </Text>
-          <Text style={styles.subtitle}>소중한 사람의 목소리가 기다리고 있어요</Text>
+          <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
         </View>
+
+        {isAuthenticated && (alarmsLoading || messagesLoading) && !refreshing && (
+          <ActivityIndicator color={Colors.light.primary} style={{ marginVertical: Spacing.lg }} />
+        )}
+
+        {/* 요약 통계 */}
+        {isAuthenticated && statsError && (
+          <TouchableOpacity
+            style={styles.statsErrorCard}
+            onPress={() => refetchStats()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.statsErrorText}>{t('common.loadError', '불러오기 실패')}</Text>
+            <Text style={styles.statsErrorRetry}>{t('common.retry', '다시 시도')}</Text>
+          </TouchableOpacity>
+        )}
+        {isAuthenticated && stats && (
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statCount}>{stats.alarms.active}</Text>
+              <Text style={styles.statLabel}>{t('home.activeAlarms', '활성 알람')}</Text>
+              {stats.trends && <TrendBadge trend={stats.trends.alarms} />}
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statCount}>{stats.messages.total}</Text>
+              <Text style={styles.statLabel}>{t('home.messages', '메시지')}</Text>
+              {stats.trends && <TrendBadge trend={stats.trends.messages} />}
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statCount}>{stats.friends.total}</Text>
+              <Text style={styles.statLabel}>{t('home.friends', '친구')}</Text>
+              {stats.trends && <TrendBadge trend={stats.trends.friends} />}
+            </View>
+            {stats.gifts.receivedPending > 0 && (
+              <TouchableOpacity style={styles.statItem} onPress={() => router.push('/gift/received')}>
+                <Text style={[styles.statCount, { color: Colors.light.accent }]}>{stats.gifts.receivedPending}</Text>
+                <Text style={[styles.statLabel, { color: Colors.light.accent }]}>{t('home.pendingGifts', '대기 선물')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* 다음 알람 카드 */}
         <TouchableOpacity
           style={styles.nextAlarmCard}
-          onPress={() => router.push('/(tabs)/alarms')}
+          onPress={() =>
+            nextAlarm
+              ? router.push({ pathname: '/alarm/edit', params: { id: nextAlarm.id } })
+              : router.push('/alarm/create')
+          }
           activeOpacity={0.8}
         >
           <View style={styles.nextAlarmGradient}>
-            <Text style={styles.nextAlarmLabel}>다음 알람</Text>
+            <Text style={styles.nextAlarmLabel}>{t('home.nextAlarm')}</Text>
             {nextAlarm ? (
               <>
                 <Text style={styles.nextAlarmTime}>{nextAlarm.time}</Text>
@@ -133,7 +230,7 @@ export default function HomeScreen() {
             ) : (
               <>
                 <Text style={styles.nextAlarmTime}>--:--</Text>
-                <Text style={styles.nextAlarmMessage}>아직 설정된 알람이 없어요</Text>
+                <Text style={styles.nextAlarmMessage}>{t('home.noAlarm')}</Text>
               </>
             )}
           </View>
@@ -148,13 +245,15 @@ export default function HomeScreen() {
           >
             <View style={styles.cheerHeader}>
               <Text style={styles.cheerEmoji}>💌</Text>
-              <Text style={styles.cheerTitle}>오늘의 메시지</Text>
+              <Text style={styles.cheerTitle}>{t('home.todayMessage')}</Text>
             </View>
             <Text style={styles.cheerText}>"{latestMessage.text}"</Text>
             <View style={styles.cheerFooter}>
               <Text style={styles.cheerVoice}>— {latestMessage.voice_name}</Text>
               <Text style={styles.playButton}>
-                {currentPlayingId === latestMessage.id ? '⏸️ 일시정지' : '▶️ 재생'}
+                {currentPlayingId === latestMessage.id
+                  ? `⏸️ ${t('home.pause')}`
+                  : `▶️ ${t('home.play')}`}
               </Text>
             </View>
           </TouchableOpacity>
@@ -162,35 +261,49 @@ export default function HomeScreen() {
 
         {/* 빠른 액션 */}
         <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>빠른 시작</Text>
+          <Text style={styles.sectionTitle}>{t('home.quickStart')}</Text>
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/voice/record')}
             >
               <Text style={styles.actionEmoji}>🎙️</Text>
-              <Text style={styles.actionLabel}>음성 녹음</Text>
+              <Text style={styles.actionLabel}>{t('home.recordVoice')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/voice/upload')}
             >
               <Text style={styles.actionEmoji}>📁</Text>
-              <Text style={styles.actionLabel}>파일 업로드</Text>
+              <Text style={styles.actionLabel}>{t('home.uploadFile')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/message/create')}
             >
               <Text style={styles.actionEmoji}>✏️</Text>
-              <Text style={styles.actionLabel}>메시지 작성</Text>
+              <Text style={styles.actionLabel}>{t('home.writeMessage')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/alarm/create')}
             >
               <Text style={styles.actionEmoji}>⏰</Text>
-              <Text style={styles.actionLabel}>알람 추가</Text>
+              <Text style={styles.actionLabel}>{t('home.addAlarm')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push('/gift/received')}
+            >
+              <Text style={styles.actionEmoji}>🎁</Text>
+              <Text style={styles.actionLabel}>{t('home.receivedGifts')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push('/(tabs)/friends')}
+            >
+              <Text style={styles.actionEmoji}>👥</Text>
+              <Text style={styles.actionLabel}>{t('home.manageFriends')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -199,10 +312,8 @@ export default function HomeScreen() {
         {!isAuthenticated && (
           <View style={styles.loginPrompt}>
             <Text style={styles.loginEmoji}>🔐</Text>
-            <Text style={styles.loginTitle}>로그인하고 시작하세요</Text>
-            <Text style={styles.loginDesc}>
-              소중한 사람의 목소리를 등록하고{'\n'}매일 따뜻한 메시지를 받아보세요
-            </Text>
+            <Text style={styles.loginTitle}>{t('home.loginTitle')}</Text>
+            <Text style={styles.loginDesc}>{t('home.loginDesc')}</Text>
             <LoginButtons />
           </View>
         )}
@@ -222,6 +333,28 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: Spacing.lg,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  statItem: {
+    flex: 1,
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    alignItems: 'center',
+  },
+  statCount: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.light.primary,
+  },
+  statLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
   },
   greeting: {
     fontSize: FontSize.hero,
@@ -366,6 +499,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.lg,
+  },
+  statsErrorCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f8717133',
+  },
+  statsErrorText: {
+    fontSize: FontSize.sm,
+    color: '#f87171',
+    fontWeight: '600',
+  },
+  statsErrorRetry: {
+    fontSize: FontSize.xs,
+    color: Colors.light.primary,
+    marginTop: 4,
   },
   loginButton: {
     backgroundColor: Colors.light.primary,

@@ -1,16 +1,26 @@
 import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
 
-// Web에서는 file-system을 import하지 않음 (지원 안 됨)
+interface FileInfo {
+  exists: boolean;
+  size?: number;
+}
+
+type GetInfoFn = (path: string) => Promise<FileInfo>;
+type MakeDirFn = (path: string, opts?: { intermediates?: boolean }) => Promise<void>;
+type WriteStringFn = (path: string, data: string, opts?: { encoding: string }) => Promise<void>;
+type ReadDirFn = (path: string) => Promise<string[]>;
+type DeleteFn = (path: string) => Promise<void>;
+
 const isWeb = Platform.OS === 'web';
 
 let documentDirectory: string | null = null;
-let getInfoAsync: any = async () => ({ exists: false });
-let makeDirectoryAsync: any = async () => {};
-let writeAsStringAsync: any = async () => {};
-let readDirectoryAsync: any = async () => [];
-let deleteAsync: any = async () => {};
-let EncodingType: any = { Base64: 'base64' };
+let getInfoAsync: GetInfoFn = async () => ({ exists: false });
+let makeDirectoryAsync: MakeDirFn = async () => {};
+let writeAsStringAsync: WriteStringFn = async () => {};
+let readDirectoryAsync: ReadDirFn = async () => [];
+let deleteAsync: DeleteFn = async () => {};
+let EncodingType: { Base64: string } = { Base64: 'base64' };
 
 if (!isWeb) {
   const fs = require('expo-file-system/legacy');
@@ -61,10 +71,14 @@ export async function requestMicPermission(): Promise<boolean> {
 }
 
 /** 녹음 시작 */
-export async function startRecording(): Promise<Audio.Recording> {
+export async function startRecording(enableMetering = false): Promise<Audio.Recording> {
   await setupAudioSession();
   const recording = new Audio.Recording();
-  await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+  const options = {
+    ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+    isMeteringEnabled: enableMetering,
+  };
+  await recording.prepareToRecordAsync(options);
   await recording.startAsync();
   return recording;
 }
@@ -80,7 +94,7 @@ export async function stopRecording(recording: Audio.Recording): Promise<{
 
   return {
     uri,
-    duration: (status as any).durationMillis / 1000,
+    duration: (status as unknown as { durationMillis: number }).durationMillis / 1000,
   };
 }
 
@@ -88,7 +102,7 @@ export async function stopRecording(recording: Audio.Recording): Promise<{
 export async function saveAudioLocally(
   base64Data: string,
   messageId: string,
-  format: string = 'mp3'
+  format: string = 'mp3',
 ): Promise<string> {
   if (isWeb) {
     // 웹에서는 data URL로 반환
@@ -125,10 +139,7 @@ export async function playAudio(uri: string): Promise<Audio.Sound> {
     });
   }
 
-  const { sound } = await Audio.Sound.createAsync(
-    { uri },
-    { shouldPlay: true }
-  );
+  const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
 
   return sound;
 }
@@ -151,8 +162,8 @@ export async function getAudioCacheSize(): Promise<number> {
   let totalSize = 0;
   for (const file of files) {
     const info = await getInfoAsync(`${AUDIO_DIR}${file}`);
-    if (info.exists && 'size' in info) {
-      totalSize += (info as any).size;
+    if (info.exists && info.size != null) {
+      totalSize += info.size;
     }
   }
   return totalSize;

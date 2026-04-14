@@ -72,11 +72,13 @@ while (( iteration < MAX_ITERATIONS )); do
       --no-verify || true
 
     # develop 브랜치에 push (auto-deploy 트리거)
-    if [ "$PUSH_ENABLED" = "1" ]; then
-      git push origin "$BRANCH" 2>>"$log_file" || {
-        echo "[iter $iteration] push failed, will retry next iter" >> "$log_file"
-      }
-    fi
+    # ⚠️ 자동 배포 비활성화 - 사용자 요청으로 push 주석 처리
+    # if [ "$PUSH_ENABLED" = "1" ]; then
+    #   git push origin "$BRANCH" 2>>"$log_file" || {
+    #     echo "[iter $iteration] push failed, will retry next iter" >> "$log_file"
+    #   }
+    # fi
+    echo "[iter $iteration] auto-push disabled (commits stay local)" >> "$log_file"
   else
     echo "[iter $iteration] no changes" >> "$log_file"
   fi

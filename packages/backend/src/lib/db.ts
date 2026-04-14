@@ -53,6 +53,7 @@ export async function initDB(env: Env) {
     `CREATE TABLE IF NOT EXISTS alarms (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
+      target_user_id TEXT,
       message_id TEXT NOT NULL REFERENCES messages(id),
       time TEXT NOT NULL,
       repeat_days TEXT DEFAULT '[]',
@@ -68,5 +69,40 @@ export async function initDB(env: Env) {
       is_favorite INTEGER DEFAULT 0,
       received_at TEXT DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS friendships (
+      id TEXT PRIMARY KEY,
+      user_a TEXT NOT NULL,
+      user_b TEXT NOT NULL,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','accepted','blocked')),
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS gifts (
+      id TEXT PRIMARY KEY,
+      sender_id TEXT NOT NULL,
+      recipient_id TEXT NOT NULL,
+      message_id TEXT NOT NULL REFERENCES messages(id),
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','accepted','rejected')),
+      note TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+  ]);
+
+  await db.batch([
+    'CREATE INDEX IF NOT EXISTS idx_voice_profiles_user ON voice_profiles(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_messages_voice ON messages(voice_profile_id)',
+    'CREATE INDEX IF NOT EXISTS idx_alarms_user ON alarms(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_alarms_target ON alarms(target_user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_alarms_message ON alarms(message_id)',
+    'CREATE INDEX IF NOT EXISTS idx_alarms_active ON alarms(is_active)',
+    'CREATE INDEX IF NOT EXISTS idx_library_user ON message_library(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_library_message ON message_library(message_id)',
+    'CREATE INDEX IF NOT EXISTS idx_friendships_user_a ON friendships(user_a)',
+    'CREATE INDEX IF NOT EXISTS idx_friendships_user_b ON friendships(user_b)',
+    'CREATE INDEX IF NOT EXISTS idx_friendships_status ON friendships(status)',
+    'CREATE INDEX IF NOT EXISTS idx_gifts_sender ON gifts(sender_id)',
+    'CREATE INDEX IF NOT EXISTS idx_gifts_recipient ON gifts(recipient_id)',
+    'CREATE INDEX IF NOT EXISTS idx_gifts_status ON gifts(status)',
+    'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
   ]);
 }

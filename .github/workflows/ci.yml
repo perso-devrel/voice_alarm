@@ -19,10 +19,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
-        working-directory: ${{ matrix.package }}
+      - name: Install root dependencies
         run: npm ci || npm install
+
+      - name: Install mobile dependencies
+        if: matrix.package == 'apps/mobile'
+        working-directory: apps/mobile
+        run: npm install
 
       - name: Typecheck
         working-directory: ${{ matrix.package }}

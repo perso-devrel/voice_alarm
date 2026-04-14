@@ -1,123 +1,172 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   FlatList,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  RefreshControl,
+  Animated as RNAnimated,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { getVoiceProfiles, deleteVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { ErrorView } from '../../src/components/QueryStateView';
+import type { VoiceProfile } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function VoicesScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: profiles, isLoading } = useQuery({
+  const {
+    data: profiles,
+    isLoading,
+    isError,
+    isRefetching,
+    refetch,
+  } = useQuery({
     queryKey: ['voiceProfiles'],
     queryFn: getVoiceProfiles,
     enabled: isAuthenticated,
   });
+
+  const filteredProfiles = useMemo(() => {
+    if (!profiles) return profiles;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return profiles;
+    return profiles.filter((p) => p.name.toLowerCase().includes(q));
+  }, [profiles, searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteVoiceProfile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
     },
+    onError: (err: unknown) => {
+      toast.show(getApiErrorMessage(err, t('voices.deleteError')));
+    },
   });
 
   const handleDelete = (id: string, name: string) => {
-    Alert.alert(
-      '음성 프로필 삭제',
-      `"${name}" 프로필을 삭제하시겠어요?\n이 음성으로 만든 메시지는 유지됩니다.`,
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: () => deleteMutation.mutate(id),
-        },
-      ]
-    );
+    Alert.alert(t('voices.deleteTitle'), t('voices.deleteConfirm', { name }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => deleteMutation.mutate(id),
+      },
+    ]);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ready':
-        return { label: '사용 가능', color: Colors.light.success };
+        return { label: t('voices.statusReady'), color: Colors.light.success };
       case 'processing':
-        return { label: '생성 중...', color: Colors.light.warning };
+        return { label: t('voices.statusProcessing'), color: Colors.light.warning };
       case 'failed':
-        return { label: '실패', color: Colors.light.error };
+        return { label: t('voices.statusFailed'), color: Colors.light.error };
       default:
         return { label: status, color: Colors.light.textTertiary };
     }
   };
 
-  const renderProfile = ({ item }: { item: any }) => {
+  const renderDeleteAction = (
+    _progress: RNAnimated.AnimatedInterpolation<number>,
+    dragX: RNAnimated.AnimatedInterpolation<number>,
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [-100, -50, 0],
+      outputRange: [1, 0.8, 0],
+      extrapolate: 'clamp',
+    });
+    return (
+      <View style={styles.swipeDeleteContainer}>
+        <RNAnimated.Text style={[styles.swipeDeleteText, { transform: [{ scale }] }]}>
+          {t('common.delete')}
+        </RNAnimated.Text>
+      </View>
+    );
+  };
+
+  const renderProfile = ({ item }: { item: VoiceProfile }) => {
     const badge = getStatusBadge(item.status);
     return (
-      <View style={styles.profileCard}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>
-            {item.name.charAt(0)}
-          </Text>
-        </View>
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{item.name}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: badge.color + '20' }]}>
-            <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
-            <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
-          </View>
-          <Text style={styles.profileDate}>
-            {new Date(item.created_at).toLocaleDateString('ko-KR')}
-          </Text>
-        </View>
+      <Swipeable
+        renderRightActions={renderDeleteAction}
+        onSwipeableOpen={() => handleDelete(item.id, item.name)}
+        overshootRight={false}
+      >
         <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDelete(item.id, item.name)}
+          style={styles.profileCard}
+          activeOpacity={0.7}
+          onPress={() => router.push({ pathname: '/voice/[id]', params: { id: item.id } })}
         >
-          <Text style={styles.deleteText}>삭제</Text>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{item.name}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: badge.color + '20' }]}>
+              <View style={[styles.statusDot, { backgroundColor: badge.color }]} />
+              <Text style={[styles.statusText, { color: badge.color }]}>{badge.label}</Text>
+            </View>
+            <Text style={styles.profileDate}>
+              {new Date(item.created_at).toLocaleDateString('ko-KR')}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDelete(item.id, item.name)}
+          >
+            <Text style={styles.deleteText}>{t('common.delete')}</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
-      </View>
+      </Swipeable>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.header}>
-        <Text style={styles.title}>음성 프로필</Text>
-        <Text style={styles.subtitle}>소중한 사람의 목소리를 등록하세요</Text>
+        <Text style={styles.title}>{t('voices.title')}</Text>
+        <Text style={styles.subtitle}>{t('voices.subtitle')}</Text>
       </View>
 
-      {/* 등록 방법 선택 */}
       <View style={styles.addSection}>
-        <TouchableOpacity
-          style={styles.addCard}
-          onPress={() => router.push('/voice/record')}
-        >
+        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/record')}>
           <Text style={styles.addEmoji}>🎙️</Text>
           <View>
-            <Text style={styles.addTitle}>직접 녹음</Text>
-            <Text style={styles.addDesc}>마이크로 음성을 녹음해요</Text>
+            <Text style={styles.addTitle}>{t('voices.record')}</Text>
+            <Text style={styles.addDesc}>{t('voices.recordDesc')}</Text>
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.addCard}
-          onPress={() => router.push('/voice/upload')}
-        >
+        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/upload')}>
           <Text style={styles.addEmoji}>📁</Text>
           <View>
-            <Text style={styles.addTitle}>파일 업로드</Text>
-            <Text style={styles.addDesc}>오디오 파일을 선택해요</Text>
+            <Text style={styles.addTitle}>{t('voices.upload')}</Text>
+            <Text style={styles.addDesc}>{t('voices.uploadDesc')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -127,37 +176,53 @@ export default function VoicesScreen() {
         >
           <Text style={styles.addEmoji}>📞</Text>
           <View>
-            <Text style={[styles.addTitle, { color: '#FFF' }]}>통화 녹음</Text>
+            <Text style={[styles.addTitle, { color: '#FFF' }]}>{t('voices.callRecord')}</Text>
             <Text style={[styles.addDesc, { color: 'rgba(255,255,255,0.8)' }]}>
-              통화 녹음에서 화자를 분리해요
+              {t('voices.callRecordDesc')}
             </Text>
           </View>
         </TouchableOpacity>
       </View>
 
-      {/* 프로필 목록 */}
       <View style={styles.listSection}>
         <Text style={styles.listTitle}>
-          등록된 음성 ({profiles?.length ?? 0})
+          {t('voices.registered')} ({profiles?.length ?? 0})
         </Text>
+        {profiles && profiles.length > 0 && (
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('voices.searchPlaceholder')}
+            placeholderTextColor={Colors.light.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
+          />
+        )}
         {isLoading ? (
           <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
-        ) : profiles?.length === 0 ? (
+        ) : isError ? (
+          <ErrorView onRetry={refetch} />
+        ) : filteredProfiles?.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🎵</Text>
             <Text style={styles.emptyText}>
-              아직 등록된 음성이 없어요{'\n'}위의 버튼으로 음성을 등록해보세요!
+              {t('voices.emptyTitle')}
+              {'\n'}
+              {t('voices.emptyDesc')}
             </Text>
           </View>
         ) : (
           <FlatList
-            data={profiles}
+            data={filteredProfiles}
             keyExtractor={(item) => item.id}
             renderItem={renderProfile}
             scrollEnabled={false}
           />
         )}
       </View>
+      </ScrollView>
+      <Toast message={toast.message} opacity={toast.opacity} />
     </SafeAreaView>
   );
 }
@@ -223,6 +288,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.light.text,
     marginBottom: Spacing.md,
+  },
+  searchInput: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   profileCard: {
     flexDirection: 'row',
@@ -298,5 +374,18 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  swipeDeleteContainer: {
+    backgroundColor: Colors.light.error,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
+  },
+  swipeDeleteText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: FontSize.md,
   },
 });

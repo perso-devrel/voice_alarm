@@ -7,25 +7,47 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { DAYS_OF_WEEK } from '../../src/constants/presets';
-import { getMessages, createAlarm } from '../../src/services/api';
+import { DAYS_OF_WEEK, PRESET_CATEGORIES } from '../../src/constants/presets';
+import type { PresetCategory } from '../../src/constants/presets';
+import {
+  getMessages,
+  getAlarms,
+  createAlarm,
+  getFriendList,
+  getVoiceProfiles,
+  generateTTS,
+} from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { syncAlarmNotifications } from '../../src/services/notifications';
+import type { Friend, Message, VoiceProfile } from '../../src/types';
+import { getApiErrorMessage } from '../../src/types';
+import { useToast } from '../../src/hooks/useToast';
+import { Toast } from '../../src/components/Toast';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
+  const { message_id: paramMessageId } = useLocalSearchParams<{ message_id?: string }>();
   const queryClient = useQueryClient();
-  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  const { isAuthenticated, userId, defaultSnoozeMinutes } = useAppStore();
+  const { t } = useTranslation();
+  const toast = useToast();
 
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
-  const [snooze, setSnooze] = useState(5);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(paramMessageId ?? null);
+  const [snooze, setSnooze] = useState(defaultSnoozeMinutes);
+  const [targetUserId, setTargetUserId] = useState<string | null>(null);
+  const [targetName, setTargetName] = useState<string | null>(null);
+  const [showPreset, setShowPreset] = useState(false);
+  const [presetCategory, setPresetCategory] = useState<string>('morning');
+  const [presetText, setPresetText] = useState<string | null>(null);
+  const [presetVoiceId, setPresetVoiceId] = useState<string | null>(null);
 
   const { data: messages } = useQuery({
     queryKey: ['messages'],
@@ -33,28 +55,64 @@ export default function CreateAlarmScreen() {
     enabled: isAuthenticated,
   });
 
+  const { data: voices } = useQuery({
+    queryKey: ['voiceProfiles'],
+    queryFn: getVoiceProfiles,
+    enabled: isAuthenticated && showPreset,
+  });
+
+  const readyVoices = voices?.filter((v: VoiceProfile) => v.status === 'ready') ?? [];
+
+  const { data: friends } = useQuery({
+    queryKey: ['friends'],
+    queryFn: getFriendList,
+    enabled: isAuthenticated,
+  });
+
+  const ttsMutation = useMutation({
+    mutationFn: generateTTS,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      setSelectedMessageId(data.message_id);
+      setShowPreset(false);
+      setPresetText(null);
+    },
+    onError: (err: unknown) => {
+      toast.show(getApiErrorMessage(err, t('alarmCreate.ttsError')));
+    },
+  });
+
+  const handlePresetGenerate = () => {
+    if (!presetVoiceId || !presetText) return;
+    ttsMutation.mutate({
+      voice_profile_id: presetVoiceId,
+      text: presetText,
+      category: presetCategory,
+    });
+  };
+
   const createMutation = useMutation({
     mutationFn: createAlarm,
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['alarms'] });
-      Alert.alert('알람 설정 완료!', '매일 소중한 목소리로 깨워드릴게요.', [
-        { text: '확인', onPress: () => router.back() },
+      const alarms = await getAlarms();
+      syncAlarmNotifications(alarms);
+      Alert.alert(t('alarmCreate.successTitle'), t('alarmCreate.successDesc'), [
+        { text: t('common.confirm'), onPress: () => router.back() },
       ]);
     },
-    onError: (err: any) => {
-      Alert.alert('오류', err.response?.data?.error || '알람 생성에 실패했습니다.');
+    onError: (err: unknown) => {
+      toast.show(getApiErrorMessage(err, t('alarmCreate.createError')));
     },
   });
 
   const toggleDay = (day: number) => {
-    setRepeatDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
+    setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
   const handleSubmit = () => {
     if (!selectedMessageId) {
-      Alert.alert('메시지 선택', '알람에 사용할 음성 메시지를 선택해주세요.');
+      toast.show(t('alarmCreate.selectMessage'));
       return;
     }
 
@@ -64,6 +122,7 @@ export default function CreateAlarmScreen() {
       time,
       repeat_days: repeatDays,
       snooze_minutes: snooze,
+      ...(targetUserId ? { target_user_id: targetUserId } : {}),
     });
   };
 
@@ -75,16 +134,56 @@ export default function CreateAlarmScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* 누구에게? */}
+      {friends && friends.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>{t('alarmCreate.forWho')}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.targetRow}>
+            <TouchableOpacity
+              style={[styles.targetChip, !targetUserId && styles.targetChipActive]}
+              onPress={() => {
+                setTargetUserId(null);
+                setTargetName(null);
+              }}
+            >
+              <Text style={[styles.targetText, !targetUserId && styles.targetTextActive]}>
+                {t('alarmCreate.forMe')}
+              </Text>
+            </TouchableOpacity>
+            {friends.map((f: Friend) => {
+              const friendId = f.user_a === userId ? f.user_b : f.user_a;
+              const isSelected = targetUserId === friendId;
+              return (
+                <TouchableOpacity
+                  key={f.id}
+                  style={[styles.targetChip, isSelected && styles.targetChipActive]}
+                  onPress={() => {
+                    setTargetUserId(isSelected ? null : friendId);
+                    setTargetName(isSelected ? null : f.friend_name || f.friend_email || null);
+                  }}
+                >
+                  <Text style={[styles.targetText, isSelected && styles.targetTextActive]}>
+                    {f.friend_name || f.friend_email?.split('@')[0] || '?'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          {targetName && (
+            <Text style={styles.targetHint}>
+              {t('alarmCreate.targetHint', { name: targetName })}
+            </Text>
+          )}
+        </>
+      )}
+
       {/* 시간 선택 */}
-      <Text style={styles.sectionTitle}>시간</Text>
+      <Text style={styles.sectionTitle}>{t('alarmCreate.time')}</Text>
       <View style={styles.timePickerContainer}>
         <View style={styles.timePicker}>
           {/* 시 */}
           <View style={styles.timeColumn}>
-            <TouchableOpacity
-              style={styles.timeArrow}
-              onPress={() => setHour((h) => (h + 1) % 24)}
-            >
+            <TouchableOpacity style={styles.timeArrow} onPress={() => setHour((h) => (h + 1) % 24)}>
               <Text style={styles.arrowText}>▲</Text>
             </TouchableOpacity>
             <Text style={styles.timeValue}>{hour.toString().padStart(2, '0')}</Text>
@@ -118,7 +217,7 @@ export default function CreateAlarmScreen() {
       </View>
 
       {/* 반복 요일 */}
-      <Text style={styles.sectionTitle}>반복</Text>
+      <Text style={styles.sectionTitle}>{t('alarmCreate.repeat')}</Text>
       <View style={styles.daysRow}>
         {DAYS_OF_WEEK.map((day, index) => (
           <TouchableOpacity
@@ -134,18 +233,18 @@ export default function CreateAlarmScreen() {
       </View>
       <View style={styles.quickDays}>
         <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('daily')}>
-          <Text style={styles.quickText}>매일</Text>
+          <Text style={styles.quickText}>{t('alarms.daily')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('weekday')}>
-          <Text style={styles.quickText}>평일</Text>
+          <Text style={styles.quickText}>{t('alarms.weekday')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('weekend')}>
-          <Text style={styles.quickText}>주말</Text>
+          <Text style={styles.quickText}>{t('alarms.weekend')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* 스누즈 */}
-      <Text style={styles.sectionTitle}>스누즈</Text>
+      <Text style={styles.sectionTitle}>{t('alarmCreate.snooze')}</Text>
       <View style={styles.snoozeRow}>
         {[5, 10, 15].map((min) => (
           <TouchableOpacity
@@ -154,26 +253,17 @@ export default function CreateAlarmScreen() {
             onPress={() => setSnooze(min)}
           >
             <Text style={[styles.snoozeText, snooze === min && styles.snoozeTextActive]}>
-              {min}분
+              {t('alarmCreate.snoozeMin', { min })}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* 메시지 선택 */}
-      <Text style={styles.sectionTitle}>알람 메시지</Text>
-      {!messages || messages.length === 0 ? (
-        <TouchableOpacity
-          style={styles.emptyMessage}
-          onPress={() => router.push('/message/create')}
-        >
-          <Text style={styles.emptyMessageText}>
-            먼저 음성 메시지를 만들어주세요 →
-          </Text>
-        </TouchableOpacity>
-      ) : (
+      <Text style={styles.sectionTitle}>{t('alarmCreate.message')}</Text>
+      {messages && messages.length > 0 ? (
         <View style={styles.messageList}>
-          {messages.map((msg: any) => (
+          {messages.map((msg: Message) => (
             <TouchableOpacity
               key={msg.id}
               style={[
@@ -188,11 +278,113 @@ export default function CreateAlarmScreen() {
                   "{msg.text}"
                 </Text>
               </View>
-              {selectedMessageId === msg.id && (
-                <Text style={styles.checkmark}>✓</Text>
-              )}
+              {selectedMessageId === msg.id && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
+        </View>
+      ) : (
+        <View style={styles.emptyMessageBox}>
+          <Text style={styles.emptyMessageEmoji}>💬</Text>
+          <Text style={styles.emptyMessageTitle}>{t('alarmCreate.noMessages')}</Text>
+          <Text style={styles.emptyMessageDesc}>{t('alarmCreate.noMessagesDesc')}</Text>
+          <View style={styles.emptyMessageActions}>
+            <TouchableOpacity
+              style={styles.emptyMessageBtn}
+              onPress={() => router.push('/message/create')}
+            >
+              <Text style={styles.emptyMessageBtnText}>{t('alarmCreate.goCreate')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 프리셋으로 빠르게 만들기 */}
+      <TouchableOpacity
+        style={styles.presetToggle}
+        onPress={() => setShowPreset((v) => !v)}
+      >
+        <Text style={styles.presetToggleText}>
+          {showPreset ? '▲' : '▼'} {t('alarmCreate.quickCreate')}
+        </Text>
+      </TouchableOpacity>
+
+      {showPreset && (
+        <View style={styles.presetSection}>
+          {/* 음성 선택 */}
+          <Text style={styles.presetLabel}>{t('alarmCreate.selectVoice')}</Text>
+          {readyVoices.length === 0 ? (
+            <TouchableOpacity
+              style={styles.emptyMessage}
+              onPress={() => router.push('/voice/record')}
+            >
+              <Text style={styles.emptyMessageText}>{t('alarmCreate.emptyVoice')}</Text>
+            </TouchableOpacity>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetRow}>
+              {readyVoices.map((v: VoiceProfile) => (
+                <TouchableOpacity
+                  key={v.id}
+                  style={[styles.targetChip, presetVoiceId === v.id && styles.targetChipActive]}
+                  onPress={() => setPresetVoiceId(v.id)}
+                >
+                  <Text style={[styles.targetText, presetVoiceId === v.id && styles.targetTextActive]}>
+                    {v.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* 카테고리 선택 */}
+          <Text style={styles.presetLabel}>{t('alarmCreate.presetCategory')}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetRow}>
+            {PRESET_CATEGORIES.map((cat: PresetCategory) => (
+              <TouchableOpacity
+                key={cat.key}
+                style={[styles.targetChip, presetCategory === cat.key && styles.targetChipActive]}
+                onPress={() => {
+                  setPresetCategory(cat.key);
+                  setPresetText(null);
+                }}
+              >
+                <Text style={[styles.targetText, presetCategory === cat.key && styles.targetTextActive]}>
+                  {cat.emoji} {cat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* 프리셋 메시지 목록 */}
+          <View style={styles.messageList}>
+            {PRESET_CATEGORIES.find((c) => c.key === presetCategory)?.messages.map((msg, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.messageItem, presetText === msg && styles.messageItemSelected]}
+                onPress={() => setPresetText(msg)}
+              >
+                <View style={styles.messageInfo}>
+                  <Text style={styles.messageText} numberOfLines={2}>"{msg}"</Text>
+                </View>
+                {presetText === msg && <Text style={styles.checkmark}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* 생성 버튼 */}
+          <TouchableOpacity
+            style={[
+              styles.presetGenerateBtn,
+              (!presetVoiceId || !presetText || ttsMutation.isPending) && styles.disabled,
+            ]}
+            onPress={handlePresetGenerate}
+            disabled={!presetVoiceId || !presetText || ttsMutation.isPending}
+          >
+            {ttsMutation.isPending ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <Text style={styles.presetGenerateText}>{t('alarmCreate.generatePreset')}</Text>
+            )}
+          </TouchableOpacity>
         </View>
       )}
 
@@ -208,9 +400,10 @@ export default function CreateAlarmScreen() {
         {createMutation.isPending ? (
           <ActivityIndicator color="#FFF" />
         ) : (
-          <Text style={styles.createText}>⏰ 알람 설정하기</Text>
+          <Text style={styles.createText}>{t('alarmCreate.submit')}</Text>
         )}
       </TouchableOpacity>
+      <Toast message={toast.message} opacity={toast.opacity} />
     </ScrollView>
   );
 }
@@ -339,6 +532,47 @@ const styles = StyleSheet.create({
     color: Colors.light.primary,
     fontWeight: '600',
   },
+  emptyMessageBox: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderStyle: 'dashed',
+  },
+  emptyMessageEmoji: {
+    fontSize: 40,
+    marginBottom: Spacing.sm,
+  },
+  emptyMessageTitle: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: Spacing.xs,
+  },
+  emptyMessageDesc: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  emptyMessageActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  emptyMessageBtn: {
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+  },
+  emptyMessageBtnText: {
+    color: '#FFF',
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+  },
   messageList: {
     gap: Spacing.sm,
   },
@@ -386,6 +620,74 @@ const styles = StyleSheet.create({
   createText: {
     color: '#FFF',
     fontSize: FontSize.lg,
+    fontWeight: '700',
+  },
+  targetRow: {
+    marginBottom: Spacing.sm,
+  },
+  targetChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginRight: Spacing.sm,
+  },
+  targetChipActive: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  targetText: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    fontWeight: '600',
+  },
+  targetTextActive: {
+    color: '#FFF',
+  },
+  targetHint: {
+    fontSize: FontSize.sm,
+    color: Colors.light.accent,
+    fontWeight: '500',
+    marginBottom: Spacing.sm,
+  },
+  presetToggle: {
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+  },
+  presetToggleText: {
+    fontSize: FontSize.md,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  presetSection: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  presetLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  presetRow: {
+    marginBottom: Spacing.sm,
+  },
+  presetGenerateBtn: {
+    backgroundColor: Colors.light.accent,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    alignItems: 'center',
+    marginTop: Spacing.md,
+  },
+  presetGenerateText: {
+    color: '#FFF',
+    fontSize: FontSize.md,
     fontWeight: '700',
   },
 });

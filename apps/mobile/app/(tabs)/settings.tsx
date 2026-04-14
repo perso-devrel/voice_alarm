@@ -1,25 +1,34 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { getUserProfile, deleteAccount } from '../../src/services/api';
 import { useState, useEffect } from 'react';
+import { Linking } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { getAudioCacheSize } from '../../src/services/audio';
 
 export default function SettingsScreen() {
-  const { plan, isAuthenticated, clearAuth } = useAppStore();
+  const { plan, isAuthenticated, clearAuth, defaultSnoozeMinutes, setDefaultSnoozeMinutes } = useAppStore();
   const [cacheSize, setCacheSize] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<string>('undetermined');
+  const { t } = useTranslation();
+
+  const { data: profile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: getUserProfile,
+    enabled: isAuthenticated,
+  });
+
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   useEffect(() => {
     getAudioCacheSize().then(setCacheSize);
+    Notifications.getPermissionsAsync().then(({ status }) => setNotifStatus(status));
   }, []);
 
   const formatBytes = (bytes: number) => {
@@ -30,70 +39,130 @@ export default function SettingsScreen() {
 
   const getPlanLabel = () => {
     const labels: Record<string, string> = {
-      free: 'Free',
-      plus: 'Plus ($3.99/월)',
-      family: 'Family ($7.99/월)',
+      free: t('settings.planFree'),
+      plus: t('settings.planPlus'),
+      family: t('settings.planFamily'),
     };
     return labels[plan] || plan;
   };
 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
   const handleLogout = () => {
-    Alert.alert('로그아웃', '정말 로그아웃하시겠어요?', [
-      { text: '취소', style: 'cancel' },
-      { text: '로그아웃', style: 'destructive', onPress: () => clearAuth() },
+    Alert.alert(t('common.logout'), t('settings.logoutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.logout'), style: 'destructive', onPress: () => clearAuth() },
     ]);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      clearAuth();
+    } catch {
+      setDeleting(false);
+      Alert.alert(t('common.error'), t('settings.deleteAccountError'));
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>설정</Text>
+        <Text style={styles.title}>{t('settings.title')}</Text>
 
-        {/* 계정 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정</Text>
+          <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
           <View style={styles.card}>
-            <SettingRow label="구독 플랜" value={getPlanLabel()} />
-            <SettingRow label="구독 관리" value="→" onPress={() => {}} />
+            {profile?.name && (
+              <SettingRow label={t('settings.name', '이름')} value={profile.name} />
+            )}
+            {profile?.email && (
+              <SettingRow label={t('settings.email', '이메일')} value={profile.email} />
+            )}
+            <SettingRow label={t('settings.plan')} value={getPlanLabel()} />
+            <SettingRow label={t('settings.managePlan')} value="→" onPress={() => {}} />
           </View>
         </View>
 
-        {/* 알림 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>알림</Text>
+          <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
           <View style={styles.card}>
             <SettingRow
-              label="알람 알림"
+              label={t('settings.notifPermission', '알림 권한')}
+              value={notifStatus === 'granted' ? t('settings.permitted', '허용됨') : t('settings.notPermitted', '허용 안 됨')}
+              valueColor={notifStatus === 'granted' ? Colors.light.primary : Colors.light.error}
+              onPress={async () => {
+                if (notifStatus !== 'granted') {
+                  const { status } = await Notifications.requestPermissionsAsync();
+                  setNotifStatus(status);
+                  if (status !== 'granted') {
+                    Linking.openSettings();
+                  }
+                }
+              }}
+            />
+            <SettingRow
+              label={t('settings.alarmNotif')}
               trailing={<Switch value={true} trackColor={{ true: Colors.light.primary }} />}
             />
             <SettingRow
-              label="응원 메시지 알림"
+              label={t('settings.messageNotif')}
               trailing={<Switch value={true} trackColor={{ true: Colors.light.primary }} />}
             />
+            <View style={settingStyles.row}>
+              <Text style={settingStyles.label}>{t('settings.defaultSnooze')}</Text>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[5, 10, 15].map((m) => (
+                  <TouchableOpacity
+                    key={m}
+                    onPress={() => setDefaultSnoozeMinutes(m)}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 4,
+                      borderRadius: 12,
+                      backgroundColor: defaultSnoozeMinutes === m ? Colors.light.primary : Colors.light.surfaceVariant,
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: FontSize.sm,
+                      fontWeight: '600',
+                      color: defaultSnoozeMinutes === m ? '#FFF' : Colors.light.textSecondary,
+                    }}>
+                      {m}{t('settings.minutes')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* 음성 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>음성</Text>
+          <Text style={styles.sectionTitle}>{t('settings.voice')}</Text>
           <View style={styles.card}>
-            <SettingRow label="음성 품질" value="높음" onPress={() => {}} />
-            <SettingRow label="캐시 크기" value={formatBytes(cacheSize)} />
             <SettingRow
-              label="캐시 삭제"
+              label={t('settings.voiceQuality')}
+              value={t('settings.voiceQualityHigh')}
+              onPress={() => {}}
+            />
+            <SettingRow label={t('settings.cacheSize')} value={formatBytes(cacheSize)} />
+            <SettingRow
+              label={t('settings.clearCache')}
               valueColor={Colors.light.error}
-              value="삭제"
-              onPress={() => Alert.alert('캐시 삭제', '모든 캐시된 오디오를 삭제하시겠어요?')}
+              value={t('common.delete')}
+              onPress={() => Alert.alert(t('settings.clearCache'), t('settings.clearCacheConfirm'))}
             />
           </View>
         </View>
 
-        {/* 앱 설정 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>앱</Text>
+          <Text style={styles.sectionTitle}>{t('settings.app')}</Text>
           <View style={styles.card}>
             <SettingRow
-              label="다크 모드"
+              label={t('settings.darkMode')}
               trailing={
                 <Switch
                   value={darkMode}
@@ -102,25 +171,79 @@ export default function SettingsScreen() {
                 />
               }
             />
-            <SettingRow label="언어" value="한국어" onPress={() => {}} />
-            <SettingRow label="버전" value="1.0.0" />
+            <SettingRow
+              label={t('settings.language')}
+              value={t('settings.languageKorean')}
+              onPress={() => {}}
+            />
+            <SettingRow label={t('settings.version')} value={appVersion} />
           </View>
         </View>
 
-        {/* 정보 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>정보</Text>
+          <Text style={styles.sectionTitle}>{t('settings.info')}</Text>
           <View style={styles.card}>
-            <SettingRow label="이용약관" value="→" onPress={() => {}} />
-            <SettingRow label="개인정보처리방침" value="→" onPress={() => {}} />
-            <SettingRow label="오픈소스 라이선스" value="→" onPress={() => {}} />
+            <SettingRow label={t('settings.terms')} value="→" onPress={() => {}} />
+            <SettingRow label={t('settings.privacy')} value="→" onPress={() => {}} />
+            <SettingRow label={t('settings.openSource')} value="→" onPress={() => {}} />
           </View>
         </View>
 
         {isAuthenticated && (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>로그아웃</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutText}>{t('common.logout')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.deleteAccountButton}
+              onPress={() => setShowDeleteDialog(true)}
+            >
+              <Text style={styles.deleteAccountText}>{t('settings.deleteAccount')}</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {showDeleteDialog && (
+          <View style={styles.deleteDialog}>
+            <Text style={styles.deleteDialogTitle}>{t('settings.deleteAccount')}</Text>
+            <Text style={styles.deleteDialogWarning}>{t('settings.deleteAccountWarning')}</Text>
+            <Text style={styles.deleteDialogPrompt}>{t('settings.deleteAccountConfirmPrompt')}</Text>
+            <TextInput
+              style={styles.deleteDialogInput}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!deleting}
+            />
+            <View style={styles.deleteDialogButtons}>
+              <TouchableOpacity
+                style={styles.deleteDialogCancel}
+                onPress={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteConfirmText('');
+                }}
+                disabled={deleting}
+              >
+                <Text style={styles.deleteDialogCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.deleteDialogConfirm,
+                  deleteConfirmText !== t('settings.deleteAccountConfirmWord') && styles.disabled,
+                ]}
+                onPress={handleDeleteAccount}
+                disabled={deleteConfirmText !== t('settings.deleteAccountConfirmWord') || deleting}
+              >
+                {deleting ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.deleteDialogConfirmText}>{t('settings.deleteAccount')}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -212,5 +335,79 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.light.error,
     fontWeight: '600',
+  },
+  deleteAccountButton: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  deleteAccountText: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+  },
+  deleteDialog: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginTop: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.error,
+  },
+  deleteDialogTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+    color: Colors.light.error,
+    marginBottom: Spacing.sm,
+  },
+  deleteDialogWarning: {
+    fontSize: FontSize.sm,
+    color: Colors.light.text,
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  deleteDialogPrompt: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.sm,
+  },
+  deleteDialogInput: {
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
+  },
+  deleteDialogButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  deleteDialogCancel: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.surfaceVariant,
+  },
+  deleteDialogCancelText: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    fontWeight: '600',
+  },
+  deleteDialogConfirm: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.error,
+  },
+  deleteDialogConfirmText: {
+    fontSize: FontSize.md,
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

@@ -1,13 +1,13 @@
 # 현재 상태
 
-- 브랜치: develop (Ralph harness 시작 직전)
-- 마지막 사람 터치: 야간 Ralph 모드 첫 가동 직전
-- 최근 주요 결정:
-  - Firebase 제거 → Google OAuth + Apple Sign-In 직접 구현
-  - 모노레포 워크스페이스에서 apps/mobile 분리 (Metro 호이스팅 충돌 회피)
-  - 백엔드 Cloudflare Workers 배포 완료 (https://voice-alarm-api.voicealarm.workers.dev)
+- 브랜치: develop
+- 마지막 루프: 2026-04-10 — P38 완료 (계정 삭제 UX + auth 에러 코드)
+- 최근 주요 변경:
+  - SettingsPage: 계정 삭제 성공 시 /login 리다이렉트 (reload → href), 에러 토스트에 401/429 분기 메시지
+  - auth 미들웨어: 에러 응답에 code 필드 추가 (TOKEN_EXPIRED, AUDIENCE_MISMATCH 등) — 이전 루프에서 이미 완료 확인
+  - 전체 typecheck/build 통과
 - 알려진 이슈:
-  - Perso API `/v1/voices` 엔드포인트가 404 (실제 경로 확인 필요, ElevenLabs는 정상)
+  - [blocked] Perso API 404 (외부 API 문서 접근 필요)
+  - [blocked] P1 ElevenLabs 통합 테스트 (API 키 + 실환경 필요)
   - 웹/모바일 미배포
-  - 선물하기/친구/상호 알람 기능 미구현 (사용자 핵심 목표)
-- 다음 루프가 기대하는 출발점: BACKLOG 의 P0 최상단 (선물하기 기능 백엔드 스키마)
+- 다음 루프: BACKLOG에 미완료 항목 없음 → 자가 생성 항목 필요

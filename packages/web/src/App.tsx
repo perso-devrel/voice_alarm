@@ -1,22 +1,32 @@
-import { useState, useEffect } from 'react';
-import VoicesPage from './pages/VoicesPage';
-import MessagesPage from './pages/MessagesPage';
-import AlarmsPage from './pages/AlarmsPage';
-import SettingsPage from './pages/SettingsPage';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
+import ErrorBoundary from './components/ErrorBoundary';
+import { useDarkMode } from './hooks/useDarkMode';
 
-type Page = 'voices' | 'messages' | 'alarms' | 'settings';
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const VoicesPage = lazy(() => import('./pages/VoicesPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const AlarmsPage = lazy(() => import('./pages/AlarmsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const FriendsPage = lazy(() => import('./pages/FriendsPage'));
+const GiftsPage = lazy(() => import('./pages/GiftsPage'));
+
+type Page = 'dashboard' | 'voices' | 'messages' | 'alarms' | 'friends' | 'gifts' | 'settings';
 
 const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
+  { key: 'dashboard', label: '대시보드', emoji: '📊' },
   { key: 'voices', label: '음성 관리', emoji: '🎙️' },
   { key: 'messages', label: '메시지', emoji: '💌' },
   { key: 'alarms', label: '알람 설정', emoji: '⏰' },
+  { key: 'friends', label: '친구', emoji: '👥' },
+  { key: 'gifts', label: '선물', emoji: '🎁' },
   { key: 'settings', label: '설정', emoji: '⚙️' },
 ];
 
 export default function App() {
-  const [page, setPage] = useState<Page>('voices');
+  const [page, setPage] = useState<Page>('dashboard');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const darkMode = useDarkMode();
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -39,20 +49,35 @@ export default function App() {
 
   const renderPage = () => {
     switch (page) {
-      case 'voices': return <VoicesPage />;
-      case 'messages': return <MessagesPage />;
-      case 'alarms': return <AlarmsPage />;
-      case 'settings': return <SettingsPage />;
+      case 'dashboard':
+        return <DashboardPage onNavigate={(p) => setPage(p as Page)} />;
+      case 'voices':
+        return <VoicesPage />;
+      case 'messages':
+        return <MessagesPage />;
+      case 'alarms':
+        return <AlarmsPage />;
+      case 'friends':
+        return <FriendsPage />;
+      case 'gifts':
+        return <GiftsPage />;
+      case 'settings':
+        return <SettingsPage darkMode={darkMode} />;
+      default:
+        return <DashboardPage onNavigate={(p) => setPage(p as Page)} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <nav className="w-64 bg-white border-r border-[#F2E8E5] p-6 flex flex-col">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[var(--color-bg)]">
+      {/* Sidebar — desktop only */}
+      <nav
+        aria-label="메인 메뉴"
+        className="hidden md:flex w-64 bg-[var(--color-surface)] border-r border-[var(--color-border)] p-6 flex-col transition-colors duration-200"
+      >
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#FF7F6B]">VoiceAlarm</h1>
-          <p className="text-sm text-gray-400 mt-1">음성 관리 대시보드</p>
+          <h1 className="text-2xl font-bold text-[var(--color-primary)]">VoiceAlarm</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">음성 관리 대시보드</p>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -60,33 +85,83 @@ export default function App() {
             <button
               key={item.key}
               onClick={() => setPage(item.key)}
+              aria-current={page === item.key ? 'page' : undefined}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                 page === item.key
-                  ? 'bg-[#FFF0ED] text-[#FF7F6B] font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-semibold'
+                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
               }`}
             >
-              <span className="text-xl">{item.emoji}</span>
+              <span className="text-xl" aria-hidden="true">
+                {item.emoji}
+              </span>
               <span>{item.label}</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-auto pt-6 border-t border-[#F2E8E5]">
+        <div className="mt-auto pt-6 border-t border-[var(--color-border)]">
           <button
             onClick={handleLogout}
+            aria-label="로그아웃"
             className="text-xs text-red-400 hover:text-red-500 transition-colors"
           >
             로그아웃
           </button>
-          <p className="text-xs text-gray-400 mt-2">VoiceAlarm v1.0.0</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-2">VoiceAlarm v1.0.0</p>
         </div>
       </nav>
 
+      {/* Mobile header */}
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-[var(--color-surface)] border-b border-[var(--color-border)] transition-colors">
+        <h1 className="text-lg font-bold text-[var(--color-primary)]">VoiceAlarm</h1>
+        <button
+          onClick={handleLogout}
+          aria-label="로그아웃"
+          className="text-xs text-red-400 hover:text-red-500 transition-colors"
+        >
+          로그아웃
+        </button>
+      </header>
+
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        {renderPage()}
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto pb-20 md:pb-8">
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]" />
+              </div>
+            }
+          >
+            {renderPage()}
+          </Suspense>
+        </ErrorBoundary>
       </main>
+
+      {/* Bottom tab bar — mobile only */}
+      <nav
+        aria-label="메인 메뉴"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex justify-around py-2 transition-colors z-50"
+      >
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.key}
+            onClick={() => setPage(item.key)}
+            aria-current={page === item.key ? 'page' : undefined}
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-xs transition-all ${
+              page === item.key
+                ? 'text-[var(--color-primary)] font-semibold'
+                : 'text-[var(--color-text-tertiary)]'
+            }`}
+          >
+            <span className="text-lg" aria-hidden="true">
+              {item.emoji}
+            </span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
