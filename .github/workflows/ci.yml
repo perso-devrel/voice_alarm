@@ -22,8 +22,13 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: npm ci || npm install
+
+      - name: Install mobile dependencies
+        if: matrix.package == 'apps/mobile'
+        working-directory: apps/mobile
+        run: npm install
 
       - name: Typecheck
         working-directory: ${{ matrix.package }}
