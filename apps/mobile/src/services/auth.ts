@@ -21,9 +21,11 @@ const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 // ===== Google 로그인 =====
 
 export function useGoogleAuth() {
-  const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'voicealarm',
-  });
+  const redirectUri = AuthSession.makeRedirectUri(
+    __DEV__
+      ? { useProxy: true }
+      : { scheme: 'voicealarm' },
+  );
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {

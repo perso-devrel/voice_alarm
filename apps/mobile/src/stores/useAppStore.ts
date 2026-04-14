@@ -63,6 +63,7 @@ interface AppState {
 
   // Onboarding
   hasCompletedOnboarding: boolean;
+  stateLoaded: boolean;
 
   // Preferences
   defaultSnoozeMinutes: number;
@@ -91,6 +92,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
   isPlaying: false,
   currentPlayingId: null,
   hasCompletedOnboarding: false,
+  stateLoaded: false,
   defaultSnoozeMinutes: 5,
 
   setAuth: async (token, userId) => {
@@ -143,6 +145,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
       isAuthenticated: !!token,
       hasCompletedOnboarding: onboarding === 'true',
       defaultSnoozeMinutes: snooze ? parseInt(snooze, 10) : 5,
+      stateLoaded: true,
     });
   },
 }));
