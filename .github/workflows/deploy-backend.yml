@@ -2,7 +2,7 @@ name: Deploy Backend (Cloudflare Workers)
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main]
     paths:
       - 'packages/backend/**'
       - '.github/workflows/deploy-backend.yml'
