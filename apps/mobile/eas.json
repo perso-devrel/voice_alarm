@@ -5,6 +5,7 @@
   "build": {
     "preview": {
       "distribution": "internal",
+      "node": "20.19.4",
       "android": {
         "buildType": "apk"
       }
@@ -12,11 +13,13 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "node": "20.19.4",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "node": "20.19.4",
       "android": {
         "buildType": "app-bundle"
       }

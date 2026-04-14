@@ -29,7 +29,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFF5F3"
       },
-      "package": "com.voicealarm.app",
+      "package": "com.devrel.voicealarm",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.SCHEDULE_EXACT_ALARM",
