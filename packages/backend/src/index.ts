@@ -34,6 +34,8 @@ const ALLOWED_ORIGINS = [
   'exp://localhost:8081',
   'https://voice-alarm.pages.dev',
   'https://voicealarm.pages.dev',
+  'https://voice-alarm-web.pages.dev',
+  'https://main.voice-alarm-web.pages.dev',
 ];
 
 app.use(
