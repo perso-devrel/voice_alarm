@@ -39,7 +39,7 @@ function TrendBadge({ trend }: { trend: WeekTrend }) {
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { isAuthenticated, hasCompletedOnboarding, setPlaying, currentPlayingId } = useAppStore();
+  const { isAuthenticated, hasCompletedOnboarding, stateLoaded, setPlaying, currentPlayingId } = useAppStore();
   const isConnected = useNetworkStatus();
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const [cachedAlarmsList, setCachedAlarmsList] = useState<Alarm[] | null>(null);
@@ -52,10 +52,10 @@ export default function HomeScreen() {
     getCachedMessages().then(setCachedMessagesList);
   }, []);
   useEffect(() => {
-    if (mounted && !hasCompletedOnboarding) {
+    if (mounted && stateLoaded && !hasCompletedOnboarding) {
       router.replace('/onboarding');
     }
-  }, [mounted, hasCompletedOnboarding]);
+  }, [mounted, stateLoaded, hasCompletedOnboarding]);
 
   const {
     data: alarms,
