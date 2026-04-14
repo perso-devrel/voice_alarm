@@ -105,4 +105,16 @@ export async function initDB(env: Env) {
     'CREATE INDEX IF NOT EXISTS idx_gifts_status ON gifts(status)',
     'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
   ]);
+
+  // 마이그레이션: google_id 컬럼 추가 (이미 있으면 무시)
+  try {
+    await db.execute('ALTER TABLE users ADD COLUMN google_id TEXT');
+    // 기존 유저의 google_id를 id로 초기화
+    await db.execute('UPDATE users SET google_id = id WHERE google_id IS NULL');
+  } catch {
+    // 이미 컬럼이 존재하면 무시
+  }
+
+  // google_id UNIQUE 인덱스 (없으면 생성)
+  await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)');
 }
