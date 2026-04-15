@@ -34,7 +34,7 @@ export interface Message {
   voice_profile_id: string;
   text: string;
   audio_url: string | null;
-  category: 'morning' | 'lunch' | 'afternoon' | 'evening' | 'night' | 'custom';
+  category: 'morning' | 'lunch' | 'afternoon' | 'evening' | 'night' | 'cheer' | 'love' | 'health' | 'custom';
   is_preset: boolean;
   created_at: string;
 }
