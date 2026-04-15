@@ -1,14 +1,15 @@
-const PERSO_BASE_URL = 'https://api.perso.ai';
+const PERSO_API_BASE = 'https://api.perso.ai';
+const PERSO_FILE_BASE = 'https://perso.ai';
 
 export class PersoClient {
   constructor(private apiKey: string) {}
 
-  private async request(path: string, options: RequestInit = {}) {
-    const url = `${PERSO_BASE_URL}${path}`;
+  private async request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+    const url = `${PERSO_API_BASE}${path}`;
     const res = await fetch(url, {
       ...options,
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        'XP-API-KEY': this.apiKey,
         'Content-Type': 'application/json',
         ...options.headers,
       },
@@ -19,62 +20,198 @@ export class PersoClient {
       throw new Error(`Perso API error ${res.status}: ${errorBody}`);
     }
 
-    return res;
+    if (res.status === 204) return {} as T;
+    return res.json();
   }
 
-  /** 음성 클론 생성 - 오디오 파일을 업로드하여 voice_id를 받음 */
-  async createVoiceClone(audioData: ArrayBuffer, name: string): Promise<{ voice_id: string }> {
-    const formData = new FormData();
-    formData.append('audio', new Blob([audioData]), 'voice_sample.wav');
-    formData.append('name', name);
+  async listSpaces(): Promise<{
+    result: Array<{
+      spaceSeq: number;
+      spaceName: string;
+      planName: string;
+      tier: string;
+      memberRole: string;
+    }>;
+  }> {
+    return this.request('/portal/api/v1/spaces');
+  }
 
-    const res = await fetch(`${PERSO_BASE_URL}/v1/voices/clone`, {
-      method: 'POST',
+  async getSasToken(fileName: string): Promise<{
+    blobSasUrl: string;
+    expirationDatetime: string;
+  }> {
+    return this.request(`/file/api/upload/sas-token?fileName=${encodeURIComponent(fileName)}`);
+  }
+
+  async uploadToBlob(blobSasUrl: string, data: ArrayBuffer): Promise<void> {
+    const res = await fetch(blobSasUrl, {
+      method: 'PUT',
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        'x-ms-blob-type': 'BlockBlob',
+        'Content-Type': 'application/octet-stream',
       },
-      body: formData,
+      body: data,
     });
 
     if (!res.ok) {
-      const errorBody = await res.text();
-      throw new Error(`Perso clone error ${res.status}: ${errorBody}`);
+      throw new Error(`Azure Blob upload failed: ${res.status}`);
     }
-
-    return res.json();
   }
 
-  /** 클론된 음성으로 TTS 생성 */
-  async textToSpeech(
-    voiceId: string,
-    text: string,
-    options?: {
-      speed?: number;
-      pitch?: number;
+  async registerAudio(
+    spaceSeq: number,
+    fileUrl: string,
+    fileName: string,
+  ): Promise<{
+    seq: number;
+    originalName: string;
+    audioFilePath: string;
+    size: number;
+    durationMs: number;
+  }> {
+    return this.request('/file/api/upload/audio', {
+      method: 'PUT',
+      body: JSON.stringify({ spaceSeq, fileUrl, fileName }),
+    });
+  }
+
+  async requestTranslation(
+    spaceSeq: number,
+    params: {
+      mediaSeq: number;
+      isVideoProject: boolean;
+      sourceLanguageCode: string;
+      targetLanguageCodes: string[];
+      numberOfSpeakers?: number;
+      preferredSpeedType?: 'GREEN' | 'RED';
+      ttsModel?: 'ELEVEN_V2' | 'ELEVEN_V3';
+      title?: string;
     },
-  ): Promise<ArrayBuffer> {
-    const res = await this.request('/v1/tts', {
+  ): Promise<{
+    result: { startGenerateProjectIdList: number[] };
+  }> {
+    return this.request(`/video-translator/api/v1/projects/spaces/${spaceSeq}/translate`, {
       method: 'POST',
       body: JSON.stringify({
-        voice_id: voiceId,
-        text,
-        speed: options?.speed ?? 1.0,
-        pitch: options?.pitch ?? 1.0,
-        output_format: 'mp3',
+        numberOfSpeakers: 1,
+        preferredSpeedType: 'GREEN',
+        ...params,
       }),
     });
-
-    return res.arrayBuffer();
   }
 
-  /** 음성 프로필 조회 */
-  async getVoice(voiceId: string): Promise<{ voice_id: string; name: string; status: string }> {
-    const res = await this.request(`/v1/voices/${voiceId}`);
-    return res.json();
+  async getProgress(
+    projectSeq: number,
+    spaceSeq: number,
+  ): Promise<{
+    result: {
+      projectSeq: number;
+      progress: number;
+      progressReason: string;
+      hasFailed: boolean;
+      expectedRemainingTimeMinutes?: number;
+    };
+  }> {
+    return this.request(
+      `/video-translator/api/v1/projects/${projectSeq}/space/${spaceSeq}/progress`,
+    );
   }
 
-  /** 음성 프로필 삭제 */
-  async deleteVoice(voiceId: string): Promise<void> {
-    await this.request(`/v1/voices/${voiceId}`, { method: 'DELETE' });
+  async getScript(
+    projectSeq: number,
+    spaceSeq: number,
+  ): Promise<{
+    result: {
+      sentences: Array<{
+        seq: number;
+        speakerOrderIndex: number;
+        offsetMs: number;
+        durationMs: number;
+        originalText: string;
+        translatedText: string;
+        audioUrl?: string;
+      }>;
+      speakers: Array<{
+        speakerOrderIndex: number;
+        externalSpeakerSeq: string;
+      }>;
+    };
+  }> {
+    return this.request(
+      `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/script`,
+    );
+  }
+
+  async generateSentenceAudio(
+    projectSeq: number,
+    audioSentenceSeq: number,
+    targetText: string,
+  ): Promise<{
+    result: {
+      scriptSeq: number;
+      translatedText: string;
+      generateAudioFilePath: string;
+      matchingRate: { level: number; levelType: string };
+    };
+  }> {
+    return this.request(
+      `/video-translator/api/v1/project/${projectSeq}/audio-sentence/${audioSentenceSeq}/generate-audio`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ targetText }),
+      },
+    );
+  }
+
+  async getDownloadInfo(
+    projectSeq: number,
+    spaceSeq: number,
+  ): Promise<{
+    hasTranslatedVoice: boolean;
+    hasOriginalVoiceOnly: boolean;
+    hasTranslatedVideo: boolean;
+    [key: string]: boolean | null;
+  }> {
+    return this.request(
+      `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/download-info`,
+    );
+  }
+
+  async download(
+    projectSeq: number,
+    spaceSeq: number,
+    target: string,
+  ): Promise<{
+    result: {
+      videoFile?: { videoDownloadLink: string };
+      audioFile?: {
+        voiceAudioDownloadLink?: string;
+        backgroundAudioDownloadLink?: string;
+      };
+      srtFile?: {
+        originalSubtitleDownloadLink?: string;
+        translatedSubtitleDownloadLink?: string;
+      };
+    };
+  }> {
+    return this.request(
+      `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/download?target=${target}`,
+    );
+  }
+
+  async listLanguages(): Promise<{
+    result: {
+      languages: Array<{
+        code: string;
+        name: string;
+        experiment: boolean;
+      }>;
+    };
+  }> {
+    return this.request('/video-translator/api/v1/languages');
+  }
+
+  static toFileUrl(relativePath: string): string {
+    return `${PERSO_FILE_BASE}${relativePath}`;
   }
 }
