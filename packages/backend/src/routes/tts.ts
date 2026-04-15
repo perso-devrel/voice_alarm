@@ -136,7 +136,12 @@ tts.post('/generate', async (c) => {
     });
 
     // 오디오 데이터를 base64로 반환 (클라이언트에서 로컬 저장)
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+    const bytes = new Uint8Array(audioBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64Audio = btoa(binary);
 
     return c.json(
       {
