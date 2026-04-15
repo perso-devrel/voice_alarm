@@ -31,13 +31,13 @@ describe('bodyLimitMiddleware', () => {
     expect(res.status).toBe(200);
   });
 
-  it('rejects requests exceeding 512KB', async () => {
+  it('rejects requests exceeding 25MB', async () => {
     const app = createApp();
     const res = await app.request('/test', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': String(600 * 1024),
+        'Content-Length': String(26 * 1024 * 1024),
       },
       body: 'x',
     });
@@ -46,13 +46,13 @@ describe('bodyLimitMiddleware', () => {
     expect(json.error).toContain('too large');
   });
 
-  it('allows requests exactly at 512KB', async () => {
+  it('allows requests exactly at 25MB', async () => {
     const app = createApp();
     const res = await app.request('/test', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': String(512 * 1024),
+        'Content-Length': String(25 * 1024 * 1024),
       },
       body: '{}',
     });
