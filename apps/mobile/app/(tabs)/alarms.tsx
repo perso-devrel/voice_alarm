@@ -183,8 +183,9 @@ export default function AlarmsScreen() {
   const formatRepeatDays = (days: number[]) => {
     if (days.length === 0) return t('alarms.once');
     if (days.length === 7) return t('alarms.daily');
-    if (JSON.stringify(days.sort()) === JSON.stringify([1, 2, 3, 4, 5])) return t('alarms.weekday');
-    if (JSON.stringify(days.sort()) === JSON.stringify([0, 6])) return t('alarms.weekend');
+    const sorted = [...days].sort();
+    if (JSON.stringify(sorted) === JSON.stringify([1, 2, 3, 4, 5])) return t('alarms.weekday');
+    if (JSON.stringify(sorted) === JSON.stringify([0, 6])) return t('alarms.weekend');
     return days.map((d) => DAYS_OF_WEEK[d]).join(', ');
   };
 
