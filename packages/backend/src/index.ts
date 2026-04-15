@@ -15,6 +15,7 @@ import libraryRoutes from './routes/library';
 import friendRoutes from './routes/friend';
 import giftRoutes from './routes/gift';
 import statsRoutes from './routes/stats';
+import dubRoutes from './routes/dub';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -104,6 +105,7 @@ api.route('/library', libraryRoutes);
 api.route('/friend', friendRoutes);
 api.route('/gift', giftRoutes);
 api.route('/stats', statsRoutes);
+api.route('/dub', dubRoutes);
 
 app.route('/api', api);
 

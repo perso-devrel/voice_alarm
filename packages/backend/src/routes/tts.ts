@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
-import { PersoClient } from '../lib/perso';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 
@@ -17,9 +16,6 @@ tts.post('/generate', async (c) => {
     voice_profile_id: string;
     text: string;
     category?: string;
-    speed?: number;
-    pitch?: number;
-    provider?: 'perso' | 'elevenlabs';
   }>();
 
   if (!body.voice_profile_id || !body.text) {
@@ -99,21 +95,12 @@ tts.post('/generate', async (c) => {
   }
 
   try {
-    let audioBuffer: ArrayBuffer;
-    const provider = body.provider ?? (vp.perso_voice_id ? 'perso' : 'elevenlabs');
-
-    if (provider === 'elevenlabs' && vp.elevenlabs_voice_id) {
-      const client = new ElevenLabsClient(c.env.ELEVENLABS_API_KEY);
-      audioBuffer = await client.textToSpeech(vp.elevenlabs_voice_id as string, body.text);
-    } else if (vp.perso_voice_id) {
-      const client = new PersoClient(c.env.PERSO_API_KEY);
-      audioBuffer = await client.textToSpeech(vp.perso_voice_id as string, body.text, {
-        speed: body.speed,
-        pitch: body.pitch,
-      });
-    } else {
+    if (!vp.elevenlabs_voice_id) {
       return c.json({ error: 'No voice ID available for this profile' }, 400);
     }
+
+    const client = new ElevenLabsClient(c.env.ELEVENLABS_API_KEY);
+    const audioBuffer = await client.textToSpeech(vp.elevenlabs_voice_id as string, body.text);
 
     // 메시지 DB 저장
     const messageId = crypto.randomUUID();

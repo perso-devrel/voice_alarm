@@ -132,6 +132,10 @@ export default function RootLayout() {
             options={{ headerShown: true, title: t('screen.receivedGifts'), presentation: 'modal' }}
           />
           <Stack.Screen
+            name="dub/translate"
+            options={{ headerShown: true, title: t('dub.title'), presentation: 'modal' }}
+          />
+          <Stack.Screen
             name="player"
             options={{ presentation: 'transparentModal', animation: 'fade' }}
           />

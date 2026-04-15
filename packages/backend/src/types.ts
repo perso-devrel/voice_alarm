@@ -79,3 +79,19 @@ export interface Gift {
   note: string | null;
   created_at: string;
 }
+
+export interface DubJob {
+  id: string;
+  user_id: string;
+  source_message_id: string | null;
+  source_language: string;
+  target_language: string;
+  status: 'uploading' | 'processing' | 'ready' | 'failed';
+  perso_space_seq: number | null;
+  perso_project_seq: number | null;
+  perso_media_seq: number | null;
+  result_message_id: string | null;
+  progress: number;
+  error_message: string | null;
+  created_at: string;
+}

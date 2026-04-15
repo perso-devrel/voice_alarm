@@ -95,6 +95,35 @@ export interface Speaker {
   total_duration: number;
 }
 
+export interface DubLanguage {
+  code: string;
+  name: string;
+  experiment: boolean;
+}
+
+export interface DubJob {
+  id: string;
+  source_message_id: string | null;
+  source_language: string;
+  target_language: string;
+  status: 'uploading' | 'processing' | 'ready' | 'failed';
+  progress: number;
+  result_message_id: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface DubResult {
+  dub_id: string;
+  status: string;
+  progress: number;
+  result_message_id?: string;
+  audio_base64?: string;
+  audio_format?: string;
+  error_message?: string;
+  expected_remaining_minutes?: number;
+}
+
 export function getApiErrorMessage(err: unknown, fallback: string): string {
   if (
     err != null &&

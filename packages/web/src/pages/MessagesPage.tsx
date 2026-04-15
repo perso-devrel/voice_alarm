@@ -15,6 +15,7 @@ import type { VoiceProfile, Message, PresetCategory, Friend } from '../types';
 import { getApiErrorMessage } from '../types';
 import { InlineAudioPlayer } from '../components/InlineAudioPlayer';
 import { VoiceDetailModal } from './VoicesPage';
+import { DubModal } from '../components/DubModal';
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   morning: '🌅',
@@ -45,6 +46,7 @@ export default function MessagesPage() {
   const [showAlarmForm, setShowAlarmForm] = useState(false);
   const [alarmTime, setAlarmTime] = useState('07:00');
   const [alarmRepeatDays, setAlarmRepeatDays] = useState<number[]>([]);
+  const [dubTarget, setDubTarget] = useState<Message | null>(null);
 
   const { data: voices } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -548,6 +550,16 @@ export default function MessagesPage() {
                 🎁 선물하기
               </button>
               <button
+                onClick={() => {
+                  setDubTarget(detailMessage);
+                  setDetailMessage(null);
+                  setShowAlarmForm(false);
+                }}
+                className="flex-1 py-2.5 rounded-xl border border-[var(--color-text-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] font-medium transition-colors"
+              >
+                🌐 번역
+              </button>
+              <button
                 onClick={() => { setDetailMessage(null); setShowAlarmForm(false); }}
                 className="py-2.5 px-4 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors font-medium"
               >
@@ -556,6 +568,9 @@ export default function MessagesPage() {
             </div>
           </div>
         </div>
+      )}
+      {dubTarget && (
+        <DubModal message={dubTarget} onClose={() => setDubTarget(null)} />
       )}
       {giftTarget && (
         <div

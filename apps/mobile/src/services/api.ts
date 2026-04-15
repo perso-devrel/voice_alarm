@@ -8,6 +8,9 @@ import type {
   Gift,
   LibraryItem,
   Speaker,
+  DubLanguage,
+  DubJob,
+  DubResult,
 } from '../types';
 
 const API_BASE_URL =
@@ -119,12 +122,10 @@ export async function getVoiceProfile(id: string) {
 export async function createVoiceClone(
   audioFile: { uri: string; name: string; type: string },
   name: string,
-  provider: 'perso' | 'elevenlabs' = 'perso',
 ) {
   const formData = new FormData();
   formData.append('audio', audioFile as unknown as Blob);
   formData.append('name', name);
-  formData.append('provider', provider);
 
   const data = await post<{ profile: VoiceProfile }>('/voice/clone', formData, {
     isFormData: true,
@@ -152,9 +153,6 @@ export async function generateTTS(params: {
   voice_profile_id: string;
   text: string;
   category?: string;
-  speed?: number;
-  pitch?: number;
-  provider?: 'perso' | 'elevenlabs';
 }) {
   return post<{
     message_id: string;
@@ -342,4 +340,40 @@ export async function searchUsers(q: string) {
 
 export async function deleteAccount() {
   return del<{ success: boolean }>('/user/me');
+}
+
+// ===== Dub API =====
+
+export async function getDubLanguages() {
+  const data = await get<{ languages: DubLanguage[] }>('/dub/languages');
+  return data.languages;
+}
+
+export async function startDub(
+  audioFile: { uri: string; name: string; type: string },
+  sourceLanguage: string,
+  targetLanguage: string,
+  sourceMessageId?: string,
+) {
+  const formData = new FormData();
+  formData.append('audio', audioFile as unknown as Blob);
+  formData.append('source_language', sourceLanguage);
+  formData.append('target_language', targetLanguage);
+  if (sourceMessageId) {
+    formData.append('source_message_id', sourceMessageId);
+  }
+
+  const data = await post<{ dub_id: string; status: string }>('/dub', formData, {
+    isFormData: true,
+  });
+  return data;
+}
+
+export async function getDubStatus(dubId: string) {
+  return get<DubResult>(`/dub/${dubId}`);
+}
+
+export async function getDubJobs() {
+  const data = await get<{ jobs: DubJob[] }>('/dub/jobs');
+  return data.jobs;
 }

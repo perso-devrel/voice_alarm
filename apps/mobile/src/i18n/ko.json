@@ -362,6 +362,27 @@
     "play": "재생",
     "stop": "정지",
     "setAsAlarm": "이 메시지로 알람 설정",
-    "notFound": "메시지를 찾을 수 없습니다"
+    "notFound": "메시지를 찾을 수 없습니다",
+    "translate": "다른 언어로 번역"
+  },
+  "dub": {
+    "title": "음성 번역",
+    "description": "원래 목소리를 유지하면서 다른 언어로 번역합니다",
+    "sourceLanguage": "원본 언어",
+    "targetLanguage": "번역할 언어",
+    "selectLanguage": "언어를 선택하세요",
+    "start": "번역 시작",
+    "processing": "번역 중...",
+    "progress": "{{progress}}% 완료",
+    "remainingTime": "약 {{minutes}}분 남음",
+    "complete": "번역 완료!",
+    "failed": "번역 실패",
+    "retry": "다시 시도",
+    "playResult": "번역된 음성 재생",
+    "saveToLibrary": "라이브러리에 저장됨",
+    "noAudio": "재생할 오디오 파일이 없습니다",
+    "sameLanguage": "원본과 다른 언어를 선택하세요",
+    "jobs": "번역 내역",
+    "noJobs": "아직 번역 내역이 없습니다"
   }
 }

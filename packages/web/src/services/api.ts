@@ -33,11 +33,10 @@ export async function getVoiceProfiles() {
   return data.profiles;
 }
 
-export async function createVoiceClone(file: File, name: string, provider: string = 'perso') {
+export async function createVoiceClone(file: File, name: string) {
   const formData = new FormData();
   formData.append('audio', file);
   formData.append('name', name);
-  formData.append('provider', provider);
   const { data } = await api.post('/voice/clone', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
@@ -217,6 +216,71 @@ export async function getRecentActivity(): Promise<Activity[]> {
 
 export async function deleteAccount() {
   await api.delete('/user/me');
+}
+
+// ===== Dub API =====
+
+export interface DubLanguage {
+  code: string;
+  name: string;
+  experiment: boolean;
+}
+
+export interface DubJob {
+  id: string;
+  source_message_id: string | null;
+  source_language: string;
+  target_language: string;
+  status: 'uploading' | 'processing' | 'ready' | 'failed';
+  progress: number;
+  result_message_id: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface DubResult {
+  dub_id: string;
+  status: string;
+  progress: number;
+  result_message_id?: string;
+  audio_base64?: string;
+  audio_format?: string;
+  error_message?: string;
+  expected_remaining_minutes?: number;
+}
+
+export async function getDubLanguages() {
+  const { data } = await api.get('/dub/languages');
+  return data.languages as DubLanguage[];
+}
+
+export async function startDub(
+  audioFile: File,
+  sourceLanguage: string,
+  targetLanguage: string,
+  sourceMessageId?: string,
+) {
+  const formData = new FormData();
+  formData.append('audio', audioFile);
+  formData.append('source_language', sourceLanguage);
+  formData.append('target_language', targetLanguage);
+  if (sourceMessageId) {
+    formData.append('source_message_id', sourceMessageId);
+  }
+  const { data } = await api.post('/dub', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data as { dub_id: string; status: string };
+}
+
+export async function getDubStatus(dubId: string) {
+  const { data } = await api.get(`/dub/${dubId}`);
+  return data as DubResult;
+}
+
+export async function getDubJobs() {
+  const { data } = await api.get('/dub/jobs');
+  return data.jobs as DubJob[];
 }
 
 export default api;

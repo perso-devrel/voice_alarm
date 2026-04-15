@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
-import { PersoClient } from '../lib/perso';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 
@@ -95,8 +94,6 @@ voice.post('/clone', async (c) => {
     const formData = await c.req.formData();
     const audioFile = formData.get('audio') as unknown as File | null;
     const name = formData.get('name') as string | null;
-    const provider = (formData.get('provider') as string) || 'perso';
-
     if (!audioFile || !name) {
       return c.json({ error: 'audio file and name are required' }, 400);
     }
@@ -105,43 +102,24 @@ voice.post('/clone', async (c) => {
       return c.json({ error: 'Name must be 50 characters or less' }, 400);
     }
 
-    if (provider !== 'perso' && provider !== 'elevenlabs') {
-      return c.json({ error: 'provider must be "perso" or "elevenlabs"' }, 400);
-    }
-
     const audioBuffer = await audioFile.arrayBuffer();
     const profileId = crypto.randomUUID();
 
-    // DB에 processing 상태로 먼저 저장
     await db.execute({
       sql: `INSERT INTO voice_profiles (id, user_id, name, status)
             VALUES (?, ?, ?, 'processing')`,
       args: [profileId, userId, name],
     });
 
-    let voiceId: string;
+    const client = new ElevenLabsClient(c.env.ELEVENLABS_API_KEY);
+    const result = await client.createInstantClone(audioBuffer, name);
+    const voiceId = result.voice_id;
 
-    if (provider === 'elevenlabs') {
-      const client = new ElevenLabsClient(c.env.ELEVENLABS_API_KEY);
-      const result = await client.createInstantClone(audioBuffer, name);
-      voiceId = result.voice_id;
-
-      await db.execute({
-        sql: `UPDATE voice_profiles SET elevenlabs_voice_id = ?, status = 'ready', updated_at = datetime('now')
-              WHERE id = ?`,
-        args: [voiceId, profileId],
-      });
-    } else {
-      const client = new PersoClient(c.env.PERSO_API_KEY);
-      const result = await client.createVoiceClone(audioBuffer, name);
-      voiceId = result.voice_id;
-
-      await db.execute({
-        sql: `UPDATE voice_profiles SET perso_voice_id = ?, status = 'ready', updated_at = datetime('now')
-              WHERE id = ?`,
-        args: [voiceId, profileId],
-      });
-    }
+    await db.execute({
+      sql: `UPDATE voice_profiles SET elevenlabs_voice_id = ?, status = 'ready', updated_at = datetime('now')
+            WHERE id = ?`,
+      args: [voiceId, profileId],
+    });
 
     return c.json(
       {
@@ -149,7 +127,6 @@ voice.post('/clone', async (c) => {
           id: profileId,
           name,
           voice_id: voiceId,
-          provider,
           status: 'ready',
         },
       },
@@ -276,12 +253,8 @@ voice.delete('/:id', async (c) => {
     }, 409);
   }
 
-  // 외부 API에서도 삭제
+  // ElevenLabs에서도 삭제
   try {
-    if (profile.perso_voice_id) {
-      const client = new PersoClient(c.env.PERSO_API_KEY);
-      await client.deleteVoice(profile.perso_voice_id as string);
-    }
     if (profile.elevenlabs_voice_id) {
       const client = new ElevenLabsClient(c.env.ELEVENLABS_API_KEY);
       await client.deleteVoice(profile.elevenlabs_voice_id as string);

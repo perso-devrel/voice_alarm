@@ -114,6 +114,15 @@ export default function MessageDetailScreen() {
             <Text style={styles.alarmButtonText}>{t('messageDetail.useForAlarm')}</Text>
           </TouchableOpacity>
 
+          {cached && (
+            <TouchableOpacity
+              style={styles.translateButton}
+              onPress={() => router.push(`/dub/translate?message_id=${id}`)}
+            >
+              <Text style={styles.translateButtonText}>{t('messageDetail.translate')}</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={styles.giftButton}
             onPress={() => router.push(`/message/create?voice_id=${message.voice_profile_id}`)}
@@ -215,6 +224,19 @@ const styles = StyleSheet.create({
   },
   alarmButtonText: {
     color: Colors.light.primary,
+    fontSize: FontSize.md,
+    fontWeight: '600',
+  },
+  translateButton: {
+    backgroundColor: Colors.light.surfaceVariant,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.textTertiary,
+  },
+  translateButtonText: {
+    color: Colors.light.textSecondary,
     fontSize: FontSize.md,
     fontWeight: '600',
   },
