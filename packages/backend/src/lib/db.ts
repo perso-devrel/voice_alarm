@@ -102,6 +102,25 @@ export async function initDB(env: Env) {
     )`,
   ]);
 
+  // 마이그레이션: 누락 컬럼 추가 (인덱스 생성 전에 실행해야 함)
+  const migrations = [
+    { sql: 'ALTER TABLE users ADD COLUMN google_id TEXT', followUp: 'UPDATE users SET google_id = id WHERE google_id IS NULL' },
+    { sql: 'ALTER TABLE alarms ADD COLUMN target_user_id TEXT' },
+    { sql: 'ALTER TABLE alarms ADD COLUMN snooze_minutes INTEGER DEFAULT 5' },
+    { sql: 'ALTER TABLE messages ADD COLUMN is_preset INTEGER DEFAULT 0' },
+    { sql: 'ALTER TABLE voice_profiles ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))' },
+    { sql: 'ALTER TABLE users ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))' },
+  ];
+
+  for (const m of migrations) {
+    try {
+      await db.execute(m.sql);
+      if (m.followUp) await db.execute(m.followUp);
+    } catch {
+      // 이미 존재하면 무시
+    }
+  }
+
   await db.batch([
     'CREATE INDEX IF NOT EXISTS idx_voice_profiles_user ON voice_profiles(user_id)',
     'CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id)',
@@ -123,25 +142,5 @@ export async function initDB(env: Env) {
     'CREATE INDEX IF NOT EXISTS idx_dub_jobs_status ON dub_jobs(status)',
   ]);
 
-  // 마이그레이션: 누락 컬럼 추가 (이미 있으면 무시)
-  const migrations = [
-    { sql: 'ALTER TABLE users ADD COLUMN google_id TEXT', followUp: 'UPDATE users SET google_id = id WHERE google_id IS NULL' },
-    { sql: 'ALTER TABLE alarms ADD COLUMN target_user_id TEXT' },
-    { sql: 'ALTER TABLE alarms ADD COLUMN snooze_minutes INTEGER DEFAULT 5' },
-    { sql: 'ALTER TABLE messages ADD COLUMN is_preset INTEGER DEFAULT 0' },
-    { sql: 'ALTER TABLE voice_profiles ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))' },
-    { sql: 'ALTER TABLE users ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))' },
-  ];
-
-  for (const m of migrations) {
-    try {
-      await db.execute(m.sql);
-      if (m.followUp) await db.execute(m.followUp);
-    } catch {
-      // 이미 존재하면 무시
-    }
-  }
-
-  // google_id UNIQUE 인덱스 (없으면 생성)
   await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)');
 }
