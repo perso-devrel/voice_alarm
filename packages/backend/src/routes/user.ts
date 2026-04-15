@@ -11,85 +11,103 @@ user.get('/me', async (c) => {
   const picture = c.get('userPicture') || '';
   const db = getDB(c.env);
 
-  let result = await db.execute({
-    sql: 'SELECT * FROM users WHERE google_id = ?',
-    args: [userId],
-  });
+  try {
+    let result = await db.execute({
+      sql: 'SELECT * FROM users WHERE google_id = ?',
+      args: [userId],
+    });
 
-  if (result.rows.length === 0) {
-    const id = crypto.randomUUID();
-    const today = new Date().toISOString().split('T')[0];
-    await db.execute({
-      sql: `INSERT INTO users (id, google_id, email, name, picture, daily_tts_reset_at)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, email, name, picture, today],
+    if (result.rows.length === 0) {
+      const id = crypto.randomUUID();
+      const today = new Date().toISOString().split('T')[0];
+      await db.execute({
+        sql: `INSERT INTO users (id, google_id, email, name, picture, daily_tts_reset_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [id, userId, email, name, picture, today],
+      });
+      result = await db.execute({
+        sql: 'SELECT * FROM users WHERE id = ?',
+        args: [id],
+      });
+    }
+
+    const u = result.rows[0];
+    const [profileCount, alarmCount] = await Promise.all([
+      db.execute({
+        sql: 'SELECT COUNT(*) as count FROM voice_profiles WHERE user_id = ?',
+        args: [userId],
+      }),
+      db.execute({
+        sql: 'SELECT COUNT(*) as count FROM alarms WHERE user_id = ?',
+        args: [userId],
+      }),
+    ]);
+
+    return c.json({
+      user: u,
+      stats: {
+        voice_profiles: Number(profileCount.rows[0]?.count ?? 0),
+        alarms: Number(alarmCount.rows[0]?.count ?? 0),
+      },
     });
-    result = await db.execute({
-      sql: 'SELECT * FROM users WHERE id = ?',
-      args: [id],
-    });
+  } catch (err) {
+    console.error(`GET /user/me failed: ${err instanceof Error ? err.message : err}`);
+    return c.json({ error: 'Failed to fetch user info' }, 500);
   }
-
-  const u = result.rows[0];
-  const profileCount = await db.execute({
-    sql: 'SELECT COUNT(*) as count FROM voice_profiles WHERE user_id = ?',
-    args: [userId],
-  });
-  const alarmCount = await db.execute({
-    sql: 'SELECT COUNT(*) as count FROM alarms WHERE user_id = ?',
-    args: [userId],
-  });
-
-  return c.json({
-    user: u,
-    stats: {
-      voice_profiles: Number(profileCount.rows[0].count),
-      alarms: Number(alarmCount.rows[0].count),
-    },
-  });
 });
 
 user.patch('/plan', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
-  const body = await c.req.json<{ plan: 'free' | 'plus' | 'family' }>();
 
-  if (!['free', 'plus', 'family'].includes(body.plan)) {
-    return c.json({ error: 'Invalid plan' }, 400);
+  try {
+    const body = await c.req.json<{ plan: 'free' | 'plus' | 'family' }>();
+
+    if (!['free', 'plus', 'family'].includes(body.plan)) {
+      return c.json({ error: 'Invalid plan' }, 400);
+    }
+
+    const result = await db.execute({
+      sql: `UPDATE users SET plan = ?, updated_at = datetime('now') WHERE google_id = ?`,
+      args: [body.plan, userId],
+    });
+
+    if (result.rowsAffected === 0) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    return c.json({ success: true, plan: body.plan });
+  } catch (err) {
+    console.error(`PATCH /user/plan failed: ${err instanceof Error ? err.message : err}`);
+    return c.json({ error: 'Failed to update plan' }, 500);
   }
-
-  const result = await db.execute({
-    sql: `UPDATE users SET plan = ?, updated_at = datetime('now') WHERE google_id = ?`,
-    args: [body.plan, userId],
-  });
-
-  if (result.rowsAffected === 0) {
-    return c.json({ error: 'User not found' }, 404);
-  }
-
-  return c.json({ success: true, plan: body.plan });
 });
 
 user.delete('/me', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
 
-  const tables = [
-    'DELETE FROM alarms WHERE user_id = ?',
-    'DELETE FROM message_library WHERE user_id = ?',
-    'DELETE FROM messages WHERE user_id = ?',
-    'DELETE FROM voice_profiles WHERE user_id = ?',
-    "DELETE FROM friendships WHERE user_a = ? OR user_b = ?",
-    "DELETE FROM gifts WHERE sender_id = ? OR recipient_id = ?",
-    'DELETE FROM users WHERE google_id = ?',
-  ];
+  try {
+    const tables = [
+      'DELETE FROM alarms WHERE user_id = ?',
+      'DELETE FROM message_library WHERE user_id = ?',
+      'DELETE FROM messages WHERE user_id = ?',
+      'DELETE FROM voice_profiles WHERE user_id = ?',
+      "DELETE FROM friendships WHERE user_a = ? OR user_b = ?",
+      "DELETE FROM gifts WHERE sender_id = ? OR recipient_id = ?",
+      'DELETE FROM users WHERE google_id = ?',
+    ];
 
-  for (const sql of tables) {
-    const needsTwoArgs = sql.includes('OR');
-    await db.execute({ sql, args: needsTwoArgs ? [userId, userId] : [userId] });
+    for (const sql of tables) {
+      const needsTwoArgs = sql.includes('OR');
+      await db.execute({ sql, args: needsTwoArgs ? [userId, userId] : [userId] });
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.error(`DELETE /user/me failed: ${err instanceof Error ? err.message : err}`);
+    return c.json({ error: 'Failed to delete account' }, 500);
   }
-
-  return c.json({ success: true });
 });
 
 user.get('/search', async (c) => {
@@ -101,21 +119,26 @@ user.get('/search', async (c) => {
     return c.json({ users: [] });
   }
 
-  const result = await db.execute({
-    sql: `SELECT google_id, email, name, picture FROM users
-          WHERE google_id != ? AND email LIKE ?
-          LIMIT 10`,
-    args: [userId, `%${q}%`],
-  });
+  try {
+    const result = await db.execute({
+      sql: `SELECT google_id, email, name, picture FROM users
+            WHERE google_id != ? AND email LIKE ?
+            LIMIT 10`,
+      args: [userId, `%${q}%`],
+    });
 
-  return c.json({
-    users: result.rows.map((r) => ({
-      id: r.google_id,
-      email: r.email,
-      name: r.name,
-      picture: r.picture,
-    })),
-  });
+    return c.json({
+      users: result.rows.map((r) => ({
+        id: r.google_id,
+        email: r.email,
+        name: r.name,
+        picture: r.picture,
+      })),
+    });
+  } catch (err) {
+    console.error(`GET /user/search failed: ${err instanceof Error ? err.message : err}`);
+    return c.json({ error: 'Search failed' }, 500);
+  }
 });
 
 export default user;

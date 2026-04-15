@@ -136,7 +136,12 @@ tts.post('/generate', async (c) => {
     });
 
     // 오디오 데이터를 base64로 반환 (클라이언트에서 로컬 저장)
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+    const bytes = new Uint8Array(audioBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64Audio = btoa(binary);
 
     return c.json(
       {
@@ -247,74 +252,8 @@ tts.delete('/messages/:id', async (c) => {
 
 /** 프리셋 메시지 목록 */
 tts.get('/presets', async (c) => {
-  const presets = [
-    {
-      category: 'morning',
-      emoji: '🌅',
-      messages: [
-        '좋은 아침이야, 오늘도 화이팅!',
-        '일어나~ 오늘도 좋은 하루 보내자!',
-        '굿모닝! 오늘 하루도 힘내!',
-      ],
-    },
-    {
-      category: 'lunch',
-      emoji: '🍽️',
-      messages: [
-        '점심 잘 챙겨 먹어, 맛있는 거 먹어!',
-        '밥 먹었어? 꼭 챙겨 먹어!',
-        '점심시간이다! 맛있는 거 먹고 오후도 파이팅!',
-      ],
-    },
-    {
-      category: 'afternoon',
-      emoji: '☕',
-      messages: [
-        '오후도 힘내, 조금만 더 파이팅!',
-        '오후 슬럼프? 커피 한 잔 하고 힘내!',
-        '조금만 더 하면 끝이야, 화이팅!',
-      ],
-    },
-    {
-      category: 'evening',
-      emoji: '🌙',
-      messages: [
-        '오늘도 고생 많았어, 수고했어!',
-        '퇴근 축하해! 오늘 하루도 잘 보냈어!',
-        '고생했어, 이제 편하게 쉬어!',
-      ],
-    },
-    {
-      category: 'night',
-      emoji: '😴',
-      messages: [
-        '오늘 하루도 잘 보냈어, 푹 자!',
-        '잘 자, 좋은 꿈 꿔!',
-        '내일도 좋은 하루 될 거야, 굿나잇!',
-      ],
-    },
-    {
-      category: 'cheer',
-      emoji: '💪',
-      messages: [
-        '넌 할 수 있어, 믿어!',
-        '힘들어도 포기하지 마, 항상 응원해!',
-        '넌 정말 대단한 사람이야!',
-      ],
-    },
-    {
-      category: 'love',
-      emoji: '❤️',
-      messages: ['사랑해, 항상 고마워!', '네가 있어서 행복해!', '보고 싶어, 빨리 보자!'],
-    },
-    {
-      category: 'health',
-      emoji: '🏥',
-      messages: ['약 챙겨 먹었어?', '물 많이 마셔! 건강 챙겨!', '오늘 스트레칭 했어? 몸 좀 풀어!'],
-    },
-  ];
-
-  return c.json({ presets });
+  const { PRESETS } = await import('../data/presets');
+  return c.json({ presets: PRESETS });
 });
 
 export default tts;

@@ -66,59 +66,59 @@ voice.post('/clone', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
 
-  // 무료 플랜 제한 체크
-  const user = await db.execute({
-    sql: 'SELECT plan FROM users WHERE google_id = ?',
-    args: [userId],
-  });
-
-  if (user.rows.length > 0) {
-    const plan = user.rows[0].plan as string;
-    const profileCount = await db.execute({
-      sql: 'SELECT COUNT(*) as count FROM voice_profiles WHERE user_id = ?',
+  try {
+    // 무료 플랜 제한 체크
+    const user = await db.execute({
+      sql: 'SELECT plan FROM users WHERE google_id = ?',
       args: [userId],
     });
-    const count = Number(profileCount.rows[0].count);
 
-    const limits: Record<string, number> = { free: 1, plus: 3, family: 10 };
-    if (count >= (limits[plan] ?? 1)) {
-      return c.json(
-        {
-          error: `${plan} 플랜은 최대 ${limits[plan]}개의 음성 프로필을 지원합니다. 업그레이드해주세요.`,
-        },
-        403,
-      );
+    if (user.rows.length > 0) {
+      const plan = user.rows[0].plan as string;
+      const profileCount = await db.execute({
+        sql: 'SELECT COUNT(*) as count FROM voice_profiles WHERE user_id = ?',
+        args: [userId],
+      });
+      const count = Number(profileCount.rows[0].count);
+
+      const limits: Record<string, number> = { free: 1, plus: 3, family: 10 };
+      if (count >= (limits[plan] ?? 1)) {
+        return c.json(
+          {
+            error: `${plan} 플랜은 최대 ${limits[plan]}개의 음성 프로필을 지원합니다. 업그레이드해주세요.`,
+          },
+          403,
+        );
+      }
     }
-  }
 
-  const formData = await c.req.formData();
-  const audioFile = formData.get('audio') as unknown as File | null;
-  const name = formData.get('name') as string | null;
-  const provider = (formData.get('provider') as string) || 'perso';
+    const formData = await c.req.formData();
+    const audioFile = formData.get('audio') as unknown as File | null;
+    const name = formData.get('name') as string | null;
+    const provider = (formData.get('provider') as string) || 'perso';
 
-  if (!audioFile || !name) {
-    return c.json({ error: 'audio file and name are required' }, 400);
-  }
+    if (!audioFile || !name) {
+      return c.json({ error: 'audio file and name are required' }, 400);
+    }
 
-  if (name.length > 50) {
-    return c.json({ error: 'Name must be 50 characters or less' }, 400);
-  }
+    if (name.length > 50) {
+      return c.json({ error: 'Name must be 50 characters or less' }, 400);
+    }
 
-  if (provider !== 'perso' && provider !== 'elevenlabs') {
-    return c.json({ error: 'provider must be "perso" or "elevenlabs"' }, 400);
-  }
+    if (provider !== 'perso' && provider !== 'elevenlabs') {
+      return c.json({ error: 'provider must be "perso" or "elevenlabs"' }, 400);
+    }
 
-  const audioBuffer = await audioFile.arrayBuffer();
-  const profileId = crypto.randomUUID();
+    const audioBuffer = await audioFile.arrayBuffer();
+    const profileId = crypto.randomUUID();
 
-  // DB에 processing 상태로 먼저 저장
-  await db.execute({
-    sql: `INSERT INTO voice_profiles (id, user_id, name, status)
-          VALUES (?, ?, ?, 'processing')`,
-    args: [profileId, userId, name],
-  });
+    // DB에 processing 상태로 먼저 저장
+    await db.execute({
+      sql: `INSERT INTO voice_profiles (id, user_id, name, status)
+            VALUES (?, ?, ?, 'processing')`,
+      args: [profileId, userId, name],
+    });
 
-  try {
     let voiceId: string;
 
     if (provider === 'elevenlabs') {
@@ -156,16 +156,13 @@ voice.post('/clone', async (c) => {
       201,
     );
   } catch (err) {
-    await db.execute({
-      sql: `UPDATE voice_profiles SET status = 'failed', updated_at = datetime('now') WHERE id = ?`,
-      args: [profileId],
-    });
+    const detail = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`Voice clone failed for user ${userId}: ${detail}`);
 
     return c.json(
       {
         error: 'Voice cloning failed',
-        detail: err instanceof Error ? err.message : 'Unknown error',
-        profile_id: profileId,
+        detail,
       },
       500,
     );

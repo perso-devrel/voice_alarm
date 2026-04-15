@@ -28,9 +28,18 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const loadPersistedState = useAppStore((s) => s.loadPersistedState);
+  const { hasCompletedOnboarding, stateLoaded } = useAppStore();
   const { t } = useTranslation();
   const router = useRouter();
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const hasNavigatedToOnboarding = useRef(false);
+
+  useEffect(() => {
+    if (stateLoaded && !hasCompletedOnboarding && !hasNavigatedToOnboarding.current) {
+      hasNavigatedToOnboarding.current = true;
+      router.replace('/onboarding');
+    }
+  }, [stateLoaded, hasCompletedOnboarding]);
 
   useEffect(() => {
     loadPersistedState();
