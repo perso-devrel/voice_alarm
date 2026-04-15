@@ -352,6 +352,27 @@
     "play": "Play",
     "stop": "Stop",
     "useForAlarm": "Set as alarm",
-    "createAnother": "Create new message with same voice"
+    "createAnother": "Create new message with same voice",
+    "translate": "Translate to another language"
+  },
+  "dub": {
+    "title": "Voice Translation",
+    "description": "Translate to another language while keeping the original voice",
+    "sourceLanguage": "Source language",
+    "targetLanguage": "Target language",
+    "selectLanguage": "Select a language",
+    "start": "Start translation",
+    "processing": "Translating...",
+    "progress": "{{progress}}% complete",
+    "remainingTime": "About {{minutes}} min remaining",
+    "complete": "Translation complete!",
+    "failed": "Translation failed",
+    "retry": "Retry",
+    "playResult": "Play translated audio",
+    "saveToLibrary": "Saved to library",
+    "noAudio": "No audio file available to play",
+    "sameLanguage": "Please select a different language",
+    "jobs": "Translation history",
+    "noJobs": "No translation history yet"
   }
 }
