@@ -85,6 +85,21 @@ export async function initDB(env: Env) {
       note TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS dub_jobs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      source_message_id TEXT,
+      source_language TEXT NOT NULL,
+      target_language TEXT NOT NULL,
+      status TEXT DEFAULT 'uploading' CHECK(status IN ('uploading','processing','ready','failed')),
+      perso_space_seq INTEGER,
+      perso_project_seq INTEGER,
+      perso_media_seq INTEGER,
+      result_message_id TEXT,
+      progress INTEGER DEFAULT 0,
+      error_message TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
   ]);
 
   await db.batch([
@@ -104,6 +119,8 @@ export async function initDB(env: Env) {
     'CREATE INDEX IF NOT EXISTS idx_gifts_recipient ON gifts(recipient_id)',
     'CREATE INDEX IF NOT EXISTS idx_gifts_status ON gifts(status)',
     'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+    'CREATE INDEX IF NOT EXISTS idx_dub_jobs_user ON dub_jobs(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_dub_jobs_status ON dub_jobs(status)',
   ]);
 
   // 마이그레이션: 누락 컬럼 추가 (이미 있으면 무시)
