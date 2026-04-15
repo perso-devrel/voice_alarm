@@ -11,7 +11,6 @@ export default function VoicesPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [uploadName, setUploadName] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
   const [testingId, setTestingId] = useState<string | null>(null);
   const testAudioRef = useRef<HTMLAudioElement>(null);
   const [search, setSearch] = useState('');
@@ -24,7 +23,7 @@ export default function VoicesPage() {
   });
 
   const cloneMutation = useMutation({
-    mutationFn: () => createVoiceClone(uploadFile!, uploadName, provider),
+    mutationFn: () => createVoiceClone(uploadFile!, uploadName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
       setShowUpload(false);
@@ -131,33 +130,6 @@ export default function VoicesPage() {
                 placeholder="예: 엄마, 아빠"
                 className="w-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">음성 AI</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setProvider('perso')}
-                  aria-pressed={provider === 'perso'}
-                  className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                    provider === 'perso'
-                      ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
-                  }`}
-                >
-                  Perso.ai
-                </button>
-                <button
-                  onClick={() => setProvider('elevenlabs')}
-                  aria-pressed={provider === 'elevenlabs'}
-                  className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                    provider === 'elevenlabs'
-                      ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                      : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
-                  }`}
-                >
-                  ElevenLabs
-                </button>
-              </div>
             </div>
           </div>
 

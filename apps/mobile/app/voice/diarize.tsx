@@ -57,7 +57,6 @@ export default function DiarizeScreen() {
           type: selectedFile.mimeType || 'audio/wav',
         },
         params.name,
-        'elevenlabs',
       );
     },
     onSuccess: () => {

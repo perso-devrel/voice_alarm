@@ -119,12 +119,10 @@ export async function getVoiceProfile(id: string) {
 export async function createVoiceClone(
   audioFile: { uri: string; name: string; type: string },
   name: string,
-  provider: 'perso' | 'elevenlabs' = 'perso',
 ) {
   const formData = new FormData();
   formData.append('audio', audioFile as unknown as Blob);
   formData.append('name', name);
-  formData.append('provider', provider);
 
   const data = await post<{ profile: VoiceProfile }>('/voice/clone', formData, {
     isFormData: true,
@@ -152,9 +150,6 @@ export async function generateTTS(params: {
   voice_profile_id: string;
   text: string;
   category?: string;
-  speed?: number;
-  pitch?: number;
-  provider?: 'perso' | 'elevenlabs';
 }) {
   return post<{
     message_id: string;

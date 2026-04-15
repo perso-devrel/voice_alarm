@@ -33,11 +33,10 @@ export async function getVoiceProfiles() {
   return data.profiles;
 }
 
-export async function createVoiceClone(file: File, name: string, provider: string = 'perso') {
+export async function createVoiceClone(file: File, name: string) {
   const formData = new FormData();
   formData.append('audio', file);
   formData.append('name', name);
-  formData.append('provider', provider);
   const { data } = await api.post('/voice/clone', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });

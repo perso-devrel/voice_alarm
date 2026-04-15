@@ -40,7 +40,6 @@ export default function RecordScreen() {
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
   const [name, setName] = useState('');
-  const [provider, setProvider] = useState<'perso' | 'elevenlabs'>('perso');
   const [levelHistory, setLevelHistory] = useState<number[]>(
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
@@ -62,7 +61,6 @@ export default function RecordScreen() {
       createVoiceClone(
         { uri: params.uri, name: 'recording.wav', type: 'audio/wav' },
         params.name,
-        provider,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
@@ -224,33 +222,6 @@ export default function RecordScreen() {
             placeholderTextColor={Colors.light.textTertiary}
           />
 
-          {/* Provider 선택 */}
-          <View style={styles.providerRow}>
-            <TouchableOpacity
-              style={[styles.providerChip, provider === 'perso' && styles.providerActive]}
-              onPress={() => setProvider('perso')}
-            >
-              <Text
-                style={[styles.providerText, provider === 'perso' && styles.providerTextActive]}
-              >
-                Perso.ai
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.providerChip, provider === 'elevenlabs' && styles.providerActive]}
-              onPress={() => setProvider('elevenlabs')}
-            >
-              <Text
-                style={[
-                  styles.providerText,
-                  provider === 'elevenlabs' && styles.providerTextActive,
-                ]}
-              >
-                ElevenLabs
-              </Text>
-            </TouchableOpacity>
-          </View>
-
           <TouchableOpacity
             style={[styles.submitButton, cloneMutation.isPending && styles.submitButtonDisabled]}
             onPress={handleSubmit}
@@ -399,31 +370,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.border,
     marginBottom: Spacing.md,
-  },
-  providerRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  providerChip: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    alignItems: 'center',
-  },
-  providerActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  providerText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    fontWeight: '600',
-  },
-  providerTextActive: {
-    color: '#FFF',
   },
   submitButton: {
     backgroundColor: Colors.light.primary,
