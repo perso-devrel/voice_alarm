@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Spacing, BorderRadius, FontSize } from '../constants/theme';
 import {
@@ -15,44 +15,78 @@ export default function LoginButtons() {
   const { setAuth } = useAppStore();
   const { request, response, promptAsync } = useGoogleAuth();
   const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (response?.type === 'success') {
+    if (!response) return;
+
+    if (response.type === 'success') {
       const idToken = response.params.id_token;
       if (idToken) {
         handleLoginSuccess(idToken, 'google');
+      } else {
+        Alert.alert(t('login.error', '로그인 실패'), t('login.noToken', '인증 토큰을 받지 못했습니다.'));
       }
+    } else if (response.type === 'error') {
+      const msg = response.error?.message || t('login.unknownError', '알 수 없는 오류가 발생했습니다.');
+      Alert.alert(t('login.error', '로그인 실패'), msg);
     }
+    // 'dismiss' (사용자가 취소)는 무시
+    setLoading(false);
   }, [response]);
 
   const handleLoginSuccess = async (idToken: string, provider: 'google' | 'apple') => {
-    await saveAuthToken(idToken, provider);
-    const user = decodeIdToken(idToken);
-    if (user) {
-      setAuth(idToken, user.sub);
+    try {
+      await saveAuthToken(idToken, provider);
+      const user = decodeIdToken(idToken);
+      if (user) {
+        setAuth(idToken, user.sub);
+      }
+    } catch {
+      Alert.alert(t('login.error', '로그인 실패'), t('login.saveFailed', '로그인 정보 저장에 실패했습니다.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      await promptAsync();
+    } catch {
+      Alert.alert(t('login.error', '로그인 실패'), t('login.googleFailed', 'Google 로그인을 시작할 수 없습니다.'));
+      setLoading(false);
     }
   };
 
   const handleAppleLogin = async () => {
-    const result = await signInWithApple();
-    if (result) {
-      await handleLoginSuccess(result.idToken, 'apple');
+    setLoading(true);
+    try {
+      const result = await signInWithApple();
+      if (result) {
+        await handleLoginSuccess(result.idToken, 'apple');
+      } else {
+        setLoading(false);
+      }
+    } catch {
+      Alert.alert(t('login.error', '로그인 실패'), t('login.appleFailed', 'Apple 로그인에 실패했습니다.'));
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={styles.googleButton}
-        onPress={() => promptAsync()}
-        disabled={!request}
+        style={[styles.googleButton, loading && styles.disabledButton]}
+        onPress={handleGoogleLogin}
+        disabled={!request || loading}
       >
         <Text style={styles.googleIcon}>G</Text>
         <Text style={styles.googleText}>{t('login.google')}</Text>
       </TouchableOpacity>
 
       {isAppleAuthAvailable() && (
-        <TouchableOpacity style={styles.appleButton} onPress={handleAppleLogin}>
+        <TouchableOpacity style={[styles.appleButton, loading && styles.disabledButton]} onPress={handleAppleLogin} disabled={loading}>
           <Text style={styles.appleIcon}></Text>
           <Text style={styles.appleText}>{t('login.apple')}</Text>
         </TouchableOpacity>
@@ -104,5 +138,8 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
