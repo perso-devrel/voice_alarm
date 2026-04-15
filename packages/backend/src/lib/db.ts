@@ -105,11 +105,13 @@ export async function initDB(env: Env) {
   // 마이그레이션: 누락 컬럼 추가 (인덱스 생성 전에 실행해야 함)
   const migrations = [
     { sql: 'ALTER TABLE users ADD COLUMN google_id TEXT', followUp: 'UPDATE users SET google_id = id WHERE google_id IS NULL' },
+    { sql: 'ALTER TABLE users ADD COLUMN name TEXT' },
+    { sql: 'ALTER TABLE users ADD COLUMN picture TEXT' },
+    { sql: 'ALTER TABLE users ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))' },
     { sql: 'ALTER TABLE alarms ADD COLUMN target_user_id TEXT' },
     { sql: 'ALTER TABLE alarms ADD COLUMN snooze_minutes INTEGER DEFAULT 5' },
     { sql: 'ALTER TABLE messages ADD COLUMN is_preset INTEGER DEFAULT 0' },
     { sql: 'ALTER TABLE voice_profiles ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))' },
-    { sql: 'ALTER TABLE users ADD COLUMN updated_at TEXT DEFAULT (datetime(\'now\'))' },
   ];
 
   for (const m of migrations) {
