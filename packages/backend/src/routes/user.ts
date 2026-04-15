@@ -21,9 +21,9 @@ user.get('/me', async (c) => {
       const id = crypto.randomUUID();
       const today = new Date().toISOString().split('T')[0];
       await db.execute({
-        sql: `INSERT INTO users (id, google_id, email, name, picture, daily_tts_reset_at)
-              VALUES (?, ?, ?, ?, ?, ?)`,
-        args: [id, userId, email, name, picture, today],
+        sql: `INSERT INTO users (id, google_id, firebase_uid, email, name, picture, daily_tts_reset_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [id, userId, userId, email, name, picture, today],
       });
       result = await db.execute({
         sql: 'SELECT * FROM users WHERE id = ?',
