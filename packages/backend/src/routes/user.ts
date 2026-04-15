@@ -51,8 +51,9 @@ user.get('/me', async (c) => {
       },
     });
   } catch (err) {
-    console.error(`GET /user/me failed: ${err instanceof Error ? err.message : err}`);
-    return c.json({ error: 'Failed to fetch user info' }, 500);
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error(`GET /user/me failed: ${detail}`);
+    return c.json({ error: 'Failed to fetch user info', detail }, 500);
   }
 });
 
