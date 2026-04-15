@@ -19,10 +19,6 @@ vi.mock('../lib/db', () => ({
   getDB: () => mockDB,
 }));
 
-vi.mock('../lib/perso', () => ({
-  PersoClient: class { async textToSpeech() { return new ArrayBuffer(8); } },
-}));
-
 vi.mock('../lib/elevenlabs', () => ({
   ElevenLabsClient: class { async textToSpeech() { return new ArrayBuffer(8); } },
 }));
@@ -150,20 +146,17 @@ describe('tts routes', () => {
       expect(body.voice_profile_id).toBe(VP_ID);
     });
 
-    it('returns 201 on successful TTS generation with perso', async () => {
+    it('returns 400 when no elevenlabs_voice_id available', async () => {
       mockDB.execute
         .mockResolvedValueOnce({ rows: [{ plan: 'free', daily_tts_count: 1, daily_tts_reset_at: new Date().toISOString().split('T')[0] }] })
         .mockResolvedValueOnce({
-          rows: [{ id: VP_ID, status: 'ready', perso_voice_id: 'perso-123', elevenlabs_voice_id: null }],
-        })
-        .mockResolvedValueOnce({ rowsAffected: 1 })
-        .mockResolvedValueOnce({ rowsAffected: 1 })
-        .mockResolvedValueOnce({ rowsAffected: 1 });
+          rows: [{ id: VP_ID, status: 'ready', elevenlabs_voice_id: null }],
+        });
       const res = await req(app, '/tts/generate', jsonBody('POST', {
         voice_profile_id: VP_ID,
         text: '안녕하세요',
       }));
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(400);
     });
   });
 
