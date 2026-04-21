@@ -740,3 +740,174 @@ describe('POST /family/alarms (text mode)', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('POST /family/alarms/voice', () => {
+  function voiceBody(overrides: Record<string, unknown> = {}) {
+    return {
+      recipient_user_id: 'user-recipient',
+      wake_at: '08:00',
+      voice_upload_id: 'upload-1',
+      ...overrides,
+    };
+  }
+
+  function queueVoiceHappyPath(opts: {
+    allowFamily?: number;
+    dub?: boolean;
+    noVoiceProfile?: boolean;
+    uploadOwner?: string;
+    uploadMissing?: boolean;
+  } = {}) {
+    mockDB.pushResult([{ id: 'user-sender' }]); // sender pk
+    mockDB.pushResult([{ plan_group_id: 'group-1' }]); // sender groups
+    mockDB.pushResult([{ plan_group_id: 'group-1' }]); // recipient groups
+    mockDB.pushResult([
+      {
+        id: 'user-recipient',
+        google_id: 'google-recipient',
+        allow_family_alarms: opts.allowFamily ?? 1,
+      },
+    ]); // recipient
+    if (opts.uploadMissing) {
+      mockDB.pushResult([]); // upload missing
+    } else {
+      mockDB.pushResult([
+        {
+          id: 'upload-1',
+          user_id: opts.uploadOwner ?? 'user-sender',
+          object_key: 'uploads/alice/hi.m4a',
+        },
+      ]);
+    }
+    if (opts.noVoiceProfile) {
+      mockDB.pushResult([]); // no profile
+    } else {
+      mockDB.pushResult([{ id: 'vp-recipient-1' }]);
+    }
+    mockDB.pushResult([], 1); // messages INSERT
+    mockDB.pushResult([], 1); // alarms INSERT
+    if (opts.dub) mockDB.pushResult([], 1); // dub_jobs INSERT
+  }
+
+  it('정상 — 더빙 없음, audio_url 에 object_key 채움', async () => {
+    queueVoiceHappyPath();
+    const app = buildApp('google-sender');
+    const res = await app.request(jsonReq('POST', '/family/alarms/voice', voiceBody({ repeat_days: [0, 6] })));
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.alarm.mode).toBe('sound-only');
+    expect(body.alarm.voice_upload_id).toBe('upload-1');
+    expect(body.alarm.repeat_days).toEqual([0, 6]);
+    expect(body.message.audio_url).toBe('uploads/alice/hi.m4a');
+    expect(body.message.category).toBe('family-voice');
+    expect(body.message.text).toBe('가족이 보낸 음성');
+    expect(body.dub_job).toBeNull();
+
+    const msgInsert = mockDB.calls.find((c) => c.sql.includes('INSERT INTO messages'));
+    const alarmInsert = mockDB.calls.find((c) => c.sql.includes('INSERT INTO alarms'));
+    expect(msgInsert?.args[4]).toBe('uploads/alice/hi.m4a'); // audio_url
+    expect(alarmInsert?.args[1]).toBe('google-sender');
+    expect(alarmInsert?.args[2]).toBe('google-recipient');
+  });
+
+  it('정상 — 커스텀 label 허용', async () => {
+    queueVoiceHappyPath();
+    const app = buildApp('google-sender');
+    const res = await app.request(
+      jsonReq('POST', '/family/alarms/voice', voiceBody({ label: '엄마의 아침 인사' })),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.message.text).toBe('엄마의 아침 인사');
+  });
+
+  it('정상 — dub_target_language 주면 dub_jobs INSERT + audio_url NULL', async () => {
+    queueVoiceHappyPath({ dub: true });
+    const app = buildApp('google-sender');
+    const res = await app.request(
+      jsonReq('POST', '/family/alarms/voice', voiceBody({ dub_target_language: 'en' })),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.message.audio_url).toBeNull();
+    expect(body.dub_job).toMatchObject({ target_language: 'en', status: 'processing' });
+    expect(body.dub_job.id).toBeTruthy();
+
+    const dubInsert = mockDB.calls.find((c) => c.sql.includes('INSERT INTO dub_jobs'));
+    expect(dubInsert).toBeDefined();
+    expect(dubInsert?.args[3]).toBe('en');
+    expect(dubInsert?.args[4]).toBe(body.message.id); // result_message_id
+  });
+
+  it('dub_target_language 가 허용 목록 밖 → 400', async () => {
+    const app = buildApp('google-sender');
+    const res = await app.request(
+      jsonReq('POST', '/family/alarms/voice', voiceBody({ dub_target_language: 'fr' })),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('dub_target_language');
+  });
+
+  it('수신자 allow_family_alarms=0 → 403', async () => {
+    queueVoiceHappyPath({ allowFamily: 0 });
+    const app = buildApp('google-sender');
+    const res = await app.request(jsonReq('POST', '/family/alarms/voice', voiceBody()));
+    expect(res.status).toBe(403);
+  });
+
+  it('voice_upload 이 송신자 소유가 아니면 → 400', async () => {
+    queueVoiceHappyPath({ uploadOwner: 'user-other' });
+    const app = buildApp('google-sender');
+    const res = await app.request(jsonReq('POST', '/family/alarms/voice', voiceBody()));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('소유자');
+  });
+
+  it('voice_upload 이 없으면 → 400', async () => {
+    queueVoiceHappyPath({ uploadMissing: true });
+    const app = buildApp('google-sender');
+    const res = await app.request(jsonReq('POST', '/family/alarms/voice', voiceBody()));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('음성 업로드');
+  });
+
+  it('수신자에 voice_profile 없으면 → 400', async () => {
+    queueVoiceHappyPath({ noVoiceProfile: true });
+    const app = buildApp('google-sender');
+    const res = await app.request(jsonReq('POST', '/family/alarms/voice', voiceBody()));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('음성 프로필');
+  });
+
+  it('다른 그룹 수신자 → 403', async () => {
+    mockDB.pushResult([{ id: 'user-sender' }]);
+    mockDB.pushResult([{ plan_group_id: 'group-A' }]);
+    mockDB.pushResult([{ plan_group_id: 'group-B' }]);
+    const app = buildApp('google-sender');
+    const res = await app.request(jsonReq('POST', '/family/alarms/voice', voiceBody()));
+    expect(res.status).toBe(403);
+  });
+
+  it('wake_at 포맷 오류 → 400', async () => {
+    const app = buildApp('google-sender');
+    const res = await app.request(
+      jsonReq('POST', '/family/alarms/voice', voiceBody({ wake_at: '25:00' })),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('voice_upload_id 누락 → 400', async () => {
+    const app = buildApp('google-sender');
+    const res = await app.request(
+      jsonReq('POST', '/family/alarms/voice', {
+        recipient_user_id: 'user-recipient',
+        wake_at: '08:00',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+});
