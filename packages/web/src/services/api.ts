@@ -378,4 +378,60 @@ function normalizeSpeaker(raw: Record<string, unknown>): Speaker {
   };
 }
 
+export interface FamilyGroupMember {
+  id: string;
+  user_id: string;
+  role: 'owner' | 'member';
+  joined_at: string;
+  email: string | null;
+  name: string | null;
+  picture: string | null;
+  allow_family_alarms: boolean;
+}
+
+export interface FamilyGroupCurrent {
+  group: {
+    id: string;
+    owner_user_id: string;
+    plan_id: string;
+    max_members: number;
+    created_at: string;
+  } | null;
+  role: 'owner' | 'member' | null;
+  members: FamilyGroupMember[];
+}
+
+export async function getFamilyGroupCurrent(): Promise<FamilyGroupCurrent> {
+  const { data } = await api.get<FamilyGroupCurrent>('/family/groups/current');
+  return data;
+}
+
+export interface FamilyAlarmCreatePayload {
+  recipient_user_id: string;
+  wake_at: string;
+  message_text: string;
+  repeat_days?: number[];
+  voice_profile_id?: string;
+}
+
+export interface FamilyAlarmCreateResponse {
+  alarm: {
+    id: string;
+    sender_user_id: string;
+    recipient_user_id: string;
+    wake_at: string;
+    repeat_days: number[];
+    mode: 'tts';
+    voice_profile_id: string;
+  };
+  message: { id: string; text: string; category: string };
+}
+
+export async function createFamilyAlarmText(
+  payload: FamilyAlarmCreatePayload,
+): Promise<FamilyAlarmCreateResponse> {
+  const { data } = await api.post<FamilyAlarmCreateResponse>('/family/alarms', payload);
+  return data;
+}
+
 export default api;

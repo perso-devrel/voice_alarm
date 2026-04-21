@@ -313,7 +313,7 @@ family.get('/groups/current', async (c) => {
 
   const membersRes = await db.execute({
     sql: `SELECT m.id, m.user_id, m.role, m.joined_at,
-                 u.email, u.name, u.picture
+                 u.email, u.name, u.picture, u.allow_family_alarms
           FROM plan_group_members m
           LEFT JOIN users u ON u.id = m.user_id
           WHERE m.plan_group_id = ?
@@ -338,6 +338,7 @@ family.get('/groups/current', async (c) => {
       email: (r.email as string | null) ?? null,
       name: (r.name as string | null) ?? null,
       picture: (r.picture as string | null) ?? null,
+      allow_family_alarms: Number(r.allow_family_alarms ?? 0) === 1,
     })),
   });
 });
