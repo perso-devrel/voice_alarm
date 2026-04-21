@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:37)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:41)
 
-- 진행 중 Phase: 5 진행 중 (#26~#28 완료, 다음 #29 코드 등록 API)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67 (27개). Phase 4 완료 + Phase 5 #26~#28 완료.
-- 진행 중 이슈: 없음 (다음: Phase 5 #29 코드 등록 API — 평문 코드 POST → hash lookup → status issued→used, 재사용 방지)
+- 진행 중 Phase: 5 진행 중 (#26~#29 완료, 다음 #30 코드 공유 UI)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69 (28개). Phase 4 완료 + Phase 5 #26~#29 완료.
+- 진행 중 이슈: 없음 (다음: Phase 5 #30 코드 공유 UI — 웹/모바일에서 발급 코드 목록 + 복사/공유 버튼, 발급자 본인에게만 노출)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:41 · Issue #69 · 이용권 코드 등록 API (/billing/redeem)
+- 브랜치: `feature/issue-69-voucher-redeem`
+- PR: #70 (merged)
+- 변경 파일: 2개 (수정)
+- 요약: `POST /api/billing/redeem { code }` 신규 — 평문 포맷 검증(VA-XXXX-XXXX-XXXX, `toUpperCase` 정규화로 소문자 입력도 허용) → 사용자 조회(google_id→users.id) → `hashVoucherCode` 로 `code_hash` UNIQUE lookup → 상태/만료/자기발급 3중 검증 → voucher `status='used'` + `redeemed_by_user_id` + `used_at` 세팅 + 새 subscription INSERT(period_days 만큼 만료) + `users.plan` 동기화(personal→plus, family→family). 에러 매트릭스: 포맷/자기발급 400, 존재 안 함 404, 이미 used/expired 409, `expires_at` 지났지만 status=issued 면 409 + DB 에서 expired 자동 전환. vitest 10건 추가 (정상 2종 + 포맷/누락/없음/used/expired/자동expired/자기발급/소문자 정규화) → 백엔드 326→336 / 26 파일 그린, tsc 에러 없음.
+- 다음: Phase 5 #30 코드 공유 UI — `GET /billing/vouchers` 응답 기반 웹/모바일 발급 코드 목록 + 복사 버튼 + 공유 링크 + 만료/사용상태 표시. 발급자 본인에게만 노출.
+- 리스크: trace-level 감사 로그 없음(누가 언제 어느 코드를 등록했는지는 voucher_codes.used_at/redeemed_by_user_id 로만 추적). 결제 중복 발급과 마찬가지로 중복 등록도 DB 수준 잠금 없음. 가족 플랜 코드 등록 시 #31 그룹 연결은 후속 이슈에서 자동화.
+
+---
 
 ## 2026-04-21 14:37 · Issue #67 · 이용권 코드 발급 (checkout 훅 + /billing/vouchers)
 - 브랜치: `feature/issue-67-voucher-codes`
