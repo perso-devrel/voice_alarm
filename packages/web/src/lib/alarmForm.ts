@@ -15,6 +15,18 @@ export function parseRepeatDays(raw: unknown): number[] {
   return [];
 }
 
+export const DAYS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+
+export function formatRepeatDays(raw: unknown): string {
+  const parsed = parseRepeatDays(raw);
+  if (parsed.length === 0) return '한 번만';
+  if (parsed.length === 7) return '매일';
+  const sorted = parsed.slice().sort((a, b) => a - b);
+  if (sorted.length === 5 && sorted[0] === 1 && sorted[4] === 5) return '평일';
+  if (sorted.length === 2 && sorted[0] === 0 && sorted[1] === 6) return '주말';
+  return sorted.map((d) => DAYS[d] ?? String(d)).join(', ');
+}
+
 export type AlarmMode = 'tts' | 'sound-only';
 
 export interface AlarmFormInput {
