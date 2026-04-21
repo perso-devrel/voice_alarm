@@ -18,3 +18,12 @@ export type {
   FontSizeKey,
   FontWeightKey,
 } from './tokens';
+
+export {
+  MIN_TOUCH_TARGET,
+  WCAG_AA_NORMAL,
+  WCAG_AA_LARGE,
+  relativeLuminance,
+  contrastRatio,
+  meetsAA,
+} from './a11y';
