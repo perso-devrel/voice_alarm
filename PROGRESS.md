@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:18)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:28)
 
 - 진행 중 Phase: 3
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41 (14개)
-- 진행 중 이슈: 없음 (다음: Phase 3 #16 화자 선택 UI 모바일)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43 (15개)
+- 진행 중 이슈: 없음 (다음: Phase 3 #17 음성 라이브러리 화면)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:28 · Issue #43 · 화자 선택 UI 모바일
+- 브랜치: `feature/issue-43-mobile-speaker-picker`
+- PR: #44 (merged)
+- 변경 파일: 5개 (신규 3 + 수정 2)
+- 요약: 모바일 `services/api.ts` 에 `uploadVoiceAudio`/`separateUpload`/`listSpeakers`/`renameSpeaker` 헬퍼 추가 (snake ↔ camel normalize). `src/lib/speakerPickerState.ts` 순수 reducer 분리 — idle/uploading/separating/ready/error 전이 + SELECT/EDIT_* 액션 + `sanitizeLabel`. `app/voice/picker.tsx` 신규 화면 — `useReducer` + `expo-document-picker` 기반 파일 선택 → 업로드 → 기존 결과 재사용 or 분리 → radio 선택 + inline 라벨 편집. `(tabs)/voices.tsx` 헤더에 "화자 감지 (mock)" 카드 링크 추가. jest 12건 추가 (reducer 8 + sanitizeLabel 4). 모노레포 총 337건 통과.
+- 다음: #17 음성 라이브러리 화면 — 등록된 음성·화자 목록·삭제·이름 변경 (웹/앱)
+- 리스크: 선택 화자 → `voice_profiles` 클론 전환은 후속. 기존 `diarize.tsx` ElevenLabs 경로는 그대로.
+
+---
 
 ## 2026-04-21 13:18 · Issue #41 · 화자 선택 UI 웹 + 라벨 편집 API
 - 브랜치: `feature/issue-41-web-speaker-picker`
