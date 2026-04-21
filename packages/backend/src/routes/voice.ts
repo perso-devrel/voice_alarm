@@ -121,7 +121,7 @@ voice.post('/uploads/:uploadId/separate', async (c) => {
   if (uploadRes.rows.length === 0) {
     return c.json({ error: 'Voice upload not found' }, 404);
   }
-  const upload = uploadRes.rows[0] as { id: string; user_id: string; object_key: string };
+  const upload = uploadRes.rows[0] as unknown as { id: string; user_id: string; object_key: string };
   if (upload.user_id !== userId) {
     return c.json({ error: 'Forbidden' }, 403);
   }
@@ -174,7 +174,7 @@ voice.get('/uploads/:uploadId/speakers', async (c) => {
   if (uploadRes.rows.length === 0) {
     return c.json({ error: 'Voice upload not found' }, 404);
   }
-  if ((uploadRes.rows[0] as { user_id: string }).user_id !== userId) {
+  if ((uploadRes.rows[0] as unknown as { user_id: string }).user_id !== userId) {
     return c.json({ error: 'Forbidden' }, 403);
   }
 
@@ -185,6 +185,55 @@ voice.get('/uploads/:uploadId/speakers', async (c) => {
   });
 
   return c.json({ speakers: speakersRes.rows });
+});
+
+/** 분리된 화자 라벨 수정 */
+voice.patch('/uploads/:uploadId/speakers/:speakerId', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const uploadId = c.req.param('uploadId');
+  const speakerId = c.req.param('speakerId');
+
+  if (!UUID_RE.test(uploadId) || !UUID_RE.test(speakerId)) {
+    return c.json({ error: 'Invalid ID format' }, 400);
+  }
+
+  let body: { label?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'JSON body required' }, 400);
+  }
+  const label = typeof body.label === 'string' ? body.label.trim() : '';
+  if (label.length === 0 || label.length > 50) {
+    return c.json({ error: 'label must be 1-50 characters' }, 400);
+  }
+
+  const uploadRes = await db.execute({
+    sql: 'SELECT id, user_id FROM voice_uploads WHERE id = ?',
+    args: [uploadId],
+  });
+  if (uploadRes.rows.length === 0) {
+    return c.json({ error: 'Voice upload not found' }, 404);
+  }
+  if ((uploadRes.rows[0] as unknown as { user_id: string }).user_id !== userId) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const speakerRes = await db.execute({
+    sql: 'SELECT id FROM voice_speakers WHERE id = ? AND upload_id = ?',
+    args: [speakerId, uploadId],
+  });
+  if (speakerRes.rows.length === 0) {
+    return c.json({ error: 'Speaker not found' }, 404);
+  }
+
+  await db.execute({
+    sql: 'UPDATE voice_speakers SET label = ? WHERE id = ?',
+    args: [label, speakerId],
+  });
+
+  return c.json({ speaker: { id: speakerId, uploadId, label } });
 });
 
 /** 음성 프로필 목록 조회 */
