@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:28)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:36)
 
-- 진행 중 Phase: 2 (인증·사용자 모델)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31 (9개)
-- 진행 중 이슈: 없음 (다음: Phase 2 #11 모바일 로그인·가입 화면)
+- 진행 중 Phase: 2 완료 → 3 진입 예정
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33 (10개)
+- 진행 중 이슈: 없음 (다음: Phase 3 #12 `packages/voice` 어댑터 인터페이스)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 12:36 · Issue #33 · 모바일 로그인·가입 화면 (이메일+비밀번호)
+- 브랜치: `feature/issue-33-mobile-email-login`
+- PR: #34 (merged)
+- 변경 파일: 5개 (신규 3, 수정 2)
+- 요약: RN `EmailPasswordForm` 신규 (로그인/가입 탭, 8자 검증, 로딩 스피너). `validateEmailPasswordForm` 순수 함수로 분리 → jest 가 AsyncStorage 없이 단독 테스트. `_layout.tsx` 에 `AuthProvider` 래핑, 홈 탭 비로그인 영역에 이메일 폼 + 구분선 + 기존 `LoginButtons` 공존. `useAuth` ↔ `useAppStore.setAuth` 동기화. jest 7건 추가. **Phase 2 완료.**
+- 다음: #12 `packages/voice` 어댑터 인터페이스 (Phase 3 시작)
+- 리스크: `LoginButtons` (Google/Apple) 는 여전히 `useAppStore.setAuth` 직접 호출 — 향후 `useAuth.loginWithToken` 으로 통합 필요 (팔로업 이슈).
+
+---
 
 ## 2026-04-21 12:28 · Issue #31 · 웹 로그인·가입 화면 (이메일+비밀번호)
 - 브랜치: `feature/issue-31-web-email-login`
