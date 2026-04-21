@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:04)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:11)
 
-- 진행 중 Phase: 5 진행 중 (#26~#32 완료, 다음 #33 가족 참여/탈퇴·권한 양도)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75 (31개). Phase 4 완료 + Phase 5 #26~#32 완료.
-- 진행 중 이슈: 없음 (다음: Phase 5 #33 가족 플랜 참여/탈퇴·소유자 권한 양도 — 멤버 자진 탈퇴, owner 양도(`role='owner'` 단일성 보장), owner 삭제 시 그룹 해체 정책)
+- 진행 중 Phase: 5 완료 (#26~#33 전부 완료). 다음 Phase 6 가족 간 알람 기능 (#34~#39).
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77 (32개). Phase 1~5 완료.
+- 진행 중 이슈: 없음 (다음: Phase 6 #34 가족 허용 설정 — `users.allow_family_alarms` 컬럼 + `PATCH /user/me` 토글)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 15:11 · Issue #77 · 가족 플랜 참여/탈퇴 + 소유자 권한 양도
+- 브랜치: `feature/issue-77-family-leave-transfer`
+- PR: #78 (merged)
+- 변경 파일: 2개 (수정)
+- 요약: `GET /family/groups/current` — 내 그룹 + 멤버 목록(owner 우선 정렬, email/name/picture 포함) + role. `POST /groups/:id/leave` — member 탈퇴 (owner 면 409). `POST /groups/:id/transfer-ownership { target_user_id }` — 검증(target 필수/self 금지/owner 본인/target 멤버) 후 2-step UPDATE: 기존 owner → member 강등 후 target → owner 승격 → plan_groups.owner_user_id 갱신. 중간 owner 0 허용, owner 2 금지. `DELETE /groups/:id/members/:uid` — owner 전용, 자기 자신/대상 owner 거부. vitest 14건 추가 (current 2 + leave 3 + transfer 5 + remove 4) → 백엔드 365→379 / 28 파일 그린, tsc 0 에러. **Phase 5 완료.**
+- 다음: Phase 6 #34 가족 허용 설정 — `users.allow_family_alarms` boolean 컬럼 추가(마이그레이션 #10, 기본 0/false) + `PATCH /user/me` 에 토글 + `/family/alarms` 엔드포인트에서 403 게이트.
+- 리스크: 양도 중간 장애 시 owner 0명 고착 가능 — admin 복구 후속. 그룹 해체(`DELETE /family/groups/:id`) 는 별도 이슈 예정. 가족 알람(Phase 6)과 함께 멤버 제거·탈퇴 시 기존 예약 알람 처리 정책 결정 필요.
+
+---
 
 ## 2026-04-21 15:04 · Issue #75 · 가족 플랜 초대 코드 + 딥링크 하이브리드
 - 브랜치: `feature/issue-75-family-plan-invites`
