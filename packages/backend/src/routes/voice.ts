@@ -2,10 +2,103 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
+import { getSharedInMemoryVoiceStorage } from '@voice-alarm/voice';
 
 const voice = new Hono<AppEnv>();
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MiB
+
+/** 원본 오디오 업로드 — 화자 분리/클론 전 단계 저장소. */
+// TODO: real object storage integration (R2 / S3) — currently in-memory only.
+voice.post('/upload', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  let formData: FormData;
+  try {
+    formData = await c.req.formData();
+  } catch {
+    return c.json({ error: 'multipart/form-data body required' }, 400);
+  }
+
+  const audioFile = formData.get('audio') as unknown as File | null;
+  if (!audioFile || typeof audioFile === 'string') {
+    return c.json({ error: 'audio file is required' }, 400);
+  }
+
+  const mimeType = audioFile.type || 'application/octet-stream';
+  if (!mimeType.startsWith('audio/')) {
+    return c.json({ error: 'audio/* MIME type required' }, 415);
+  }
+
+  const buffer = await audioFile.arrayBuffer();
+  if (buffer.byteLength === 0) {
+    return c.json({ error: 'audio file is empty' }, 400);
+  }
+  if (buffer.byteLength > MAX_UPLOAD_BYTES) {
+    return c.json(
+      { error: `audio file exceeds ${MAX_UPLOAD_BYTES} bytes (got ${buffer.byteLength})` },
+      413,
+    );
+  }
+
+  const durationRaw = formData.get('durationMs');
+  let durationMs: number | undefined;
+  if (typeof durationRaw === 'string' && durationRaw.length > 0) {
+    const n = Number.parseInt(durationRaw, 10);
+    if (!Number.isFinite(n) || n <= 0) {
+      return c.json({ error: 'durationMs must be a positive integer' }, 400);
+    }
+    durationMs = n;
+  }
+
+  const originalNameRaw = formData.get('originalName');
+  const originalName =
+    typeof originalNameRaw === 'string' && originalNameRaw.length > 0
+      ? originalNameRaw.slice(0, 200)
+      : audioFile.name || undefined;
+
+  const storage = getSharedInMemoryVoiceStorage();
+  const meta = await storage.store({
+    userId,
+    bytes: new Uint8Array(buffer),
+    mimeType,
+    durationMs,
+    originalName,
+  });
+
+  const uploadId = crypto.randomUUID();
+  await db.execute({
+    sql: `INSERT INTO voice_uploads
+          (id, user_id, object_key, mime_type, size_bytes, duration_ms, original_name)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      uploadId,
+      userId,
+      meta.objectKey,
+      meta.mimeType,
+      meta.sizeBytes,
+      meta.durationMs ?? null,
+      meta.originalName ?? null,
+    ],
+  });
+
+  return c.json(
+    {
+      upload: {
+        id: uploadId,
+        objectKey: meta.objectKey,
+        mimeType: meta.mimeType,
+        sizeBytes: meta.sizeBytes,
+        durationMs: meta.durationMs ?? null,
+        originalName: meta.originalName ?? null,
+        createdAt: meta.createdAt,
+      },
+    },
+    201,
+  );
+});
 
 /** 음성 프로필 목록 조회 */
 voice.get('/', async (c) => {
@@ -246,11 +339,14 @@ voice.delete('/:id', async (c) => {
   const msgCount = Number((msgCheck.rows[0] as Record<string, unknown>)?.cnt ?? 0);
 
   if (msgCount > 0 && c.req.query('force') !== 'true') {
-    return c.json({
-      warning: true,
-      message_count: msgCount,
-      message: `This voice profile has ${msgCount} message(s). Add ?force=true to delete anyway.`,
-    }, 409);
+    return c.json(
+      {
+        warning: true,
+        message_count: msgCount,
+        message: `This voice profile has ${msgCount} message(s). Add ?force=true to delete anyway.`,
+      },
+      409,
+    );
   }
 
   // ElevenLabs에서도 삭제
