@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:40)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:48)
 
 - 진행 중 Phase: 3
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35 (11개)
-- 진행 중 이슈: 없음 (다음: Phase 3 #13 음성 업로드 API)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37 (12개)
+- 진행 중 이슈: 없음 (다음: Phase 3 #14 화자 분리 mock)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 12:48 · Issue #37 · 원본 오디오 업로드 API + VoiceStorage 추상화
+- 브랜치: `feature/issue-37-voice-upload-api`
+- PR: #38 (merged)
+- 변경 파일: 9개 (신규 2 + 수정 7)
+- 요약: `packages/voice` 에 `VoiceStorage` 인터페이스 + `InMemoryVoiceStorage` 추가 (`// TODO: real object storage integration`). 마이그레이션 #3 `voice-uploads` 테이블 추가 (object_key/mime_type/size_bytes/duration_ms/original_name + 인덱스 2종). 백엔드 `POST /voice/upload` 라우트 신규 — multipart audio + 선택 durationMs/originalName, 10 MiB 제한, `audio/*` MIME 강제. 테스트 11건 추가 (voice 패키지 4 / backend voice.upload 6 / migrations 1).
+- 다음: #14 화자 분리 mock (업로드된 object_key → MockVoiceProvider.separate 연결)
+- 리스크: `InMemoryVoiceStorage` 는 Workers 리퀘스트 간 공유 불가 — 실환경에서 R2/S3 어댑터 필요. 기존 `/voice/clone` 은 아직 ElevenLabs 직접 호출 상태 (팔로업).
+
+---
 
 ## 2026-04-21 12:40 · Issue #35 · `packages/voice` 어댑터 인터페이스 + MockVoiceProvider
 - 브랜치: `feature/issue-35-voice-provider-scaffold`
