@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildCreatePayload,
+  formatRepeatDays,
   parseRepeatDays,
   validateAlarmForm,
   type AlarmFormInput,
@@ -32,6 +33,30 @@ describe('parseRepeatDays', () => {
   });
   it('비정수 필터링', () => {
     expect(parseRepeatDays([1, '2', 3.5, null, 4])).toEqual([1, 4]);
+  });
+});
+
+describe('formatRepeatDays', () => {
+  it('빈 배열 → 한 번만', () => {
+    expect(formatRepeatDays([])).toBe('한 번만');
+  });
+  it('7개 → 매일', () => {
+    expect(formatRepeatDays([0, 1, 2, 3, 4, 5, 6])).toBe('매일');
+  });
+  it('[1,2,3,4,5] → 평일', () => {
+    expect(formatRepeatDays([1, 2, 3, 4, 5])).toBe('평일');
+  });
+  it('[0,6] → 주말', () => {
+    expect(formatRepeatDays([0, 6])).toBe('주말');
+  });
+  it('개별 요일 표시', () => {
+    expect(formatRepeatDays([1, 3, 5])).toBe('월, 수, 금');
+  });
+  it('문자열 JSON 파싱', () => {
+    expect(formatRepeatDays('[0,6]')).toBe('주말');
+  });
+  it('null → 한 번만', () => {
+    expect(formatRepeatDays(null)).toBe('한 번만');
   });
 });
 

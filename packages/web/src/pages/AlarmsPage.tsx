@@ -14,10 +14,8 @@ import type { Alarm, Message, VoiceProfile, PresetCategory } from '../types';
 import { AlarmSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
 import { VoiceDetailModal } from './VoicesPage';
-import { validateAlarmForm, parseRepeatDays } from '../lib/alarmForm';
+import { validateAlarmForm, parseRepeatDays, formatRepeatDays, DAYS } from '../lib/alarmForm';
 import { buildFamilyAlarmLabel } from '../lib/familyAlarmLabel';
-
-const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 type AlarmFilter = 'all' | 'active' | 'inactive';
 
@@ -92,25 +90,6 @@ export default function AlarmsPage() {
       setShowCreate(false);
     },
   });
-
-  const formatRepeat = (days: number[] | string | null | undefined) => {
-    let parsed: number[] = [];
-    if (Array.isArray(days)) parsed = days.slice();
-    else if (typeof days === 'string' && days.length > 0) {
-      try {
-        const maybe: unknown = JSON.parse(days);
-        if (Array.isArray(maybe)) parsed = maybe.filter((n): n is number => Number.isInteger(n));
-      } catch {
-        parsed = [];
-      }
-    }
-    if (parsed.length === 0) return '한 번만';
-    if (parsed.length === 7) return '매일';
-    const sorted = parsed.slice().sort();
-    if (JSON.stringify(sorted) === JSON.stringify([1, 2, 3, 4, 5])) return '평일';
-    if (JSON.stringify(sorted) === JSON.stringify([0, 6])) return '주말';
-    return sorted.map((d) => DAYS[d]).join(', ');
-  };
 
   const filteredAlarms = (() => {
     if (!alarms) return [];
@@ -249,7 +228,7 @@ export default function AlarmsPage() {
                       ) : null;
                     })()}
                   </div>
-                  <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeat(alarm.repeat_days)}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeatDays(alarm.repeat_days)}</p>
                   <div className="mt-2">
                     <span
                       className="text-sm text-[var(--color-primary)] font-medium hover:underline cursor-pointer"
