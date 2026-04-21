@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:22)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:28)
 
-- 진행 중 Phase: 6 진행 중 (#34~#35 완료). 다음 #36 가족 알람 추가 API(voice).
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81 (34개). Phase 1~5 완료.
-- 진행 중 이슈: 없음 (다음: Phase 6 #36 가족 알람 추가 API voice 모드 — 음성 업로드/더빙 mock)
+- 진행 중 Phase: 6 진행 중 (#34~#36 완료). 다음 #37 웹 가족 알람 편집 화면.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83 (35개). Phase 1~5 완료.
+- 진행 중 이슈: 없음 (다음: Phase 6 #37 웹 가족 알람 편집 화면 — 그룹 멤버 선택/시간/메시지/허용 여부 노출)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 15:28 · Issue #83 · 가족 알람 추가 API (voice 모드)
+- 브랜치: `feature/issue-83-family-alarm-voice`
+- PR: #84 (merged)
+- 변경 파일: 2개 (수정)
+- 요약: `POST /api/family/alarms/voice { recipient_user_id, wake_at, voice_upload_id, label?, dub_target_language?, repeat_days? }` 신규. 검증 체인은 text 모드와 동일하되 voice_upload 소유권(송신자 PK 일치) 검증 추가 + `dub_target_language ∈ {ko,en,ja,zh}` 화이트리스트. 더빙 경로 — `dub_jobs` INSERT(user_id=송신자 google_id, target_language, status='processing', result_message_id=신규 message.id) + `messages.audio_url=NULL`. 원본 경로 — `messages.audio_url = voice_uploads.object_key` 로 즉시 재생 가능. `messages.category='family-voice'` + `alarms.mode='sound-only'` 로 text 모드와 분리. label 기본값 `'가족이 보낸 음성'`, 200자 제한. `// TODO: real perso.ai/elevenlabs integration` 주석 — 실제 더빙 변환은 기존 `/api/dub` 경로에서 처리. vitest 11건 추가 (정상 기본/라벨/더빙 3 + 400×5 + 403×2 + 포맷) → 백엔드 398→409 / 28 파일 그린, tsc 0 에러.
+- 다음: Phase 6 #37 웹 가족 알람 편집 화면 — 그룹 멤버 선택 + 시간/메시지/반복요일 + voice 모드 업로드 + 더빙 언어 선택 + 수신자 `allow_family_alarms` 뱃지 노출. `packages/web/src/pages/FamilyAlarmsPage.tsx` 와 API 클라이언트 함수.
+- 리스크: 더빙 완료 콜백/폴링 미구현 — `dub_jobs.status` 는 'processing' 에 멈춰있음. 실제 오디오 파일은 object_key 가 public URL 이 아닌 경우 서명 URL 변환 필요(재생 경로에서 래핑 예정). 수신자 재생 UX (#38/#39) 범위 밖. 동일 시간 중복 예약 가드 없음.
+
+---
 
 ## 2026-04-21 15:22 · Issue #81 · 가족 알람 추가 API (text 모드)
 - 브랜치: `feature/issue-81-family-alarm-text`
