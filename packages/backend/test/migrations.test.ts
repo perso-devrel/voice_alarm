@@ -83,4 +83,42 @@ describe('migrations', () => {
     expect(all).toContain('idx_alarms_voice_profile');
     expect(all).toContain('idx_alarms_speaker');
   });
+
+  it('마이그레이션 #6 에서 plans / subscriptions 테이블과 인덱스를 추가한다', () => {
+    const m = migrations.find((x) => x.id === 6);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS plans');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS subscriptions');
+    expect(all).toContain("CHECK(plan_type IN ('free','personal','family'))");
+    expect(all).toContain("CHECK(status IN ('active','expired','cancelled'))");
+    expect(all).toContain('period_days');
+    expect(all).toContain('max_members');
+    expect(all).toContain('price_krw');
+    expect(all).toContain('plan_group_id');
+    expect(all).toContain('expires_at');
+    expect(all).toContain('idx_plans_key');
+    expect(all).toContain('idx_subscriptions_user');
+    expect(all).toContain('idx_subscriptions_status');
+    expect(all).toContain('idx_subscriptions_expires');
+  });
+
+  it('마이그레이션 #6 에서 기본 플랜 3종(free / plus_personal / family) 을 시드한다', () => {
+    const m = migrations.find((x) => x.id === 6);
+    expect(m).toBeDefined();
+    const inserts = m!.statements.filter((s) => s.trim().startsWith('INSERT'));
+    expect(inserts.length).toBe(3);
+    const all = inserts.join('\n');
+    expect(all).toContain("'free'");
+    expect(all).toContain("'plus_personal'");
+    expect(all).toContain("'family'");
+    // 가족 플랜은 max_members=6, 30일 주기, 9900원
+    expect(all).toMatch(/'family',[^\n]*'family',\s*30,\s*6,\s*9900/);
+    // 개인 플랜은 4900원, 1인, 30일 주기
+    expect(all).toMatch(/'plus_personal',[^\n]*'personal',\s*30,\s*1,\s*4900/);
+    // INSERT OR IGNORE 로 재실행 안전성 확보
+    for (const stmt of inserts) {
+      expect(stmt).toContain('INSERT OR IGNORE');
+    }
+  });
 });
