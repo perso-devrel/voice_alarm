@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:48)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:05)
 
 - 진행 중 Phase: 3
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37 (12개)
-- 진행 중 이슈: 없음 (다음: Phase 3 #14 화자 분리 mock)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39 (13개)
+- 진행 중 이슈: 없음 (다음: Phase 3 #15 화자 선택 UI 웹)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:05 · Issue #39 · 업로드 오디오 화자 분리 mock
+- 브랜치: `feature/issue-39-voice-separate-mock`
+- PR: #40 (merged)
+- 변경 파일: 5개 (수정)
+- 요약: 마이그레이션 #4 `voice-speakers` 테이블/인덱스 추가. `POST /voice/uploads/:uploadId/separate` — 업로드 소유권 확인 후 `MockVoiceProvider.separate` 호출, 기존 세그먼트 삭제 후 새 `화자 N` 라벨로 INSERT. `GET /voice/uploads/:uploadId/speakers` — 시작 시간 오름차순 조회. `helpers.createMockDB().reset()` 이 `calls`+`results` 양쪽 큐를 비우도록 확장(테스트 격리 픽스). `// NEEDS_VERIFICATION: real diarization` 마커로 실연동 지점 표시. vitest 9건 추가 (voice 분리 8 / 마이그레이션 1).
+- 다음: #15 화자 선택 UI 웹 (분리된 세그먼트 시각화 + 라벨 편집)
+- 리스크: `/voice/diarize` 기존 라우트는 여전히 ElevenLabs 호출 경로 유지(별도 팔로업). 화자 라벨은 `화자 1/2/3` 고정 — 사용자 편집은 다음 이슈에서 처리.
+
+---
 
 ## 2026-04-21 12:48 · Issue #37 · 원본 오디오 업로드 API + VoiceStorage 추상화
 - 브랜치: `feature/issue-37-voice-upload-api`
