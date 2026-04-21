@@ -495,4 +495,157 @@ family.delete('/groups/:groupId/members/:userId', async (c) => {
   return c.json({ success: true, removed_user_id: targetUserId });
 });
 
+const WAKE_AT_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const MESSAGE_TEXT_MAX = 500;
+
+function normalizeRepeatDays(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return [];
+  const filtered = raw
+    .filter((n): n is number => Number.isInteger(n) && n >= 0 && n <= 6)
+    .sort((a, b) => a - b);
+  return Array.from(new Set(filtered));
+}
+
+/**
+ * POST /family/alarms { recipient_user_id, wake_at, message_text, repeat_days?, voice_profile_id? }
+ * 같은 가족 그룹 멤버에게 text 모드 알람을 예약한다.
+ * - 수신자 allow_family_alarms=0 이면 403
+ * - 수신자 voice_profile 1개 이상 필요 (TTS mock)
+ * - messages INSERT → alarms INSERT (user_id=송신자 google_id, target_user_id=수신자 google_id)
+ */
+family.post('/alarms', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  type AlarmBody = {
+    recipient_user_id?: unknown;
+    wake_at?: unknown;
+    message_text?: unknown;
+    repeat_days?: unknown;
+    voice_profile_id?: unknown;
+  };
+  const body: AlarmBody = await c.req.json<AlarmBody>().catch(() => ({}) as AlarmBody);
+
+  const recipientPk =
+    typeof body.recipient_user_id === 'string' ? body.recipient_user_id.trim() : '';
+  const wakeAt = typeof body.wake_at === 'string' ? body.wake_at.trim() : '';
+  const messageText =
+    typeof body.message_text === 'string' ? body.message_text.trim() : '';
+
+  if (!recipientPk) {
+    return c.json({ error: 'recipient_user_id 가 필요합니다' }, 400);
+  }
+  if (!WAKE_AT_RE.test(wakeAt)) {
+    return c.json({ error: 'wake_at 는 HH:mm 형식이어야 합니다' }, 400);
+  }
+  if (messageText.length === 0) {
+    return c.json({ error: 'message_text 가 비어있습니다' }, 400);
+  }
+  if (messageText.length > MESSAGE_TEXT_MAX) {
+    return c.json({ error: `message_text 는 ${MESSAGE_TEXT_MAX}자 이하여야 합니다` }, 400);
+  }
+
+  const senderPk = await resolveUserPk(db, userId);
+  if (!senderPk) return c.json({ error: '사용자를 찾을 수 없습니다' }, 404);
+  if (senderPk === recipientPk) {
+    return c.json({ error: '자기 자신에게는 가족 알람을 보낼 수 없습니다' }, 400);
+  }
+
+  const senderGroupRes = await db.execute({
+    sql: `SELECT plan_group_id FROM plan_group_members WHERE user_id = ?`,
+    args: [senderPk],
+  });
+  if (senderGroupRes.rows.length === 0) {
+    return c.json({ error: '가족 그룹에 속해 있지 않습니다' }, 403);
+  }
+  const senderGroupIds = new Set(
+    senderGroupRes.rows.map((r) => String(r.plan_group_id)),
+  );
+
+  const recipientMemberRes = await db.execute({
+    sql: `SELECT plan_group_id FROM plan_group_members WHERE user_id = ?`,
+    args: [recipientPk],
+  });
+  const shared = recipientMemberRes.rows.find((r) =>
+    senderGroupIds.has(String(r.plan_group_id)),
+  );
+  if (!shared) {
+    return c.json({ error: '같은 가족 그룹의 멤버가 아닙니다' }, 403);
+  }
+
+  const recipientRes = await db.execute({
+    sql: `SELECT id, google_id, allow_family_alarms FROM users WHERE id = ?`,
+    args: [recipientPk],
+  });
+  if (recipientRes.rows.length === 0) {
+    return c.json({ error: '수신자를 찾을 수 없습니다' }, 404);
+  }
+  const recipient = recipientRes.rows[0];
+  if (Number(recipient.allow_family_alarms ?? 0) !== 1) {
+    return c.json({ error: '수신자가 가족 알람을 허용하지 않았습니다' }, 403);
+  }
+
+  let voiceProfileId =
+    typeof body.voice_profile_id === 'string' ? body.voice_profile_id.trim() : '';
+  if (voiceProfileId) {
+    const owned = await db.execute({
+      sql: `SELECT id FROM voice_profiles WHERE id = ? AND user_id = ?`,
+      args: [voiceProfileId, recipientPk],
+    });
+    if (owned.rows.length === 0) {
+      return c.json({ error: '지정한 voice_profile 이 수신자 소유가 아닙니다' }, 400);
+    }
+  } else {
+    const latest = await db.execute({
+      sql: `SELECT id FROM voice_profiles WHERE user_id = ?
+            ORDER BY created_at DESC LIMIT 1`,
+      args: [recipientPk],
+    });
+    if (latest.rows.length === 0) {
+      return c.json({ error: '수신자의 음성 프로필이 없습니다' }, 400);
+    }
+    voiceProfileId = String(latest.rows[0].id);
+  }
+
+  const repeatDays = normalizeRepeatDays(body.repeat_days);
+  const messageId = crypto.randomUUID();
+  const alarmId = crypto.randomUUID();
+
+  // TODO: real perso.ai/elevenlabs integration — audio_url 은 TTS 렌더링 완료 후 채움
+  await db.execute({
+    sql: `INSERT INTO messages (id, user_id, voice_profile_id, text, audio_url, category)
+          VALUES (?, ?, ?, ?, NULL, 'family')`,
+    args: [messageId, recipientPk, voiceProfileId, messageText],
+  });
+
+  await db.execute({
+    sql: `INSERT INTO alarms (id, user_id, target_user_id, message_id, time, repeat_days, mode)
+          VALUES (?, ?, ?, ?, ?, ?, 'tts')`,
+    args: [
+      alarmId,
+      userId,
+      String(recipient.google_id),
+      messageId,
+      wakeAt,
+      JSON.stringify(repeatDays),
+    ],
+  });
+
+  return c.json(
+    {
+      alarm: {
+        id: alarmId,
+        sender_user_id: senderPk,
+        recipient_user_id: recipientPk,
+        wake_at: wakeAt,
+        repeat_days: repeatDays,
+        mode: 'tts',
+        voice_profile_id: voiceProfileId,
+      },
+      message: { id: messageId, text: messageText, category: 'family' },
+    },
+    201,
+  );
+});
+
 export default family;
