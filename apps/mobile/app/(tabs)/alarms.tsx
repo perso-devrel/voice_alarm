@@ -28,6 +28,7 @@ import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { parseRepeatDays } from '../../src/lib/alarmForm';
+import { getAlarmModeBadge } from '../../src/lib/alarmPlayback';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 
@@ -239,6 +240,11 @@ export default function AlarmsScreen() {
             </View>
             <View style={styles.alarmMeta}>
               <Text style={[styles.alarmVoice, !item.is_active && styles.textInactive]}>🗣️ {item.voice_name}</Text>
+              <View style={styles.modeBadge}>
+                <Text style={styles.modeBadgeText}>
+                  {getAlarmModeBadge(item.mode).emoji} {getAlarmModeBadge(item.mode).label}
+                </Text>
+              </View>
               <Text style={[styles.alarmMessage, !item.is_active && styles.textInactive]} numberOfLines={1}>
                 "{item.message_text}"
               </Text>
@@ -457,6 +463,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
     marginTop: 2,
+  },
+  modeBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.surfaceVariant,
+  },
+  modeBadgeText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.primary,
+    fontWeight: '600',
   },
   emptyState: {
     flex: 1,
