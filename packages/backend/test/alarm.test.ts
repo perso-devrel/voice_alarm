@@ -52,6 +52,101 @@ describe('GET /alarm — 알람 목록', () => {
     expect(body.alarms).toHaveLength(1);
     expect(body.alarms[0].time).toBe('07:00');
   });
+
+  it('목록 응답이 정규화된다 — repeat_days 배열, is_active boolean, mode 기본값', async () => {
+    mockDB.pushResult([{ total: 1 }]);
+    mockDB.pushResult([
+      {
+        id: ID.alarm,
+        time: '07:00',
+        is_active: 1,
+        repeat_days: '[1,3,5]',
+        mode: null,
+        voice_profile_id: null,
+        speaker_id: null,
+        message_text: 'hi',
+      },
+    ]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/alarm'));
+    const body = await res.json();
+    expect(body.alarms[0].repeat_days).toEqual([1, 3, 5]);
+    expect(body.alarms[0].is_active).toBe(true);
+    expect(body.alarms[0].mode).toBe('tts');
+    expect(body.alarms[0].voice_profile_id).toBeNull();
+    expect(body.alarms[0].speaker_id).toBeNull();
+  });
+
+  it('목록: mode=sound-only + voice_profile_id/speaker_id 를 그대로 노출', async () => {
+    const vp = '40000000-0000-4000-8000-000000000001';
+    const sp = '50000000-0000-4000-8000-000000000001';
+    mockDB.pushResult([{ total: 1 }]);
+    mockDB.pushResult([
+      {
+        id: ID.alarm,
+        time: '08:00',
+        is_active: 0,
+        repeat_days: '[]',
+        mode: 'sound-only',
+        voice_profile_id: vp,
+        speaker_id: sp,
+      },
+    ]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/alarm'));
+    const body = await res.json();
+    expect(body.alarms[0].mode).toBe('sound-only');
+    expect(body.alarms[0].is_active).toBe(false);
+    expect(body.alarms[0].voice_profile_id).toBe(vp);
+    expect(body.alarms[0].speaker_id).toBe(sp);
+  });
+
+  it('목록: repeat_days 가 잘못된 JSON 이어도 빈 배열로 fallback', async () => {
+    mockDB.pushResult([{ total: 1 }]);
+    mockDB.pushResult([
+      {
+        id: ID.alarm,
+        time: '07:00',
+        is_active: 1,
+        repeat_days: 'not-json',
+      },
+    ]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/alarm'));
+    const body = await res.json();
+    expect(body.alarms[0].repeat_days).toEqual([]);
+  });
+});
+
+describe('GET /alarm/:id — 단일 조회 정규화', () => {
+  it('단일 조회 응답이 정규화된다', async () => {
+    mockDB.pushResult([
+      {
+        id: ID.alarm,
+        time: '09:00',
+        is_active: 1,
+        repeat_days: '[0,6]',
+        mode: 'tts',
+        voice_profile_id: null,
+        speaker_id: null,
+      },
+    ]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', `/alarm/${ID.alarm}`));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.alarm.repeat_days).toEqual([0, 6]);
+    expect(body.alarm.is_active).toBe(true);
+    expect(body.alarm.mode).toBe('tts');
+    expect(body.alarm.voice_profile_id).toBeNull();
+  });
+
+  it('존재하지 않으면 404', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', `/alarm/${ID.alarm404}`));
+    expect(res.status).toBe(404);
+  });
 });
 
 describe('POST /alarm — 알람 생성', () => {
@@ -225,6 +320,20 @@ describe('POST /alarm — 알람 생성', () => {
     expect(body.alarm.mode).toBe('tts');
     const insert = mockDB.calls.find((c) => c.sql.includes('INSERT INTO alarms'));
     expect(insert!.args).toContain('tts');
+  });
+
+  it('POST 응답에 voice_profile_id/speaker_id 가 null 로 명시된다', async () => {
+    mockDB.pushResult([{ plan: 'plus' }]);
+    mockDB.pushResult([{ id: ID.message }]);
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00' }),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.alarm).toHaveProperty('voice_profile_id', null);
+    expect(body.alarm).toHaveProperty('speaker_id', null);
   });
 });
 
