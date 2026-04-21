@@ -338,6 +338,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.sm,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   devButtonDisabled: {
     opacity: 0.5,
