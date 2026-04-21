@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:17)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:23)
 
-- 진행 중 Phase: 4 완료 → Phase 5 진입
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61 (24개). **Phase 4 (TASK.md #19~#25) 전부 완료.**
-- 진행 중 이슈: 없음 (다음: Phase 5 #26 Plan·Subscription 모델 — 개인/가족 이용권 스키마, 결제는 스텁)
+- 진행 중 Phase: 5 진행 중 (#26 완료, 다음 #27 결제 스텁)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63 (25개). Phase 4 완료 + Phase 5 #26 완료.
+- 진행 중 이슈: 없음 (다음: Phase 5 #27 스텁 결제 엔드포인트 — 실 PG 미연동, "완료" 더미 응답 → Subscription 생성)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:23 · Issue #63 · Plan·Subscription 모델 및 기본 플랜 3종 시드 (Phase 5 진입)
+- 브랜치: `feature/issue-63-plan-subscription-model`
+- PR: #64 (merged)
+- 변경 파일: 2개 (수정)
+- 요약: 마이그레이션 #6 추가 — `plans(id, key UNIQUE, name, plan_type free|personal|family, period_days, max_members, price_krw, is_active)` 와 `subscriptions(id, user_id, plan_id, plan_group_id nullable, status active|expired|cancelled, starts_at, expires_at)` 테이블 및 인덱스 4종(idx_plans_key, idx_subscriptions_user/status/expires). 기본 플랜 3종 `INSERT OR IGNORE` 시드 — `free`(무기한/1인/0원), `plus_personal`(30일/1인/4900원), `family`(30일/6인/9900원). `users.plan` 컬럼은 백워드 호환 위해 유지(활성 subscription 과 동기화 로직은 #27 결제 스텁에서 구현). `plan_group_id` 는 #31 가족 플랜 그룹 연결 이전까지 nullable. vitest 2건 추가 (테이블/인덱스/CHECK/시드 검증) → migrations 11건 / 전체 300→302건 그린, tsc 에러 없음.
+- 다음: Phase 5 #27 스텁 결제 엔드포인트 — 실 PG 미연동, `POST /billing/checkout/{plan_key}` 가 더미 "완료" 응답을 반환하며 subscription row 생성 + users.plan 동기화.
+- 리스크: 기존 사용자의 `users.plan` 값이 free 로 남아 있어도 활성 subscription 이 없는 한 일관성 문제는 없음. 결제 연동 이후 주기적 expiry 스윕 필요.
+
+---
 
 ## 2026-04-21 14:17 · Issue #61 · 알람 미리듣기 액션 라우터 + 🔈 버튼 (Phase 4 종료)
 - 브랜치: `feature/issue-61-mobile-tts-preview-action`
