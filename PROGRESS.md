@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:12)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:20)
 
-- 진행 중 Phase: 7 진행 중 (#40 완료). 다음 #41 경험치 규칙 설계 문서.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91 (39개). Phase 1~6 완료.
-- 진행 중 이슈: 없음 (다음: Phase 7 #41 경험치 규칙 설계 문서)
+- 진행 중 Phase: 7 진행 중 (#40~#41 완료). 다음 #42 XP 지급 API.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93 (40개). Phase 1~6 완료.
+- 진행 중 이슈: 없음 (다음: Phase 7 #42 XP 지급 API)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 16:20 · Issue #93 · 경험치 규칙 문서 + 순수 함수
+- 브랜치: `feature/issue-93-xp-rules`
+- PR: #94 (merged)
+- 변경 파일: 3개 (신규)
+- 요약: Phase 7 #41 — 어떤 행동이 몇 XP 를 주는지 한 곳에서 결정. `docs/XP_RULES.md` 한국어 문서에 이벤트→XP/애정도 매핑(정상 완료 30/2, 스누즈 5/0, 강제 종료 0/0, 가족 알람 수신 10/3, 친구 초대 50/5) + 일일 캡 200 + 설계 근거(스누즈 파밍 차단 비율, 가족 알람 XP 는 낮지만 애정도 는 높게, 친구 초대는 1회성 부스터) + 엣지 케이스(earned<=0/NaN/음수 already/cap=0) 정리. `packages/backend/src/lib/xpRules.ts` — `XpEvent` 유니온 5종, `DAILY_XP_CAP=200`, `computeXpForEvent`·`computeAffectionForEvent`·`isXpEvent` 런타임 가드, `applyDailyXpCap(earned, already, cap?)` → `{grantedXp, capped, remainingCap}`, `computeGrant` 단일 진입점(애정도는 캡 영향 받지 않음). vitest 19건(매핑 5 + 가드 2 + 캡 8 + grant 4) → 백엔드 429→448 / 31 파일 그린, tsc 0 에러.
+- 다음: Phase 7 #42 XP 지급 API — `POST /api/characters/xp { event, client_nonce? }` 신설. `characters.daily_xp` / `daily_xp_reset_at` 컬럼 추가하거나 `character_xp_logs` 테이블로 지급 이력 관리. `computeGrant` 호출 후 트랜잭션으로 `xp += grantedXp, affection += affection` 업데이트 + `level`/`stage` DB 재계산. `(user_id, client_nonce)` 유니크 인덱스로 idempotent 보장.
+- 리스크: 문서와 코드의 수치가 손으로 동기화됨 — 향후 값 변경 시 두 곳 모두 수정해야 함. 지급 이력 테이블 스키마는 아직 미결정(#42 에서 확정). `alarm_snoozed` 5 XP 가 남용되면 Phase 10 에서 0 또는 2 로 강등 고려.
+
+---
 
 ## 2026-04-21 16:12 · Issue #91 · 캐릭터 모델 + XP/성장단계 헬퍼
 - 브랜치: `feature/issue-91-character-model`
