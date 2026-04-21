@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:36)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:40)
 
-- 진행 중 Phase: 2 완료 → 3 진입 예정
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33 (10개)
-- 진행 중 이슈: 없음 (다음: Phase 3 #12 `packages/voice` 어댑터 인터페이스)
+- 진행 중 Phase: 3
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35 (11개)
+- 진행 중 이슈: 없음 (다음: Phase 3 #13 음성 업로드 API)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 12:40 · Issue #35 · `packages/voice` 어댑터 인터페이스 + MockVoiceProvider
+- 브랜치: `feature/issue-35-voice-provider-scaffold`
+- PR: #36 (merged)
+- 변경 파일: 8개 (신규 7 + package-lock)
+- 요약: `@voice-alarm/voice` 워크스페이스 신규. `VoiceProvider` 인터페이스 (`enroll`·`synthesize`·`separate`) 와 결정론적 `MockVoiceProvider` 구현. zod 기반 입력/결과 스키마로 검증. `// TODO: real perso.ai integration` · `// TODO: real elevenlabs integration` 주석으로 실연동 지점 명시. vitest 7건 추가 (enroll 3 / synthesize 2 / separate 2). **Phase 3 진입.**
+- 다음: #13 음성 업로드 API (multipart + fixture)
+- 리스크: 백엔드 라우트에 아직 연결 안 됨 — 다음 이슈에서 주입. `separate` 는 해시 기반 의사-감지로 실제 화자 감지 아님(주석 표기).
+
+---
 
 ## 2026-04-21 12:36 · Issue #33 · 모바일 로그인·가입 화면 (이메일+비밀번호)
 - 브랜치: `feature/issue-33-mobile-email-login`
