@@ -60,14 +60,32 @@ billing.post('/checkout', async (c) => {
   const periodDays = Number(plan.period_days) || 30;
   const startsAt = new Date();
   const expiresAt = new Date(startsAt.getTime() + periodDays * 24 * 60 * 60 * 1000);
+  const maxMembers = Number(plan.max_members) || 1;
+
+  // 가족 플랜은 그룹 + owner 멤버를 선행 생성하고 subscription 에 plan_group_id 연결 (#31)
+  let planGroupId: string | null = null;
+  if (planType === 'family') {
+    planGroupId = crypto.randomUUID();
+    await db.execute({
+      sql: `INSERT INTO plan_groups (id, owner_user_id, plan_id, max_members)
+            VALUES (?, ?, ?, ?)`,
+      args: [planGroupId, userPk, String(plan.id), maxMembers],
+    });
+    await db.execute({
+      sql: `INSERT INTO plan_group_members (id, plan_group_id, user_id, role)
+            VALUES (?, ?, ?, 'owner')`,
+      args: [crypto.randomUUID(), planGroupId, userPk],
+    });
+  }
 
   await db.execute({
-    sql: `INSERT INTO subscriptions (id, user_id, plan_id, status, starts_at, expires_at)
-          VALUES (?, ?, ?, 'active', ?, ?)`,
+    sql: `INSERT INTO subscriptions (id, user_id, plan_id, plan_group_id, status, starts_at, expires_at)
+          VALUES (?, ?, ?, ?, 'active', ?, ?)`,
     args: [
       subscriptionId,
       userPk,
       String(plan.id),
+      planGroupId,
       startsAt.toISOString(),
       expiresAt.toISOString(),
     ],
@@ -105,6 +123,7 @@ billing.post('/checkout', async (c) => {
       id: subscriptionId,
       user_id: userPk,
       plan_id: String(plan.id),
+      plan_group_id: planGroupId,
       status: 'active',
       starts_at: startsAt.toISOString(),
       expires_at: expiresAt.toISOString(),
@@ -115,9 +134,16 @@ billing.post('/checkout', async (c) => {
       name: String(plan.name),
       plan_type: planType,
       period_days: periodDays,
-      max_members: Number(plan.max_members),
+      max_members: maxMembers,
       price_krw: Number(plan.price_krw),
     },
+    plan_group: planGroupId
+      ? {
+          id: planGroupId,
+          owner_user_id: userPk,
+          max_members: maxMembers,
+        }
+      : null,
     voucher: {
       id: voucherId,
       code: voucherCode,

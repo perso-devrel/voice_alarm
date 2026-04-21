@@ -119,6 +119,21 @@ describe('migrations', () => {
     expect(all).toContain('idx_voucher_codes_status');
   });
 
+  it('마이그레이션 #8 에서 plan_groups / plan_group_members 테이블과 인덱스를 추가한다', () => {
+    const m = migrations.find((x) => x.id === 8);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS plan_groups');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS plan_group_members');
+    expect(all).toContain('owner_user_id TEXT NOT NULL REFERENCES users(id)');
+    expect(all).toContain('max_members INTEGER NOT NULL DEFAULT 6');
+    expect(all).toContain("CHECK(role IN ('owner','member'))");
+    expect(all).toContain('idx_plan_groups_owner');
+    expect(all).toContain('idx_plan_group_members_group');
+    expect(all).toContain('idx_plan_group_members_user');
+    expect(all).toContain('idx_plan_group_members_unique');
+  });
+
   it('마이그레이션 #6 에서 기본 플랜 3종(free / plus_personal / family) 을 시드한다', () => {
     const m = migrations.find((x) => x.id === 6);
     expect(m).toBeDefined();

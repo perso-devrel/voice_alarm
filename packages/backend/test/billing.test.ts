@@ -110,6 +110,73 @@ describe('POST /billing/checkout', () => {
     expect(insertVoucher?.args[3]).toBe(PLAN_FAMILY.id);
   });
 
+  it('family → plan_groups + owner 멤버 자동 생성, subscription.plan_group_id 연결', async () => {
+    mockDB.pushResult([PLAN_FAMILY]);
+    mockDB.pushResult([{ id: 'user-pk-1' }]);
+    mockDB.pushResult([], 1); // INSERT plan_groups
+    mockDB.pushResult([], 1); // INSERT plan_group_members
+    mockDB.pushResult([], 1); // INSERT subscription
+    mockDB.pushResult([], 1); // UPDATE users.plan
+    mockDB.pushResult([], 1); // INSERT voucher_code
+
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/billing/checkout', { plan_key: 'family' }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    const insertGroup = mockDB.calls.find((c) => c.sql.includes('INSERT INTO plan_groups'));
+    expect(insertGroup).toBeDefined();
+    expect(insertGroup?.args[1]).toBe('user-pk-1'); // owner_user_id
+    expect(insertGroup?.args[2]).toBe(PLAN_FAMILY.id); // plan_id
+    expect(insertGroup?.args[3]).toBe(6); // max_members
+
+    const insertMember = mockDB.calls.find((c) =>
+      c.sql.includes('INSERT INTO plan_group_members'),
+    );
+    expect(insertMember).toBeDefined();
+    expect(insertMember?.args[1]).toBe(insertGroup?.args[0]); // plan_group_id
+    expect(insertMember?.args[2]).toBe('user-pk-1'); // user_id
+    expect(insertMember?.sql).toContain("'owner'");
+
+    const insertSub = mockDB.calls.find((c) => c.sql.includes('INSERT INTO subscriptions'));
+    expect(insertSub).toBeDefined();
+    expect(insertSub?.args[3]).toBe(insertGroup?.args[0]); // plan_group_id
+    expect(body.subscription.plan_group_id).toBe(insertGroup?.args[0]);
+    expect(body.plan_group).toMatchObject({
+      owner_user_id: 'user-pk-1',
+      max_members: 6,
+    });
+    expect(body.plan_group.id).toBe(insertGroup?.args[0]);
+  });
+
+  it('plus_personal 결제는 plan_groups/plan_group_members INSERT 를 호출하지 않고 plan_group_id 도 null', async () => {
+    mockDB.pushResult([PLAN_PLUS]);
+    mockDB.pushResult([{ id: 'user-pk-1' }]);
+    mockDB.pushResult([], 1);
+    mockDB.pushResult([], 1);
+    mockDB.pushResult([], 1);
+
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/billing/checkout', { plan_key: 'plus_personal' }),
+    );
+    const body = await res.json();
+
+    const insertGroup = mockDB.calls.find((c) => c.sql.includes('INSERT INTO plan_groups'));
+    expect(insertGroup).toBeUndefined();
+    const insertMember = mockDB.calls.find((c) =>
+      c.sql.includes('INSERT INTO plan_group_members'),
+    );
+    expect(insertMember).toBeUndefined();
+
+    const insertSub = mockDB.calls.find((c) => c.sql.includes('INSERT INTO subscriptions'));
+    expect(insertSub?.args[3]).toBeNull(); // plan_group_id
+    expect(body.subscription.plan_group_id).toBeNull();
+    expect(body.plan_group).toBeNull();
+  });
+
   it('subscription.expires_at 는 starts_at + period_days 후', async () => {
     mockDB.pushResult([PLAN_PLUS]);
     mockDB.pushResult([{ id: 'user-pk-1' }]);
