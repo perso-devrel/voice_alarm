@@ -20,6 +20,7 @@ import statsRoutes from './routes/stats';
 import dubRoutes from './routes/dub';
 import billingRoutes from './routes/billing';
 import familyRoutes from './routes/family';
+import characterRoutes from './routes/character';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -115,6 +116,7 @@ api.route('/stats', statsRoutes);
 api.route('/dub', dubRoutes);
 api.route('/billing', billingRoutes);
 api.route('/family', familyRoutes);
+api.route('/characters', characterRoutes);
 
 app.route('/api', api);
 

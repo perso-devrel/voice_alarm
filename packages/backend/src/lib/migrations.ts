@@ -318,6 +318,26 @@ export const migrations: Migration[] = [
       `ALTER TABLE users ADD COLUMN allow_family_alarms INTEGER NOT NULL DEFAULT 0`,
     ],
   },
+  {
+    id: 11,
+    name: 'characters',
+    statements: [
+      // 1 사용자 = 1 캐릭터. 알람을 정상 종료하면 XP 획득 → level/stage 성장.
+      // stage: 'seed'(씨앗) → 'sprout'(새싹) → 'tree'(나무) → 'bloom'(꽃)
+      `CREATE TABLE IF NOT EXISTS characters (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL UNIQUE REFERENCES users(id),
+        name TEXT NOT NULL DEFAULT '내 캐릭터',
+        level INTEGER NOT NULL DEFAULT 1,
+        xp INTEGER NOT NULL DEFAULT 0,
+        affection INTEGER NOT NULL DEFAULT 0,
+        stage TEXT NOT NULL DEFAULT 'seed' CHECK(stage IN ('seed','sprout','tree','bloom')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_user ON characters(user_id)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

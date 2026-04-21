@@ -158,6 +158,19 @@ describe('migrations', () => {
     expect(all).toContain('INTEGER NOT NULL DEFAULT 0');
   });
 
+  it('마이그레이션 #11 에서 characters 테이블과 유니크 인덱스를 추가한다', () => {
+    const m = migrations.find((x) => x.id === 11);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS characters');
+    expect(all).toContain('user_id TEXT NOT NULL UNIQUE REFERENCES users(id)');
+    expect(all).toContain('level INTEGER NOT NULL DEFAULT 1');
+    expect(all).toContain('xp INTEGER NOT NULL DEFAULT 0');
+    expect(all).toContain('affection INTEGER NOT NULL DEFAULT 0');
+    expect(all).toContain("CHECK(stage IN ('seed','sprout','tree','bloom'))");
+    expect(all).toContain('idx_characters_user');
+  });
+
   it('마이그레이션 #6 에서 기본 플랜 3종(free / plus_personal / family) 을 시드한다', () => {
     const m = migrations.find((x) => x.id === 6);
     expect(m).toBeDefined();
