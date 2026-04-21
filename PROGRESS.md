@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:54)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:06)
 
 - 진행 중 Phase: 4
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55 (21개)
-- 진행 중 이슈: 없음 (다음: Phase 4 #23 모바일 알람 편집 화면 — mode/voice_profile/speaker UI)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57 (22개)
+- 진행 중 이슈: 없음 (다음: Phase 4 #24 알람 재생(sound-only) — mock 음성 파일 재생 파이프라인)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:06 · Issue #57 · 모바일 알람 편집 화면 mode 토글 및 voice_profile 연결
+- 브랜치: `feature/issue-57-mobile-alarm-mode-ui`
+- PR: #58 (merged)
+- 변경 파일: 8개 (신규 2 + 수정 6)
+- 요약: `apps/mobile/src/lib/alarmForm.ts` 신규 — 웹(#55)과 동일 계약의 `validateAlarmForm`/`buildCreatePayload`/`parseRepeatDays` 순수 헬퍼. `Alarm` 타입에 `mode / voice_profile_id / speaker_id` 추가, `repeat_days: number[] | string` 으로 호환 확장. `createAlarm`/`updateAlarm` 서비스 옵션 확장. `app/alarm/create.tsx`, `app/alarm/edit.tsx` 에 🗣 TTS / 🔊 원본 radio 토글과 음성 프로필 picker 추가 — sound-only 시 음성 프로필 미지정이면 제출 버튼 disabled + 안내. 기존 3곳의 `JSON.parse(alarm.repeat_days||'[]')` (`edit.tsx`, `(tabs)/alarms.tsx`, `services/notifications.ts`) 을 `parseRepeatDays` 로 안전 치환 — 백엔드 #20 정규화 이후 배열 응답과 과거 문자열 응답 양쪽 대응. jest 17건 추가 (buildCreatePayload 5 / validateAlarmForm 6 / parseRepeatDays 6), 모바일 33→50 / 전체 359→409.
+- 다음: Phase 4 #24 알람 재생 (sound-only) — 선택된 voice_profile 의 mock 음성 파일을 알람 시각에 재생하는 로컬 파이프라인. 이어서 #25 tts 재생(샘플 + 자막 오버레이).
+- 리스크: speaker picker 는 이번에도 연결 안 함(voice_profile 만). `repeat_days` 타입이 `number[] | string` 인 채 남아 있어 런타임 분기 필요 — Phase 10에서 타입 좁히기 후보.
+
+---
 
 ## 2026-04-21 13:54 · Issue #55 · 웹 알람 편집 화면 mode 토글 및 voice_profile 연결
 - 브랜치: `feature/issue-55-web-alarm-mode-ui`
