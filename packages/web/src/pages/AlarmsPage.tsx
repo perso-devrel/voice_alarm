@@ -14,6 +14,7 @@ import type { Alarm, Message, VoiceProfile, PresetCategory } from '../types';
 import { AlarmSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
 import { VoiceDetailModal } from './VoicesPage';
+import { validateAlarmForm } from '../lib/alarmForm';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -91,13 +92,23 @@ export default function AlarmsPage() {
     },
   });
 
-  const formatRepeat = (days: string) => {
-    const parsed: number[] = JSON.parse(days || '[]');
+  const formatRepeat = (days: number[] | string | null | undefined) => {
+    let parsed: number[] = [];
+    if (Array.isArray(days)) parsed = days.slice();
+    else if (typeof days === 'string' && days.length > 0) {
+      try {
+        const maybe: unknown = JSON.parse(days);
+        if (Array.isArray(maybe)) parsed = maybe.filter((n): n is number => Number.isInteger(n));
+      } catch {
+        parsed = [];
+      }
+    }
     if (parsed.length === 0) return '한 번만';
     if (parsed.length === 7) return '매일';
-    if (JSON.stringify(parsed.sort()) === JSON.stringify([1, 2, 3, 4, 5])) return '평일';
-    if (JSON.stringify(parsed.sort()) === JSON.stringify([0, 6])) return '주말';
-    return parsed.map((d) => DAYS[d]).join(', ');
+    const sorted = parsed.slice().sort();
+    if (JSON.stringify(sorted) === JSON.stringify([1, 2, 3, 4, 5])) return '평일';
+    if (JSON.stringify(sorted) === JSON.stringify([0, 6])) return '주말';
+    return sorted.map((d) => DAYS[d]).join(', ');
   };
 
   const filteredAlarms = (() => {
@@ -217,7 +228,15 @@ export default function AlarmsPage() {
                 }`}
               >
                 <div className="flex-1">
-                  <p className="text-4xl font-light text-[var(--color-text)]">{alarm.time}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-4xl font-light text-[var(--color-text)]">{alarm.time}</p>
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"
+                      aria-label={`재생 모드: ${alarm.mode === 'sound-only' ? '원본 음성' : 'TTS'}`}
+                    >
+                      {alarm.mode === 'sound-only' ? '🔊 원본' : '🗣️ TTS'}
+                    </span>
+                  </div>
                   <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeat(alarm.repeat_days)}</p>
                   <div className="mt-2">
                     <span
@@ -280,7 +299,13 @@ function AlarmCreateForm({
   isPending,
   error,
 }: {
-  onSubmit: (params: { message_id: string; time: string; repeat_days?: number[] }) => void;
+  onSubmit: (params: {
+    message_id: string;
+    time: string;
+    repeat_days?: number[];
+    mode?: 'tts' | 'sound-only';
+    voice_profile_id?: string;
+  }) => void;
   onCancel: () => void;
   isPending: boolean;
   error: string | null;
@@ -289,6 +314,7 @@ function AlarmCreateForm({
   const [time, setTime] = useState('07:00');
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [mode, setMode] = useState<'tts' | 'sound-only'>('tts');
   const [showPreset, setShowPreset] = useState(false);
   const [presetCategory, setPresetCategory] = useState<string | null>(null);
   const [presetText, setPresetText] = useState<string | null>(null);
@@ -340,8 +366,16 @@ function AlarmCreateForm({
   };
 
   const handleSubmit = () => {
-    if (!selectedMessageId) return;
-    onSubmit({ message_id: selectedMessageId, time, repeat_days: repeatDays });
+    const result = validateAlarmForm({
+      messageId: selectedMessageId,
+      time,
+      repeatDays,
+      mode,
+      voiceProfileId: mode === 'sound-only' ? presetVoiceId : null,
+    });
+    if (!result.ok) return;
+    const { message_id, time: t, repeat_days, mode: m, voice_profile_id } = result.payload;
+    onSubmit({ message_id, time: t, repeat_days, mode: m, voice_profile_id });
   };
 
   const selectedPresets = presets?.find((c: PresetCategory) => c.category === presetCategory);
@@ -384,6 +418,38 @@ function AlarmCreateForm({
           <button onClick={() => setRepeatDays([1, 2, 3, 4, 5])} className="text-xs text-[var(--color-primary)] hover:underline">평일</button>
           <button onClick={() => setRepeatDays([0, 6])} className="text-xs text-[var(--color-primary)] hover:underline">주말</button>
         </div>
+      </div>
+
+      {/* 재생 모드 */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">재생 모드</label>
+        <div className="flex gap-2" role="radiogroup" aria-label="재생 모드">
+          {(
+            [
+              ['tts', '🗣️ TTS 합성'],
+              ['sound-only', '🔊 원본 재생'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={mode === value}
+              onClick={() => setMode(value)}
+              className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                mode === value
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-bg)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {mode === 'sound-only' && !presetVoiceId && (
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
+            원본 재생은 아래 프리셋에서 음성 프로필을 먼저 선택해야 합니다.
+          </p>
+        )}
       </div>
 
       {/* 메시지 선택 */}
@@ -530,7 +596,7 @@ function AlarmCreateForm({
       <div className="flex gap-2">
         <button
           onClick={handleSubmit}
-          disabled={!selectedMessageId || isPending}
+          disabled={!selectedMessageId || isPending || (mode === 'sound-only' && !presetVoiceId)}
           className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition-colors disabled:opacity-50"
         >
           {isPending ? '생성 중...' : '⏰ 알람 설정하기'}
@@ -560,12 +626,21 @@ function AlarmEditInline({
   isPending: boolean;
   error: string | null;
 }) {
+  const initialRepeat: number[] = Array.isArray(alarm.repeat_days)
+    ? alarm.repeat_days.slice()
+    : (() => {
+        try {
+          const parsed: unknown = JSON.parse(String(alarm.repeat_days ?? '[]'));
+          return Array.isArray(parsed) ? parsed.filter((n): n is number => Number.isInteger(n)) : [];
+        } catch {
+          return [];
+        }
+      })();
   const [time, setTime] = useState(alarm.time);
-  const [repeatDays, setRepeatDays] = useState<number[]>(() => {
-    try { return JSON.parse(alarm.repeat_days || '[]'); } catch { return []; }
-  });
+  const [repeatDays, setRepeatDays] = useState<number[]>(initialRepeat);
   const [selectedMessageId, setSelectedMessageId] = useState(alarm.message_id);
   const [snoozeMinutes, setSnoozeMinutes] = useState(alarm.snooze_minutes ?? 5);
+  const [mode, setMode] = useState<'tts' | 'sound-only'>(alarm.mode ?? 'tts');
   const [editMsgSearch, setEditMsgSearch] = useState('');
 
   const { data: messages } = useQuery({
@@ -587,21 +662,24 @@ function AlarmEditInline({
     setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
-  const origRepeat = JSON.stringify((JSON.parse(alarm.repeat_days || '[]') as number[]).sort());
+  const origRepeat = JSON.stringify(initialRepeat.slice().sort());
+  const origMode = alarm.mode ?? 'tts';
   const hasChanges =
     time !== alarm.time ||
-    JSON.stringify(repeatDays.sort()) !== origRepeat ||
+    JSON.stringify(repeatDays.slice().sort()) !== origRepeat ||
     selectedMessageId !== alarm.message_id ||
-    snoozeMinutes !== (alarm.snooze_minutes ?? 5);
+    snoozeMinutes !== (alarm.snooze_minutes ?? 5) ||
+    mode !== origMode;
 
   const handleSave = () => {
     const params: Record<string, unknown> = {};
     if (time !== alarm.time) params.time = time;
-    if (JSON.stringify(repeatDays.sort()) !== origRepeat) {
+    if (JSON.stringify(repeatDays.slice().sort()) !== origRepeat) {
       params.repeat_days = repeatDays;
     }
     if (selectedMessageId !== alarm.message_id) params.message_id = selectedMessageId;
     if (snoozeMinutes !== (alarm.snooze_minutes ?? 5)) params.snooze_minutes = snoozeMinutes;
+    if (mode !== origMode) params.mode = mode;
     onSave(params);
   };
 
@@ -660,6 +738,32 @@ function AlarmEditInline({
             className="flex-1 accent-[var(--color-primary)]"
           />
           <span className="text-sm text-[var(--color-text)] font-medium w-12 text-right">{snoozeMinutes}분</span>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">재생 모드</label>
+        <div className="flex gap-2" role="radiogroup" aria-label="재생 모드 편집">
+          {(
+            [
+              ['tts', '🗣️ TTS 합성'],
+              ['sound-only', '🔊 원본 재생'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={mode === value}
+              onClick={() => setMode(value)}
+              className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                mode === value
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'bg-[var(--color-bg)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
