@@ -110,6 +110,68 @@ describe('GET /voice/:id — 음성 프로필 상세', () => {
   });
 });
 
+describe('PATCH /voice/:id — 음성 프로필 이름 변경', () => {
+  it('잘못된 UUID 형식이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/voice/bad-id', { name: '새 이름' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('JSON 이 아니면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      new Request(`http://localhost/voice/${V1}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'not-json',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('이름이 공백이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', `/voice/${V1}`, { name: '   ' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('이름이 51자 이상이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('PATCH', `/voice/${V1}`, { name: '가'.repeat(51) }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('존재하지 않거나 소유자가 아니면 404', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('PATCH', `/voice/${V404}`, { name: '새 이름' }),
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it('정상 변경은 200 과 새 이름을 반환하고 updated_at 이 갱신된다', async () => {
+    mockDB.pushResult([{ id: V1 }]);
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('PATCH', `/voice/${V1}`, { name: '  엄마 목소리  ' }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.profile.id).toBe(V1);
+    expect(body.profile.name).toBe('엄마 목소리');
+
+    const update = mockDB.calls.find((c) => c.sql.includes('UPDATE voice_profiles'));
+    expect(update).toBeDefined();
+    expect(update!.sql).toContain('updated_at');
+    expect(update!.args).toContain('엄마 목소리');
+    expect(update!.args).toContain(V1);
+  });
+});
+
 describe('GET /voice/:id/stats — 음성 프로필 통계', () => {
   it('잘못된 UUID 형식이면 400', async () => {
     const app = buildApp();

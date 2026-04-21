@@ -147,6 +147,11 @@ export async function deleteVoiceProfile(id: string) {
   await del(`/voice/${id}`);
 }
 
+export async function updateVoiceProfile(id: string, name: string) {
+  const data = await patch<{ profile: { id: string; name: string } }>(`/voice/${id}`, { name });
+  return data.profile;
+}
+
 // ===== Voice upload + speaker picker (mock path) =====
 
 export interface VoiceUploadMeta {

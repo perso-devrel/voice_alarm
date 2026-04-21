@@ -56,6 +56,11 @@ export async function deleteVoiceProfile(id: string) {
   await api.delete(`/voice/${id}`);
 }
 
+export async function updateVoiceProfile(id: string, name: string) {
+  const { data } = await api.patch(`/voice/${id}`, { name });
+  return data.profile as { id: string; name: string };
+}
+
 export async function generateTTS(params: {
   voice_profile_id: string;
   text: string;
