@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:38)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:42)
 
 - 진행 중 Phase: 4
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49 (18개)
-- 진행 중 이슈: 없음 (다음: Phase 4 후속 — 알람 트리거 실행 경로 / 모드별 재생기 연결)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51 (19개)
+- 진행 중 이슈: 없음 (다음: Phase 4 #21 알람 스케줄링 — 인메모리 스케줄러 + Cron Trigger 스텁)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:42 · Issue #51 · 알람 CRUD 응답 정규화 — repeat_days/is_active/mode 일관화
+- 브랜치: `feature/issue-51-alarm-response-normalize`
+- PR: #52 (merged)
+- 변경 파일: 2개 (수정)
+- 요약: `routes/alarm.ts` 에 `normalizeAlarmRow` 헬퍼 도입 — repeat_days JSON→배열(잘못된 JSON 은 빈 배열 fallback), is_active→boolean, mode null→`tts` 기본, voice_profile_id/speaker_id `undefined`→`null`. GET list/single/PATCH 반환 전부 동일 헬퍼 통과. POST 응답도 voice_profile_id/speaker_id 를 null 로 명시적 노출(body 스프레드 의존 제거). vitest 6건 추가 (목록 정규화, sound-only 노출, 잘못된 JSON fallback, 단일 정규화 + 404, POST null 명시). 모노레포 backend 283→289 / 전체 332→338.
+- 다음: Phase 4 #21 알람 스케줄링 (인메모리 `setInterval` 기반 개발용 스케줄러 + Cloudflare Workers Cron Trigger TODO 주석) 또는 #22 웹 알람 편집 화면(새 mode/voice_profile 필드 UI 노출)
+- 리스크: 정규화는 응답만 바꾸므로 기존 DB 레코드 호환. 기존 웹/모바일 클라이언트가 `repeat_days` 를 문자열로 파싱하던 코드가 있으면 중복 JSON.parse 발생할 수 있어 UI 이슈에서 정리 필요(후속 이슈에서 처리).
+
+---
 
 ## 2026-04-21 13:38 · Issue #49 · Alarm 모델 확장 — mode/voice_profile_id/speaker_id (Phase 4 진입)
 - 브랜치: `feature/issue-49-alarm-model-mode`
