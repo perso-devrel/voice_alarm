@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:50)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:05)
 
-- 진행 중 Phase: 6 진행 중 (#34~#38 완료). 다음 #39 가족 알람 수신 표시 UI.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87 (37개). Phase 1~5 완료.
-- 진행 중 이슈: 없음 (다음: Phase 6 #39 가족 알람 수신 표시 UI)
+- 진행 중 Phase: 6 완료 (#34~#39 전부 완료). 다음 Phase 7 게이미피케이션 (#40~#45).
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89 (38개). Phase 1~6 완료.
+- 진행 중 이슈: 없음 (다음: Phase 7 #40 캐릭터 모델 + XP 규칙)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 16:05 · Issue #89 · 가족 알람 수신 뱃지 + sender 메타 노출
+- 브랜치: `feature/issue-89-family-alarm-receive-badge`
+- PR: #90 (merged)
+- 변경 파일: 10개 (신규 4 + 수정 6)
+- 요약: 백엔드 `normalizeAlarmRow(row, viewerUserId?)` 리팩터링 — `category ∈ {family, family-voice}` 로 `is_family_alarm` 판정, `row.user_id !== viewerUserId` 로 `is_received_family_alarm` 서버 계산, `creator_email`/`creator_name`/`category` SELECT 후 sender_user_id·sender_name·sender_email 노출. GET 리스트·GET 단건·PATCH 3곳 호출부에 `c.get('userId')` 전달. 웹/모바일 `src/lib/familyAlarmLabel.ts` 동일 계약의 순수 함수 2종 — `isReceivedFamilyAlarm`(서버 플래그 우선, 폴백 로직), `buildFamilyAlarmLabel`(name→email→'가족' fallback + 💌 prefix). `packages/web/src/pages/AlarmsPage.tsx` 카드 행과 `apps/mobile/app/(tabs)/alarms.tsx` 메타 영역에 primary-tinted pill 뱃지 렌더. `Alarm` 타입에 sender 필드 5개 추가(웹·모바일). 테스트: backend 3건(family/non-family/family-voice) + 웹 vitest 12건 + 모바일 jest 12건 → backend 409→412, web 64→76, mobile 91→103 그린, 3개 패키지 tsc 0 에러.
+- 다음: Phase 7 #40 캐릭터 모델 + XP 규칙 — `characters` 테이블(id, user_id, level, xp, stage) 스키마 + 행동별 XP 획득 규칙(알람 생성/수신자 피드백/친구 초대) 정의 + `POST /api/characters/xp { delta, reason }` 부여 API. 레벨업 시 stage 자동 증가.
+- 리스크: 백엔드가 뱃지 렌더 판단을 가지게 되어 `is_received_family_alarm=true` 인데 실제 category 가 family 가 아닌 엣지 케이스가 없도록 DB 정합성 유지 필요(현재는 INSERT 측이 category 를 family/family-voice 로만 내려줌). 과거 응답 호환을 위한 클라이언트 fallback(`sender_user_id !== selfUserId`) 은 `selfUserId` 미주입 시 false 반환 — 리스트/단건 API 가 `viewerUserId` 를 항상 받으므로 실질 영향 없음. 발신자 프로필 사진은 미노출 — 후속 이슈(#44/#45) 에서 아바타 연계 예정.
+
+---
 
 ## 2026-04-21 15:50 · Issue #87 · 모바일 가족 알람 편집 화면
 - 브랜치: `feature/issue-87-mobile-family-alarms`
