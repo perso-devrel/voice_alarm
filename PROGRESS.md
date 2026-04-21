@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:20)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:28)
 
-- 진행 중 Phase: 7 진행 중 (#40~#41 완료). 다음 #42 XP 지급 API.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93 (40개). Phase 1~6 완료.
-- 진행 중 이슈: 없음 (다음: Phase 7 #42 XP 지급 API)
+- 진행 중 Phase: 7 진행 중 (#40~#42 완료). 다음 #43 웹 캐릭터 화면.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95 (41개). Phase 1~6 완료.
+- 진행 중 이슈: 없음 (다음: Phase 7 #43 웹 캐릭터 화면)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 16:28 · Issue #95 · XP 지급 API (POST /characters/xp)
+- 브랜치: `feature/issue-95-xp-grant-api`
+- PR: #96 (merged)
+- 변경 파일: 4개 (수정 3 + 신규 1)
+- 요약: Phase 7 #42 — 이벤트 기반 XP/애정도 지급 서버 엔드포인트. 마이그레이션 #12 `character-xp-logs` — `characters.daily_xp INTEGER NOT NULL DEFAULT 0`, `characters.daily_xp_reset_at TEXT` 컬럼 추가 + `character_xp_logs` 테이블(id, character_id FK, event, client_nonce, granted_xp, affection_delta, capped, created_at) + `(character_id, client_nonce)` 유니크 partial index(nonce IS NOT NULL 일 때만). `POST /api/characters/xp { event, client_nonce? }` — `isXpEvent`(#93) 검증 400, user resolve 404, `client_nonce` 중복 시 기존 로그 재응답(200 duplicated=true), 날짜 바뀌면 daily_xp=0 리셋 후 `computeGrant`(#93) 호출, `characters` UPDATE + `character_xp_logs` INSERT, 응답 201 `{character, progress, grant:{event, granted_xp, affection, capped, remaining_cap, duplicated}}`. `routes/character.ts` 를 `lib/character.ts` + `lib/xpRules.ts` 양쪽에 의존하도록 확장 — `CharacterRow` 에 daily_xp/reset_at 필드 추가, `loadOrCreateCharacter` 헬퍼 분리, `serializeCharacter` 로 xp 기준 level/stage 재계산 + DB 에도 동기화. vitest 9건(400/404/정상/캡초과/날짜리셋/멱등중복/자동생성/dismissed 로그/마이그레이션 #12 구조) → 백엔드 448→457 / 32 파일 그린, tsc 0 에러.
+- 다음: Phase 7 #43 웹 캐릭터 화면 — `packages/web/src/pages/CharacterPage.tsx` + `services/api.ts` 에 `getCharacterMe`/`grantXp` + 순수 함수 헬퍼(`buildCharacterAvatar` 스테이지→이모지). 탭하면 정해진 대사 랜덤 출력, XP 게이지 바, 레벨/스테이지 뱃지. App.tsx 라우팅 추가.
+- 리스크: libsql 웹 클라이언트에 수동 트랜잭션 지원이 제한되어 UPDATE→INSERT 순차 실행 — 중간 장애 시 XP 만 올라가고 로그 누락 가능. 실제로는 rollback 패턴 or Durable Object 경로 검토 후속 이슈. `friend_invited` 이벤트는 아직 호출부 없음 (#32 플로우 연결은 별도). `daily_xp_reset_at` 는 서버 UTC 기준 — 사용자 타임존 보정은 Phase 10 개선 후보.
+
+---
 
 ## 2026-04-21 16:20 · Issue #93 · 경험치 규칙 문서 + 순수 함수
 - 브랜치: `feature/issue-93-xp-rules`
