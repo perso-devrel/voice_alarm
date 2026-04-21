@@ -7,6 +7,7 @@ import {
   xpThresholdForLevel,
   type CharacterStage,
 } from '../lib/character';
+import { computeGrant, isXpEvent } from '../lib/xpRules';
 
 const character = new Hono<AppEnv>();
 
@@ -18,6 +19,8 @@ interface CharacterRow {
   xp: number;
   affection: number;
   stage: CharacterStage;
+  daily_xp: number;
+  daily_xp_reset_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,9 +45,35 @@ function rowToCharacter(row: Record<string, unknown>): CharacterRow {
     xp: Number(row.xp ?? 0),
     affection: Number(row.affection ?? 0),
     stage: (row.stage as CharacterStage) ?? 'seed',
+    daily_xp: Number(row.daily_xp ?? 0),
+    daily_xp_reset_at: (row.daily_xp_reset_at as string | null) ?? null,
     created_at: String(row.created_at ?? ''),
     updated_at: String(row.updated_at ?? ''),
   };
+}
+
+async function loadOrCreateCharacter(
+  db: ReturnType<typeof getDB>,
+  userPk: string,
+): Promise<CharacterRow> {
+  const existing = await db.execute({
+    sql: 'SELECT * FROM characters WHERE user_id = ?',
+    args: [userPk],
+  });
+  if (existing.rows.length > 0) {
+    return rowToCharacter(existing.rows[0] as Record<string, unknown>);
+  }
+  const id = crypto.randomUUID();
+  await db.execute({
+    sql: `INSERT INTO characters (id, user_id, name, level, xp, affection, stage)
+          VALUES (?, ?, ?, 1, 0, 0, 'seed')`,
+    args: [id, userPk, '내 캐릭터'],
+  });
+  const created = await db.execute({
+    sql: 'SELECT * FROM characters WHERE id = ?',
+    args: [id],
+  });
+  return rowToCharacter(created.rows[0] as Record<string, unknown>);
 }
 
 function buildProgress(xp: number, level: number) {
@@ -60,6 +89,19 @@ function buildProgress(xp: number, level: number) {
   };
 }
 
+function serializeCharacter(row: CharacterRow) {
+  const level = computeLevelFromXp(row.xp);
+  const stage = computeStageFromLevel(level);
+  return {
+    character: { ...row, level, stage },
+    progress: buildProgress(row.xp, level),
+  };
+}
+
+function todayString(now: Date = new Date()): string {
+  return now.toISOString().split('T')[0];
+}
+
 /**
  * GET /characters/me
  * 현재 사용자의 캐릭터를 반환. 없으면 기본값(level=1, xp=0, stage='seed') 으로 생성.
@@ -71,41 +113,115 @@ character.get('/me', async (c) => {
   const userPk = await resolveUserPk(db, userId);
   if (!userPk) return c.json({ error: '사용자를 찾을 수 없습니다' }, 404);
 
-  const existing = await db.execute({
-    sql: 'SELECT * FROM characters WHERE user_id = ?',
-    args: [userPk],
-  });
+  const row = await loadOrCreateCharacter(db, userPk);
+  return c.json(serializeCharacter(row));
+});
 
-  let row: CharacterRow;
-  if (existing.rows.length === 0) {
-    const id = crypto.randomUUID();
-    await db.execute({
-      sql: `INSERT INTO characters (id, user_id, name, level, xp, affection, stage)
-            VALUES (?, ?, ?, 1, 0, 0, 'seed')`,
-      args: [id, userPk, '내 캐릭터'],
+/**
+ * POST /characters/xp { event, client_nonce? }
+ * 이벤트별 XP·애정도 지급. client_nonce 가 있으면 멱등 (중복 호출 시 기존 결과 반환).
+ * 날짜가 바뀌면 daily_xp 리셋 후 재산정.
+ */
+character.post('/xp', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const body = await c.req
+    .json<{ event?: unknown; client_nonce?: unknown }>()
+    .catch(() => ({ event: undefined, client_nonce: undefined }));
+
+  if (!isXpEvent(body.event)) {
+    return c.json({ error: '지원하지 않는 event 입니다' }, 400);
+  }
+  const event = body.event;
+  const clientNonce =
+    typeof body.client_nonce === 'string' && body.client_nonce.trim().length > 0
+      ? body.client_nonce.trim()
+      : null;
+
+  const userPk = await resolveUserPk(db, userId);
+  if (!userPk) return c.json({ error: '사용자를 찾을 수 없습니다' }, 404);
+
+  // 멱등성: 동일 client_nonce 로 이미 지급된 로그가 있으면 그대로 재응답.
+  if (clientNonce) {
+    const dup = await db.execute({
+      sql: `SELECT l.* FROM character_xp_logs l
+            JOIN characters c ON c.id = l.character_id
+            WHERE c.user_id = ? AND l.client_nonce = ?
+            LIMIT 1`,
+      args: [userPk, clientNonce],
     });
-    const created = await db.execute({
-      sql: 'SELECT * FROM characters WHERE id = ?',
-      args: [id],
-    });
-    row = rowToCharacter(created.rows[0] as Record<string, unknown>);
-  } else {
-    row = rowToCharacter(existing.rows[0] as Record<string, unknown>);
+    if (dup.rows.length > 0) {
+      const log = dup.rows[0] as Record<string, unknown>;
+      const row = await loadOrCreateCharacter(db, userPk);
+      const serialized = serializeCharacter(row);
+      return c.json({
+        ...serialized,
+        grant: {
+          event: String(log.event),
+          granted_xp: Number(log.granted_xp ?? 0),
+          affection: Number(log.affection_delta ?? 0),
+          capped: Number(log.capped ?? 0) === 1,
+          remaining_cap: 0,
+          duplicated: true,
+        },
+      });
+    }
   }
 
-  // 저장된 값이 헬퍼 결과와 다르면 신뢰할 수 있게 헬퍼 값으로 정규화해 노출.
-  const level = computeLevelFromXp(row.xp);
-  const stage = computeStageFromLevel(level);
-  const progress = buildProgress(row.xp, level);
+  const today = todayString();
+  const current = await loadOrCreateCharacter(db, userPk);
+  const dailyXpBase =
+    current.daily_xp_reset_at === today ? current.daily_xp : 0;
 
-  return c.json({
-    character: {
-      ...row,
-      level,
-      stage,
-    },
-    progress,
+  const grant = computeGrant(event, dailyXpBase);
+  const newXp = current.xp + grant.xp.grantedXp;
+  const newAffection = current.affection + grant.affection;
+  const newDailyXp = dailyXpBase + grant.xp.grantedXp;
+  const newLevel = computeLevelFromXp(newXp);
+  const newStage = computeStageFromLevel(newLevel);
+
+  await db.execute({
+    sql: `UPDATE characters
+          SET xp = ?, affection = ?, level = ?, stage = ?,
+              daily_xp = ?, daily_xp_reset_at = ?,
+              updated_at = datetime('now')
+          WHERE id = ?`,
+    args: [newXp, newAffection, newLevel, newStage, newDailyXp, today, current.id],
   });
+
+  const logId = crypto.randomUUID();
+  await db.execute({
+    sql: `INSERT INTO character_xp_logs
+          (id, character_id, event, client_nonce, granted_xp, affection_delta, capped)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      logId,
+      current.id,
+      event,
+      clientNonce,
+      grant.xp.grantedXp,
+      grant.affection,
+      grant.xp.capped ? 1 : 0,
+    ],
+  });
+
+  const refreshed = await loadOrCreateCharacter(db, userPk);
+  const serialized = serializeCharacter(refreshed);
+  return c.json(
+    {
+      ...serialized,
+      grant: {
+        event,
+        granted_xp: grant.xp.grantedXp,
+        affection: grant.affection,
+        capped: grant.xp.capped,
+        remaining_cap: grant.xp.remainingCap,
+        duplicated: false,
+      },
+    },
+    201,
+  );
 });
 
 export default character;
