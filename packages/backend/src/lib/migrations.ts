@@ -310,6 +310,14 @@ export const migrations: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_plan_group_invites_status ON plan_group_invites(status)',
     ],
   },
+  {
+    id: 10,
+    name: 'user-allow-family-alarms',
+    statements: [
+      // 가족이 내게 알람을 추가할 수 있는지 여부 — 기본 false(0) 로 opt-in 설계
+      `ALTER TABLE users ADD COLUMN allow_family_alarms INTEGER NOT NULL DEFAULT 0`,
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

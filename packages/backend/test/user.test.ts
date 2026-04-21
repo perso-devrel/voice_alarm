@@ -24,7 +24,16 @@ beforeEach(() => {
 
 describe('GET /user/me', () => {
   it('기존 사용자 반환', async () => {
-    mockDB.pushResult([{ id: 'u-1', google_id: 'user-1', email: 'user@test.com', name: 'Test', plan: 'free' }]);
+    mockDB.pushResult([
+      {
+        id: 'u-1',
+        google_id: 'user-1',
+        email: 'user@test.com',
+        name: 'Test',
+        plan: 'free',
+        allow_family_alarms: 0,
+      },
+    ]);
     mockDB.pushResult([{ count: 3 }]);
     mockDB.pushResult([{ count: 2 }]);
 
@@ -33,8 +42,29 @@ describe('GET /user/me', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.user.google_id).toBe('user-1');
+    expect(body.user.allow_family_alarms).toBe(false);
     expect(body.stats.voice_profiles).toBe(3);
     expect(body.stats.alarms).toBe(2);
+  });
+
+  it('allow_family_alarms=1 을 true 로 직렬화', async () => {
+    mockDB.pushResult([
+      {
+        id: 'u-1',
+        google_id: 'user-1',
+        email: 'user@test.com',
+        name: 'Test',
+        plan: 'free',
+        allow_family_alarms: 1,
+      },
+    ]);
+    mockDB.pushResult([{ count: 0 }]);
+    mockDB.pushResult([{ count: 0 }]);
+
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/user/me'));
+    const body = await res.json();
+    expect(body.user.allow_family_alarms).toBe(true);
   });
 
   it('신규 사용자 자동 생성', async () => {
@@ -50,6 +80,53 @@ describe('GET /user/me', () => {
     const body = await res.json();
     expect(body.user.google_id).toBe('user-1');
     expect(mockDB.calls[1].sql).toContain('INSERT INTO users');
+  });
+});
+
+describe('PATCH /user/me', () => {
+  it('allow_family_alarms=true 성공', async () => {
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/user/me', { allow_family_alarms: true }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.allow_family_alarms).toBe(true);
+    expect(mockDB.calls[0].sql).toContain('UPDATE users SET allow_family_alarms');
+    expect(mockDB.calls[0].args[0]).toBe(1);
+  });
+
+  it('allow_family_alarms=false 성공', async () => {
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/user/me', { allow_family_alarms: false }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.allow_family_alarms).toBe(false);
+    expect(mockDB.calls[0].args[0]).toBe(0);
+  });
+
+  it('필드 누락 → 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/user/me', {}));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('변경할 필드');
+  });
+
+  it('잘못된 타입 → 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/user/me', { allow_family_alarms: 'yes' }));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('boolean');
+  });
+
+  it('존재하지 않는 사용자 → 404', async () => {
+    mockDB.pushResult([], 0);
+    const app = buildApp();
+    const res = await app.request(jsonReq('PATCH', '/user/me', { allow_family_alarms: true }));
+    expect(res.status).toBe(404);
   });
 });
 
