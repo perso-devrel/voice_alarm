@@ -15,6 +15,7 @@ import { AlarmSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
 import { VoiceDetailModal } from './VoicesPage';
 import { validateAlarmForm } from '../lib/alarmForm';
+import { buildFamilyAlarmLabel } from '../lib/familyAlarmLabel';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -228,7 +229,7 @@ export default function AlarmsPage() {
                 }`}
               >
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-4xl font-light text-[var(--color-text)]">{alarm.time}</p>
                     <span
                       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]"
@@ -236,6 +237,17 @@ export default function AlarmsPage() {
                     >
                       {alarm.mode === 'sound-only' ? '🔊 원본' : '🗣️ TTS'}
                     </span>
+                    {(() => {
+                      const label = buildFamilyAlarmLabel(alarm);
+                      return label.visible ? (
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-primary)]/15 text-[var(--color-primary)]"
+                          aria-label={label.text}
+                        >
+                          {label.text}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                   <p className="text-sm text-[var(--color-text-secondary)] mt-1">{formatRepeat(alarm.repeat_days)}</p>
                   <div className="mt-2">

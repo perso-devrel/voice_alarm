@@ -34,6 +34,7 @@ import {
   getAlarmModeBadge,
   resolveAlarmPlayback,
 } from '../../src/lib/alarmPlayback';
+import { buildFamilyAlarmLabel } from '../../src/lib/familyAlarmLabel';
 import type { Message, VoiceProfile } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
@@ -287,6 +288,16 @@ export default function AlarmsScreen() {
                   {getAlarmModeBadge(item.mode).emoji} {getAlarmModeBadge(item.mode).label}
                 </Text>
               </View>
+              {(() => {
+                const familyLabel = buildFamilyAlarmLabel(item);
+                return familyLabel.visible ? (
+                  <View style={styles.familyBadge}>
+                    <Text style={styles.familyBadgeText} accessibilityLabel={familyLabel.text}>
+                      {familyLabel.text}
+                    </Text>
+                  </View>
+                ) : null;
+              })()}
               <Text style={[styles.alarmMessage, !item.is_active && styles.textInactive]} numberOfLines={1}>
                 "{item.message_text}"
               </Text>
@@ -530,6 +541,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.light.primary,
     fontWeight: '600',
+  },
+  familyBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.primaryLight,
+  },
+  familyBadgeText: {
+    fontSize: FontSize.xs,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   alarmActions: {
     flexDirection: 'row',

@@ -42,6 +42,11 @@ export interface Alarm {
   message_text?: string;
   voice_name?: string;
   category?: string;
+  sender_user_id?: string | null;
+  sender_name?: string | null;
+  sender_email?: string | null;
+  is_family_alarm?: boolean;
+  is_received_family_alarm?: boolean;
 }
 
 export interface Friend {
