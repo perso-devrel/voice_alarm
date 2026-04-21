@@ -19,6 +19,9 @@ export type {
   FontWeightKey,
 } from './tokens';
 
+export { resolveStateView } from './stateView';
+export type { StateViewVariant, StateViewConfig } from './stateView';
+
 export {
   MIN_TOUCH_TARGET,
   WCAG_AA_NORMAL,
