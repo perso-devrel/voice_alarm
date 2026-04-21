@@ -1,8 +1,10 @@
 import {
   MOCK_DEFAULT_ALARM_URI,
   MOCK_VOICE_SAMPLE_URI,
+  buildAlarmPreviewAction,
   getAlarmModeBadge,
   resolveAlarmPlayback,
+  type PlaybackPlan,
 } from '../src/lib/alarmPlayback';
 import type { Alarm, Message, VoiceProfile } from '../src/types';
 
@@ -148,5 +150,101 @@ describe('getAlarmModeBadge', () => {
 
   it('undefined → TTS 기본', () => {
     expect(getAlarmModeBadge(undefined)).toEqual({ emoji: '🗣️', label: 'TTS' });
+  });
+});
+
+describe('buildAlarmPreviewAction', () => {
+  it('tts plan → navigate /player 액션, 파라미터 포함', () => {
+    const plan: PlaybackPlan = {
+      kind: 'tts',
+      messageId: 'm1',
+      text: '일어나자',
+      voiceName: '엄마',
+      category: 'morning',
+    };
+    const action = buildAlarmPreviewAction(plan);
+    expect(action.type).toBe('navigate');
+    if (action.type === 'navigate') {
+      expect(action.path).toBe('/player');
+      expect(action.params).toEqual({
+        messageId: 'm1',
+        text: '일어나자',
+        voiceName: '엄마',
+        category: 'morning',
+      });
+    }
+  });
+
+  it('sound-only plan → preview-audio, uri=MOCK_VOICE_SAMPLE_URI + voiceName 캡션', () => {
+    const plan: PlaybackPlan = {
+      kind: 'sound-only',
+      voiceProfileId: 'v1',
+      voiceName: '아빠',
+      uri: MOCK_VOICE_SAMPLE_URI,
+    };
+    const action = buildAlarmPreviewAction(plan);
+    expect(action.type).toBe('preview-audio');
+    if (action.type === 'preview-audio') {
+      expect(action.uri).toBe(MOCK_VOICE_SAMPLE_URI);
+      expect(action.caption).toContain('아빠');
+      expect(action.voiceName).toBe('아빠');
+    }
+  });
+
+  it('fallback plan → preview-audio, uri=MOCK_DEFAULT_ALARM_URI + 안내 캡션', () => {
+    const plan: PlaybackPlan = {
+      kind: 'fallback',
+      uri: MOCK_DEFAULT_ALARM_URI,
+      reason: '음성 프로필이 지정되지 않아 기본 알람 톤으로 재생합니다.',
+    };
+    const action = buildAlarmPreviewAction(plan);
+    expect(action.type).toBe('preview-audio');
+    if (action.type === 'preview-audio') {
+      expect(action.uri).toBe(MOCK_DEFAULT_ALARM_URI);
+      expect(action.caption).toContain('지정되지');
+      expect(action.voiceName).toBe('');
+    }
+  });
+
+  it('error plan → toast 메시지로 전달', () => {
+    const plan: PlaybackPlan = { kind: 'error', reason: '재생할 메시지를 찾을 수 없습니다.' };
+    const action = buildAlarmPreviewAction(plan);
+    expect(action.type).toBe('toast');
+    if (action.type === 'toast') expect(action.message).toContain('찾을 수 없');
+  });
+
+  it('resolve → action 엔드투엔드: tts 정상 경로', () => {
+    const plan = resolveAlarmPlayback(
+      {
+        mode: 'tts',
+        voice_profile_id: null,
+        message_id: 'm1',
+        message_text: '굿모닝',
+        voice_name: '엄마',
+        category: 'morning',
+      },
+      [],
+      [],
+    );
+    const action = buildAlarmPreviewAction(plan);
+    expect(action.type).toBe('navigate');
+  });
+
+  it('resolve → action 엔드투엔드: sound-only voice 미지정 → fallback preview', () => {
+    const plan = resolveAlarmPlayback(
+      {
+        mode: 'sound-only',
+        voice_profile_id: null,
+        message_id: 'm1',
+        message_text: '텍스트',
+        voice_name: '엄마',
+        category: 'morning',
+      },
+      [],
+      [],
+    );
+    const action = buildAlarmPreviewAction(plan);
+    expect(action.type).toBe('preview-audio');
+    if (action.type === 'preview-audio') expect(action.uri).toBe(MOCK_DEFAULT_ALARM_URI);
   });
 });
