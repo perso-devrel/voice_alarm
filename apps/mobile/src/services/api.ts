@@ -276,6 +276,9 @@ export async function createAlarm(params: {
   repeat_days?: number[];
   snooze_minutes?: number;
   target_user_id?: string;
+  mode?: 'tts' | 'sound-only';
+  voice_profile_id?: string;
+  speaker_id?: string;
 }) {
   const data = await post<{ alarm: Alarm }>('/alarm', params);
   return data.alarm;
@@ -289,6 +292,9 @@ export async function updateAlarm(
     is_active?: boolean;
     snooze_minutes?: number;
     message_id?: string;
+    mode?: 'tts' | 'sound-only';
+    voice_profile_id?: string | null;
+    speaker_id?: string | null;
   },
 ) {
   await patch(`/alarm/${id}`, params);

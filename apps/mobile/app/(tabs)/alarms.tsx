@@ -27,13 +27,14 @@ import { cacheAlarms, getCachedAlarms } from '../../src/services/offlineCache';
 import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { parseRepeatDays } from '../../src/lib/alarmForm';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 
 function getNextFireMs(alarm: Alarm): number | null {
   if (!alarm.is_active) return null;
   const [h, m] = alarm.time.split(':').map(Number);
-  const days: number[] = JSON.parse(alarm.repeat_days || '[]');
+  const days = parseRepeatDays(alarm.repeat_days);
   const now = new Date();
   const todayMinutes = now.getHours() * 60 + now.getMinutes();
   const alarmMinutes = h * 60 + m;
@@ -208,7 +209,7 @@ export default function AlarmsScreen() {
   };
 
   const renderAlarm = ({ item }: { item: Alarm }) => {
-    const repeatDays = JSON.parse(item.repeat_days || '[]');
+    const repeatDays = parseRepeatDays(item.repeat_days);
     void tick;
     const nextFireMs = getNextFireMs(item);
     const perAlarmCountdown = nextFireMs !== null ? formatCountdown(nextFireMs) : null;

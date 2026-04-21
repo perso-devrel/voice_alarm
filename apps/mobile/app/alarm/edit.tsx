@@ -13,13 +13,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
-import { getMessages, getAlarm, getAlarms, updateAlarm } from '../../src/services/api';
+import {
+  getMessages,
+  getAlarm,
+  getAlarms,
+  updateAlarm,
+  getVoiceProfiles,
+} from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
-import type { Message } from '../../src/types';
+import type { AlarmMode, Message, VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
+import { parseRepeatDays, validateAlarmForm } from '../../src/lib/alarmForm';
 
 export default function EditAlarmScreen() {
   const router = useRouter();
@@ -34,6 +41,8 @@ export default function EditAlarmScreen() {
   const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [snooze, setSnooze] = useState(5);
+  const [mode, setMode] = useState<AlarmMode>('tts');
+  const [voiceProfileId, setVoiceProfileId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   const { data: alarm } = useQuery({
@@ -48,14 +57,25 @@ export default function EditAlarmScreen() {
     enabled: isAuthenticated,
   });
 
+  const { data: voices } = useQuery({
+    queryKey: ['voiceProfiles'],
+    queryFn: getVoiceProfiles,
+    enabled: isAuthenticated,
+  });
+
+  const readyVoices: VoiceProfile[] =
+    voices?.filter((v: VoiceProfile) => v.status === 'ready') ?? [];
+
   useEffect(() => {
     if (alarm && !loaded) {
       const [h, m] = alarm.time.split(':').map(Number);
       setHour(h);
       setMinute(m);
-      setRepeatDays(JSON.parse(alarm.repeat_days || '[]'));
+      setRepeatDays(parseRepeatDays(alarm.repeat_days));
       setSelectedMessageId(alarm.message_id);
       setSnooze(alarm.snooze_minutes);
+      setMode(alarm.mode === 'sound-only' ? 'sound-only' : 'tts');
+      setVoiceProfileId(alarm.voice_profile_id ?? null);
       setLoaded(true);
     }
   }, [alarm, loaded]);
@@ -66,6 +86,8 @@ export default function EditAlarmScreen() {
       repeat_days?: number[];
       snooze_minutes?: number;
       message_id?: string;
+      mode?: AlarmMode;
+      voice_profile_id?: string | null;
     }) => updateAlarm(id!, params),
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['alarms'] });
@@ -85,19 +107,31 @@ export default function EditAlarmScreen() {
   };
 
   const handleSubmit = () => {
-    if (!selectedMessageId) {
-      toast.show(t('alarmCreate.selectMessage'));
+    const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    const validated = validateAlarmForm({
+      messageId: selectedMessageId,
+      time,
+      repeatDays,
+      mode,
+      voiceProfileId,
+      snoozeMinutes: snooze,
+    });
+    if (!validated.ok) {
+      toast.show(validated.error);
       return;
     }
-
-    const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    const { payload } = validated;
     editMutation.mutate({
-      message_id: selectedMessageId,
-      time,
-      repeat_days: repeatDays,
-      snooze_minutes: snooze,
+      message_id: payload.message_id,
+      time: payload.time,
+      repeat_days: payload.repeat_days,
+      snooze_minutes: payload.snooze_minutes,
+      mode: payload.mode,
+      voice_profile_id: payload.voice_profile_id ?? null,
     });
   };
+
+  const soundOnlyInvalid = mode === 'sound-only' && !voiceProfileId;
 
   const quickSetDays = (type: 'daily' | 'weekday' | 'weekend') => {
     if (type === 'daily') setRepeatDays([0, 1, 2, 3, 4, 5, 6]);
@@ -181,6 +215,70 @@ export default function EditAlarmScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* 재생 모드 */}
+      <Text style={styles.sectionTitle}>재생 모드</Text>
+      <View style={styles.modeRow}>
+        <TouchableOpacity
+          style={[styles.modeChip, mode === 'tts' && styles.modeChipActive]}
+          onPress={() => setMode('tts')}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: mode === 'tts' }}
+        >
+          <Text style={[styles.modeText, mode === 'tts' && styles.modeTextActive]}>
+            🗣️ TTS
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeChip, mode === 'sound-only' && styles.modeChipActive]}
+          onPress={() => setMode('sound-only')}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: mode === 'sound-only' }}
+        >
+          <Text style={[styles.modeText, mode === 'sound-only' && styles.modeTextActive]}>
+            🔊 원본
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {mode === 'sound-only' && (
+        <>
+          <Text style={styles.sectionTitle}>음성 프로필</Text>
+          {readyVoices.length === 0 ? (
+            <View style={styles.emptyVoiceBox}>
+              <Text style={styles.emptyVoiceText}>
+                원본 재생 모드는 등록된 음성 프로필이 필요해요.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.voiceRow}
+            >
+              {readyVoices.map((v) => {
+                const selected = voiceProfileId === v.id;
+                return (
+                  <TouchableOpacity
+                    key={v.id}
+                    style={[styles.voiceChip, selected && styles.voiceChipActive]}
+                    onPress={() => setVoiceProfileId(selected ? null : v.id)}
+                  >
+                    <Text style={[styles.voiceText, selected && styles.voiceTextActive]}>
+                      {v.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+          {soundOnlyInvalid && (
+            <Text style={styles.voiceHint}>
+              원본 재생 모드에서는 음성 프로필을 지정해야 합니다.
+            </Text>
+          )}
+        </>
+      )}
+
       {/* 스누즈 */}
       <Text style={styles.sectionTitle}>{t('alarmCreate.snooze')}</Text>
       <View style={styles.snoozeRow}>
@@ -232,10 +330,10 @@ export default function EditAlarmScreen() {
       <TouchableOpacity
         style={[
           styles.saveButton,
-          (!selectedMessageId || editMutation.isPending) && styles.disabled,
+          (!selectedMessageId || soundOnlyInvalid || editMutation.isPending) && styles.disabled,
         ]}
         onPress={handleSubmit}
-        disabled={!selectedMessageId || editMutation.isPending}
+        disabled={!selectedMessageId || soundOnlyInvalid || editMutation.isPending}
       >
         {editMutation.isPending ? (
           <ActivityIndicator color="#FFF" />
@@ -446,5 +544,71 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: FontSize.lg,
     fontWeight: '700',
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  modeChip: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+  },
+  modeChipActive: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  modeText: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    fontWeight: '600',
+  },
+  modeTextActive: {
+    color: '#FFF',
+  },
+  voiceRow: {
+    flexDirection: 'row',
+  },
+  voiceChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginRight: Spacing.sm,
+  },
+  voiceChipActive: {
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
+  },
+  voiceText: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    fontWeight: '600',
+  },
+  voiceTextActive: {
+    color: '#FFF',
+  },
+  voiceHint: {
+    fontSize: FontSize.sm,
+    color: Colors.light.error,
+    marginTop: Spacing.xs,
+  },
+  emptyVoiceBox: {
+    backgroundColor: Colors.light.surface,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderStyle: 'dashed',
+  },
+  emptyVoiceText: {
+    color: Colors.light.textSecondary,
+    fontSize: FontSize.sm,
   },
 });
