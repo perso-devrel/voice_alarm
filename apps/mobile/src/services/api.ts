@@ -531,6 +531,67 @@ export interface FamilyAlarmCreateResponse {
   message: { id: string; text: string; category: string };
 }
 
+// ===== Character API =====
+
+export type CharacterStage = 'seed' | 'sprout' | 'tree' | 'bloom';
+
+export type XpEvent =
+  | 'alarm_completed'
+  | 'alarm_snoozed'
+  | 'alarm_dismissed'
+  | 'family_alarm_received'
+  | 'friend_invited';
+
+export interface CharacterPayload {
+  id: string;
+  user_id: string;
+  name: string;
+  level: number;
+  xp: number;
+  affection: number;
+  stage: CharacterStage;
+  daily_xp: number;
+  daily_xp_reset_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CharacterProgress {
+  xp_into_level: number;
+  xp_to_next_level: number;
+  level_span: number;
+  progress_ratio: number;
+}
+
+export interface CharacterResponse {
+  character: CharacterPayload;
+  progress: CharacterProgress;
+}
+
+export interface CharacterGrantResponse extends CharacterResponse {
+  grant: {
+    event: XpEvent;
+    granted_xp: number;
+    affection: number;
+    capped: boolean;
+    remaining_cap: number;
+    duplicated: boolean;
+  };
+}
+
+export async function getCharacterMe(): Promise<CharacterResponse> {
+  return get<CharacterResponse>('/characters/me');
+}
+
+export async function grantCharacterXp(payload: {
+  event: XpEvent;
+  client_nonce?: string;
+}): Promise<CharacterGrantResponse> {
+  return post<CharacterGrantResponse>('/characters/xp', payload);
+}
+
+// ===== Family Group / Family Alarm API =====
+
 export async function getFamilyGroupCurrent() {
   return get<FamilyGroupCurrent>('/family/groups/current');
 }
