@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:42)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:47)
 
 - 진행 중 Phase: 4
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51 (19개)
-- 진행 중 이슈: 없음 (다음: Phase 4 #21 알람 스케줄링 — 인메모리 스케줄러 + Cron Trigger 스텁)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53 (20개)
+- 진행 중 이슈: 없음 (다음: Phase 4 #22 웹 알람 편집 화면 — mode/voice_profile/speaker 필드 UI 노출)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:47 · Issue #53 · 알람 스케줄러 + Cloudflare Cron Trigger 스텁
+- 브랜치: `feature/issue-53-alarm-scheduler`
+- PR: #54 (merged)
+- 변경 파일: 5개 (신규 2 + 수정 3)
+- 요약: `src/lib/scheduler.ts` 신규 — `shouldAlarmFire`/`selectFiringAlarms`/`formatHHmm` 순수 함수. HH:mm + repeat_days(빈 배열=매일) + is_active 체크로 발화 대상 판정. `src/index.ts` 에 `scheduled(event, env)` export 추가 — Cloudflare Workers Cron Trigger 진입점, 활성 알람 조회→`selectFiringAlarms`→`console.warn` 로 `firing_ids` 로깅. 실 푸시는 `// TODO: FCM delivery`. `routes/alarm.ts` 에 `GET /alarm/tick` 디버그 엔드포인트 추가 — 인증된 유저의 활성 알람을 현재 UTC 시각 기준으로 드라이런. vitest 11건 추가 (scheduler 9 + tick 2). 모노레포 backend 289→300 / 전체 338→349.
+- 다음: Phase 4 #22 웹 알람 편집 화면 — mode / voice_profile_id / speaker_id 를 웹 UI 에 노출 (또는 #23 모바일 알람 편집)
+- 리스크: `wrangler.toml` Cron Trigger 실등록 + 실제 FCM 발송은 별도 이슈. 스케줄러는 UTC 기준 — 타임존 처리는 클라이언트가 HH:mm 저장 시 로컬 환산한다고 가정. 사용자 타임존 필드 도입은 후속.
+
+---
 
 ## 2026-04-21 13:42 · Issue #51 · 알람 CRUD 응답 정규화 — repeat_days/is_active/mode 일관화
 - 브랜치: `feature/issue-51-alarm-response-normalize`
