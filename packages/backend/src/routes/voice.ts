@@ -2,12 +2,13 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
-import { getSharedInMemoryVoiceStorage } from '@voice-alarm/voice';
+import { getSharedInMemoryVoiceStorage, MockVoiceProvider } from '@voice-alarm/voice';
 
 const voice = new Hono<AppEnv>();
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MiB
+const MAX_SPEAKERS = 3;
 
 /** 원본 오디오 업로드 — 화자 분리/클론 전 단계 저장소. */
 // TODO: real object storage integration (R2 / S3) — currently in-memory only.
@@ -98,6 +99,92 @@ voice.post('/upload', async (c) => {
     },
     201,
   );
+});
+
+/**
+ * 업로드된 오디오의 화자 분리 (mock).
+ * NEEDS_VERIFICATION: real diarization algorithm — 실제 알고리즘은 perso.ai/ElevenLabs 영역.
+ */
+voice.post('/uploads/:uploadId/separate', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const uploadId = c.req.param('uploadId');
+
+  if (!UUID_RE.test(uploadId)) {
+    return c.json({ error: 'Invalid upload ID format' }, 400);
+  }
+
+  const uploadRes = await db.execute({
+    sql: 'SELECT id, user_id, object_key FROM voice_uploads WHERE id = ?',
+    args: [uploadId],
+  });
+  if (uploadRes.rows.length === 0) {
+    return c.json({ error: 'Voice upload not found' }, 404);
+  }
+  const upload = uploadRes.rows[0] as { id: string; user_id: string; object_key: string };
+  if (upload.user_id !== userId) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const provider = new MockVoiceProvider();
+  const result = await provider.separate({
+    audioUri: upload.object_key,
+    maxSpeakers: MAX_SPEAKERS,
+  });
+
+  await db.execute({
+    sql: 'DELETE FROM voice_speakers WHERE upload_id = ?',
+    args: [uploadId],
+  });
+
+  const speakers = result.speakers.map((s, idx) => ({
+    id: crypto.randomUUID(),
+    uploadId,
+    label: `화자 ${idx + 1}`,
+    startMs: s.startMs,
+    endMs: s.endMs,
+    confidence: s.confidence,
+  }));
+
+  for (const sp of speakers) {
+    await db.execute({
+      sql: `INSERT INTO voice_speakers (id, upload_id, label, start_ms, end_ms, confidence)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [sp.id, sp.uploadId, sp.label, sp.startMs, sp.endMs, sp.confidence],
+    });
+  }
+
+  return c.json({ speakers, provider: result.provider }, 201);
+});
+
+/** 업로드된 오디오의 분리된 화자 목록 조회 */
+voice.get('/uploads/:uploadId/speakers', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const uploadId = c.req.param('uploadId');
+
+  if (!UUID_RE.test(uploadId)) {
+    return c.json({ error: 'Invalid upload ID format' }, 400);
+  }
+
+  const uploadRes = await db.execute({
+    sql: 'SELECT id, user_id FROM voice_uploads WHERE id = ?',
+    args: [uploadId],
+  });
+  if (uploadRes.rows.length === 0) {
+    return c.json({ error: 'Voice upload not found' }, 404);
+  }
+  if ((uploadRes.rows[0] as { user_id: string }).user_id !== userId) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const speakersRes = await db.execute({
+    sql: `SELECT id, upload_id, label, start_ms, end_ms, confidence, created_at
+          FROM voice_speakers WHERE upload_id = ? ORDER BY start_ms ASC`,
+    args: [uploadId],
+  });
+
+  return c.json({ speakers: speakersRes.rows });
 });
 
 /** 음성 프로필 목록 조회 */
