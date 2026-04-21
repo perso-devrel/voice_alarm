@@ -322,6 +322,81 @@ describe('GET /voice/uploads/:uploadId/speakers — 저장된 화자 조회', ()
   });
 });
 
+describe('PATCH /voice/uploads/:uploadId/speakers/:speakerId — 화자 라벨 수정', () => {
+  const UPLOAD_ID = '50000000-0000-4000-8000-000000000003';
+  const SPEAKER_ID = '60000000-0000-4000-8000-000000000001';
+
+  function patchReq(uploadId: string, speakerId: string, body: unknown): Request {
+    return new Request(`http://localhost/voice/uploads/${uploadId}/speakers/${speakerId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it('잘못된 UUID 형식이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(patchReq('bad', SPEAKER_ID, { label: '엄마' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('JSON body 가 아니면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      new Request(`http://localhost/voice/uploads/${UPLOAD_ID}/speakers/${SPEAKER_ID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'not-json',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('빈 label 이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(patchReq(UPLOAD_ID, SPEAKER_ID, { label: '   ' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('업로드가 없으면 404', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(patchReq(UPLOAD_ID, SPEAKER_ID, { label: '엄마' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('타인 소유 업로드면 403', async () => {
+    mockDB.pushResult([{ id: UPLOAD_ID, user_id: 'other-user' }]);
+    const app = buildApp('user-1');
+    const res = await app.request(patchReq(UPLOAD_ID, SPEAKER_ID, { label: '엄마' }));
+    expect(res.status).toBe(403);
+  });
+
+  it('화자가 없으면 404', async () => {
+    mockDB.pushResult([{ id: UPLOAD_ID, user_id: 'user-1' }]);
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(patchReq(UPLOAD_ID, SPEAKER_ID, { label: '엄마' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('정상 호출은 200 과 업데이트된 라벨을 반환한다', async () => {
+    mockDB.pushResult([{ id: UPLOAD_ID, user_id: 'user-1' }]);
+    mockDB.pushResult([{ id: SPEAKER_ID }]);
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(patchReq(UPLOAD_ID, SPEAKER_ID, { label: '  엄마  ' }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.speaker.id).toBe(SPEAKER_ID);
+    expect(body.speaker.label).toBe('엄마');
+
+    const upd = mockDB.calls.find((c) => c.sql.startsWith('UPDATE voice_speakers'));
+    expect(upd).toBeDefined();
+    expect(upd!.args).toContain('엄마');
+  });
+});
+
 describe('DELETE /voice/:id — 음성 프로필 삭제', () => {
   it('잘못된 UUID 형식이면 400', async () => {
     const app = buildApp();

@@ -4,6 +4,7 @@ import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, generateTTS, ge
 import type { VoiceProfile, Message, Alarm } from '../types';
 import { getApiErrorMessage } from '../types';
 import { VoiceCardSkeleton } from '../components/Skeleton';
+import SpeakerPicker from '../components/SpeakerPicker';
 
 export default function VoicesPage() {
   const queryClient = useQueryClient();
@@ -16,6 +17,7 @@ export default function VoicesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [detailProfile, setDetailProfile] = useState<VoiceProfile | null>(null);
+  const [showSpeakerPicker, setShowSpeakerPicker] = useState(false);
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -107,14 +109,26 @@ export default function VoicesPage() {
           <h2 className="text-3xl font-bold text-[var(--color-text)]">음성 프로필</h2>
           <p className="text-[var(--color-text-secondary)] mt-1">소중한 사람의 목소리를 관리하세요</p>
         </div>
-        <button
-          onClick={() => setShowUpload(!showUpload)}
-          aria-expanded={showUpload}
-          className="bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-colors"
-        >
-          + 음성 등록
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSpeakerPicker(true)}
+            className="bg-[var(--color-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] px-5 py-3 rounded-xl font-semibold hover:bg-[var(--color-primary-light)]/20 transition-colors"
+          >
+            화자 감지
+          </button>
+          <button
+            onClick={() => setShowUpload(!showUpload)}
+            aria-expanded={showUpload}
+            className="bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-colors"
+          >
+            + 음성 등록
+          </button>
+        </div>
       </div>
+
+      {showSpeakerPicker && (
+        <SpeakerPicker onClose={() => setShowSpeakerPicker(false)} />
+      )}
 
       {showUpload && (
         <div className="bg-[var(--color-surface)] rounded-2xl p-6 mb-6 border border-[var(--color-border)] shadow-sm transition-colors">

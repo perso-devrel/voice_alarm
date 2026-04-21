@@ -283,4 +283,68 @@ export async function getDubJobs() {
   return data.jobs as DubJob[];
 }
 
+// ===== Voice upload & speaker picker =====
+
+export interface VoiceUploadMeta {
+  id: string;
+  objectKey: string;
+  mimeType: string;
+  sizeBytes: number;
+  durationMs: number | null;
+  originalName: string | null;
+  createdAt: string;
+}
+
+export interface Speaker {
+  id: string;
+  upload_id: string;
+  label: string;
+  start_ms: number;
+  end_ms: number;
+  confidence: number;
+  created_at?: string;
+}
+
+export async function uploadVoiceAudio(file: File, durationMs?: number): Promise<VoiceUploadMeta> {
+  const form = new FormData();
+  form.append('audio', file);
+  if (durationMs !== undefined) form.append('durationMs', String(durationMs));
+  if (file.name) form.append('originalName', file.name);
+  const { data } = await api.post('/voice/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.upload as VoiceUploadMeta;
+}
+
+export async function separateUpload(uploadId: string): Promise<Speaker[]> {
+  const { data } = await api.post(`/voice/uploads/${uploadId}/separate`);
+  return (data.speakers as Array<Record<string, unknown>>).map(normalizeSpeaker);
+}
+
+export async function listSpeakers(uploadId: string): Promise<Speaker[]> {
+  const { data } = await api.get(`/voice/uploads/${uploadId}/speakers`);
+  return (data.speakers as Array<Record<string, unknown>>).map(normalizeSpeaker);
+}
+
+export async function renameSpeaker(
+  uploadId: string,
+  speakerId: string,
+  label: string,
+): Promise<{ id: string; label: string }> {
+  const { data } = await api.patch(`/voice/uploads/${uploadId}/speakers/${speakerId}`, { label });
+  return data.speaker as { id: string; label: string };
+}
+
+function normalizeSpeaker(raw: Record<string, unknown>): Speaker {
+  return {
+    id: String(raw.id ?? raw['speaker_id'] ?? ''),
+    upload_id: String(raw.upload_id ?? raw.uploadId ?? ''),
+    label: String(raw.label ?? ''),
+    start_ms: Number(raw.start_ms ?? raw.startMs ?? 0),
+    end_ms: Number(raw.end_ms ?? raw.endMs ?? 0),
+    confidence: Number(raw.confidence ?? 0),
+    created_at: raw.created_at as string | undefined,
+  };
+}
+
 export default api;
