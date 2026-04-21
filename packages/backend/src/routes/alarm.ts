@@ -13,9 +13,13 @@ type AlarmRow = Record<string, unknown> & {
   mode?: unknown;
   voice_profile_id?: unknown;
   speaker_id?: unknown;
+  user_id?: unknown;
+  creator_email?: unknown;
+  creator_name?: unknown;
+  category?: unknown;
 };
 
-function normalizeAlarmRow(row: AlarmRow) {
+function normalizeAlarmRow(row: AlarmRow, viewerUserId?: string | null) {
   const rawRepeat = row.repeat_days;
   let repeatDays: number[] = [];
   if (typeof rawRepeat === 'string' && rawRepeat.length > 0) {
@@ -32,6 +36,14 @@ function normalizeAlarmRow(row: AlarmRow) {
   const mode: AlarmMode =
     row.mode === 'sound-only' || row.mode === 'tts' ? row.mode : 'tts';
 
+  const category = typeof row.category === 'string' ? row.category : null;
+  const isFamilyAlarm = category === 'family' || category === 'family-voice';
+  const senderUserId = typeof row.user_id === 'string' ? row.user_id : null;
+  const senderName = typeof row.creator_name === 'string' ? row.creator_name : null;
+  const senderEmail = typeof row.creator_email === 'string' ? row.creator_email : null;
+  const isReceivedFamilyAlarm =
+    isFamilyAlarm && !!viewerUserId && !!senderUserId && senderUserId !== viewerUserId;
+
   return {
     ...row,
     repeat_days: repeatDays,
@@ -39,6 +51,11 @@ function normalizeAlarmRow(row: AlarmRow) {
     mode,
     voice_profile_id: (row.voice_profile_id ?? null) as string | null,
     speaker_id: (row.speaker_id ?? null) as string | null,
+    sender_user_id: senderUserId,
+    sender_name: senderName,
+    sender_email: senderEmail,
+    is_family_alarm: isFamilyAlarm,
+    is_received_family_alarm: isReceivedFamilyAlarm,
   };
 }
 
@@ -131,7 +148,7 @@ alarm.get('/', async (c) => {
   ]);
 
   const total = Number(countRes.rows[0].total);
-  const alarms = (result.rows as AlarmRow[]).map(normalizeAlarmRow);
+  const alarms = (result.rows as AlarmRow[]).map((r) => normalizeAlarmRow(r, userId));
   return c.json({ alarms, total, limit, offset });
 });
 
@@ -160,7 +177,7 @@ alarm.get('/:id', async (c) => {
     return c.json({ error: 'Alarm not found' }, 404);
   }
 
-  return c.json({ alarm: normalizeAlarmRow(result.rows[0] as AlarmRow) });
+  return c.json({ alarm: normalizeAlarmRow(result.rows[0] as AlarmRow, userId) });
 });
 
 /** 알람 생성 */
@@ -440,7 +457,7 @@ alarm.patch('/:id', async (c) => {
 
   return c.json({
     success: true,
-    alarm: normalizeAlarmRow(updated.rows[0] as AlarmRow),
+    alarm: normalizeAlarmRow(updated.rows[0] as AlarmRow, userId),
   });
 });
 
