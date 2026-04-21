@@ -149,6 +149,83 @@ describe('POST /alarm — 알람 생성', () => {
     );
     expect(res.status).toBe(201);
   });
+
+  it('mode 가 허용 목록 밖이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00', mode: 'video' }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('voice_profile_id UUID 형식이 아니면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/alarm', {
+        message_id: ID.message,
+        time: '07:00',
+        voice_profile_id: 'not-a-uuid',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('speaker_id UUID 형식이 아니면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/alarm', {
+        message_id: ID.message,
+        time: '07:00',
+        speaker_id: 'bad',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('mode + voice_profile_id + speaker_id 포함해 정상 생성', async () => {
+    const voiceProfileId = '40000000-0000-4000-8000-000000000001';
+    const speakerId = '50000000-0000-4000-8000-000000000001';
+    mockDB.pushResult([{ plan: 'plus' }]);
+    mockDB.pushResult([{ id: ID.message }]);
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/alarm', {
+        message_id: ID.message,
+        time: '07:00',
+        mode: 'sound-only',
+        voice_profile_id: voiceProfileId,
+        speaker_id: speakerId,
+      }),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.alarm.mode).toBe('sound-only');
+
+    const insert = mockDB.calls.find((c) => c.sql.includes('INSERT INTO alarms'));
+    expect(insert).toBeDefined();
+    expect(insert!.sql).toContain('mode');
+    expect(insert!.sql).toContain('voice_profile_id');
+    expect(insert!.sql).toContain('speaker_id');
+    expect(insert!.args).toContain('sound-only');
+    expect(insert!.args).toContain(voiceProfileId);
+    expect(insert!.args).toContain(speakerId);
+  });
+
+  it('mode 미지정 시 기본값은 tts', async () => {
+    mockDB.pushResult([{ plan: 'plus' }]);
+    mockDB.pushResult([{ id: ID.message }]);
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/alarm', { message_id: ID.message, time: '07:00' }),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.alarm.mode).toBe('tts');
+    const insert = mockDB.calls.find((c) => c.sql.includes('INSERT INTO alarms'));
+    expect(insert!.args).toContain('tts');
+  });
 });
 
 describe('PATCH /alarm/:id — 알람 수정', () => {
@@ -184,6 +261,47 @@ describe('PATCH /alarm/:id — 알람 수정', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
+  });
+
+  it('mode/voice_profile_id/speaker_id 변경 반영', async () => {
+    const voiceProfileId = '40000000-0000-4000-8000-0000000000aa';
+    const speakerId = '50000000-0000-4000-8000-0000000000bb';
+    mockDB.pushResult([{ id: ID.alarm }]); // existing
+    mockDB.pushResult([], 1); // update
+    mockDB.pushResult([
+      {
+        id: ID.alarm,
+        time: '07:00',
+        is_active: 1,
+        snooze_minutes: 5,
+        repeat_days: '[]',
+        mode: 'sound-only',
+        voice_profile_id: voiceProfileId,
+        speaker_id: speakerId,
+      },
+    ]);
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('PATCH', `/alarm/${ID.alarm}`, {
+        mode: 'sound-only',
+        voice_profile_id: voiceProfileId,
+        speaker_id: speakerId,
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.alarm.mode).toBe('sound-only');
+    expect(body.alarm.voice_profile_id).toBe(voiceProfileId);
+    expect(body.alarm.speaker_id).toBe(speakerId);
+
+    const update = mockDB.calls.find((c) => c.sql.startsWith('UPDATE alarms SET'));
+    expect(update).toBeDefined();
+    expect(update!.sql).toContain('mode = ?');
+    expect(update!.sql).toContain('voice_profile_id = ?');
+    expect(update!.sql).toContain('speaker_id = ?');
+    expect(update!.args).toContain('sound-only');
+    expect(update!.args).toContain(voiceProfileId);
+    expect(update!.args).toContain(speakerId);
   });
 });
 

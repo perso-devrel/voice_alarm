@@ -180,6 +180,20 @@ export const migrations: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_voice_speakers_upload ON voice_speakers(upload_id)',
     ],
   },
+  {
+    id: 5,
+    name: 'alarm-mode-voice-speaker',
+    statements: [
+      // mode: 'sound-only' 는 원본 오디오 재생, 'tts' 는 합성 메시지 재생 (기본)
+      `ALTER TABLE alarms ADD COLUMN mode TEXT NOT NULL DEFAULT 'tts'
+        CHECK(mode IN ('sound-only','tts'))`,
+      // 메시지 경유 없이 알람이 특정 음성 프로필·화자 세그먼트에 직접 바인딩될 수 있음
+      'ALTER TABLE alarms ADD COLUMN voice_profile_id TEXT',
+      'ALTER TABLE alarms ADD COLUMN speaker_id TEXT',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_voice_profile ON alarms(voice_profile_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_speaker ON alarms(speaker_id)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {
