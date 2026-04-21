@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:12)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:17)
 
-- 진행 중 Phase: 4
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59 (23개)
-- 진행 중 이슈: 없음 (다음: Phase 4 #25 알람 재생(tts) — 샘플 + 자막 오버레이)
+- 진행 중 Phase: 4 완료 → Phase 5 진입
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61 (24개). **Phase 4 (TASK.md #19~#25) 전부 완료.**
+- 진행 중 이슈: 없음 (다음: Phase 5 #26 Plan·Subscription 모델 — 개인/가족 이용권 스키마, 결제는 스텁)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:17 · Issue #61 · 알람 미리듣기 액션 라우터 + 🔈 버튼 (Phase 4 종료)
+- 브랜치: `feature/issue-61-mobile-tts-preview-action`
+- PR: #62 (merged)
+- 변경 파일: 3개 (수정)
+- 요약: `alarmPlayback.ts` 에 `buildAlarmPreviewAction(plan)` 순수 함수 추가 — #59 의 PlaybackPlan 을 `navigate(/player)` / `preview-audio(uri,caption)` / `toast(message)` 액션으로 디스패치. tts 는 기존 player 화면으로 라우팅되어 자막(text) 이 자동 오버레이되고, sound-only / fallback 은 caption 을 자막으로 사용해 바로 재생. `(tabs)/alarms.tsx` 알람 카드에 🔈 미리듣기 버튼 추가 — `stopPropagation` 으로 편집 이동 차단, messages/voices 쿼리 연결해 resolver 에 전달, 실패 시 mock 파일 번들 안내 토스트. jest 6건 (buildAlarmPreviewAction 4 + 엔드투엔드 2), 모바일 61→67 / 전체 420→426. **Phase 4 종료** — TASK.md #19~#25 (Alarm 모델 확장 + CRUD 정규화 + 스케줄러 + 웹/모바일 편집 UI + sound-only/tts 재생) 7개 이슈 전부 달성.
+- 다음: Phase 5 #26 Plan·Subscription 모델 — 개인/가족 플랜 스키마, 기간/상태, 결제 스텁 엔드포인트 설계
+- 리스크: mock URI 실체 번들 후속. 노티피케이션 발화 시 자동 재생(백그라운드 오디오 세션) 은 별도 이슈. speaker 별 세그먼트 오버레이는 Phase 6 이후.
+
+---
 
 ## 2026-04-21 14:12 · Issue #59 · 알람 재생 resolver (sound-only mock) + 모드 뱃지
 - 브랜치: `feature/issue-59-mobile-alarm-playback-resolver`
