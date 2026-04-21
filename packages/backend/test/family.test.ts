@@ -316,6 +316,7 @@ describe('GET /family/groups/current', () => {
         email: 'owner@x.com',
         name: 'Owner',
         picture: null,
+        allow_family_alarms: 1,
       },
       {
         id: 'm-mem',
@@ -325,6 +326,7 @@ describe('GET /family/groups/current', () => {
         email: 'm@x.com',
         name: 'Member',
         picture: null,
+        allow_family_alarms: 0,
       },
     ]);
 
@@ -337,6 +339,8 @@ describe('GET /family/groups/current', () => {
     expect(body.role).toBe('member');
     expect(body.members).toHaveLength(2);
     expect(body.members[0].role).toBe('owner');
+    expect(body.members[0].allow_family_alarms).toBe(true);
+    expect(body.members[1].allow_family_alarms).toBe(false);
   });
 
   it('소속 그룹 없음 → null 응답', async () => {

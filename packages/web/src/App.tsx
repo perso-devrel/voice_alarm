@@ -11,14 +11,24 @@ const AlarmsPage = lazy(() => import('./pages/AlarmsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const FriendsPage = lazy(() => import('./pages/FriendsPage'));
 const GiftsPage = lazy(() => import('./pages/GiftsPage'));
+const FamilyAlarmsPage = lazy(() => import('./pages/FamilyAlarmsPage'));
 
-type Page = 'dashboard' | 'voices' | 'messages' | 'alarms' | 'friends' | 'gifts' | 'settings';
+type Page =
+  | 'dashboard'
+  | 'voices'
+  | 'messages'
+  | 'alarms'
+  | 'family'
+  | 'friends'
+  | 'gifts'
+  | 'settings';
 
 const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
   { key: 'dashboard', label: '대시보드', emoji: '📊' },
   { key: 'voices', label: '음성 관리', emoji: '🎙️' },
   { key: 'messages', label: '메시지', emoji: '💌' },
   { key: 'alarms', label: '알람 설정', emoji: '⏰' },
+  { key: 'family', label: '가족 알람', emoji: '🏠' },
   { key: 'friends', label: '친구', emoji: '👥' },
   { key: 'gifts', label: '선물', emoji: '🎁' },
   { key: 'settings', label: '설정', emoji: '⚙️' },
@@ -59,6 +69,8 @@ export default function App() {
         return <MessagesPage />;
       case 'alarms':
         return <AlarmsPage />;
+      case 'family':
+        return <FamilyAlarmsPage />;
       case 'friends':
         return <FriendsPage />;
       case 'gifts':
