@@ -116,6 +116,36 @@ export const migrations: Migration[] = [
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)',
     ],
   },
+  {
+    id: 2,
+    name: 'email-password-auth',
+    statements: [
+      // 기존 스키마는 google_id NOT NULL — 이메일/비밀번호 사용자를 위해 nullable 로 재정의.
+      // SQLite 의 ALTER TABLE 한계로 users 테이블 재생성 패턴 사용.
+      `CREATE TABLE users_new (
+        id TEXT PRIMARY KEY,
+        google_id TEXT UNIQUE,
+        email TEXT NOT NULL,
+        password_hash TEXT,
+        name TEXT,
+        picture TEXT,
+        plan TEXT DEFAULT 'free' CHECK(plan IN ('free','plus','family')),
+        daily_tts_count INTEGER DEFAULT 0,
+        daily_tts_reset_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `INSERT INTO users_new (id, google_id, email, name, picture, plan,
+        daily_tts_count, daily_tts_reset_at, created_at, updated_at)
+        SELECT id, google_id, email, name, picture, plan,
+        daily_tts_count, daily_tts_reset_at, created_at, updated_at FROM users`,
+      'DROP TABLE users',
+      'ALTER TABLE users_new RENAME TO users',
+      'CREATE UNIQUE INDEX idx_users_email_unique ON users(email)',
+      'CREATE INDEX idx_users_email ON users(email)',
+      'CREATE UNIQUE INDEX idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

@@ -11,6 +11,7 @@ import voiceRoutes from './routes/voice';
 import ttsRoutes from './routes/tts';
 import alarmRoutes from './routes/alarm';
 import userRoutes from './routes/user';
+import authRoutes from './routes/auth';
 import libraryRoutes from './routes/library';
 import friendRoutes from './routes/friend';
 import giftRoutes from './routes/gift';
@@ -88,6 +89,9 @@ app.get('/api/tts/presets', publicCache, async (c) => {
   const { PRESETS } = await import('./data/presets');
   return c.json({ presets: PRESETS });
 });
+
+// 이메일+비밀번호 가입/로그인 (인증 미들웨어 미적용)
+app.route('/api/auth', authRoutes);
 
 // 인증이 필요한 라우트들
 const api = new Hono<AppEnv>();
