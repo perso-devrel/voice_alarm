@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:28)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:35)
 
-- 진행 중 Phase: 6 진행 중 (#34~#36 완료). 다음 #37 웹 가족 알람 편집 화면.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83 (35개). Phase 1~5 완료.
-- 진행 중 이슈: 없음 (다음: Phase 6 #37 웹 가족 알람 편집 화면 — 그룹 멤버 선택/시간/메시지/허용 여부 노출)
+- 진행 중 Phase: 6 진행 중 (#34~#37 완료). 다음 #38 모바일 가족 알람 편집 화면.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85 (36개). Phase 1~5 완료.
+- 진행 중 이슈: 없음 (다음: Phase 6 #38 모바일 가족 알람 편집 화면)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 15:35 · Issue #85 · 웹 가족 알람 편집 화면
+- 브랜치: `feature/issue-85-web-family-alarms`
+- PR: #86 (merged)
+- 변경 파일: 7개 (신규 3 + 수정 4)
+- 요약: `packages/web/src/lib/familyAlarmForm.ts` 순수 함수 3종 — `filterFamilyAlarmRecipients`(self·비허용 제외 + owner 우선 정렬), `validateFamilyAlarmForm`(wake_at HH:mm · 메시지 trim/500자 · repeatDays 중복·범위 밖 제거+정렬 · voice_profile_id 선택), `buildMemberDisplayName`(name→email→'이름 미지정'). `FamilyAlarmsPage.tsx` 3 상태 UI — 로딩/그룹 없음/그룹+폼, 멤버 카드(소유자·멤버 + 알람 허용/거부 뱃지), 수신자 select + 시간 + 메시지(500자 카운터) + 반복요일 토글, react-query mutation 성공/에러 메시지. `services/api.ts` 에 `getFamilyGroupCurrent`·`createFamilyAlarmText`·`FamilyGroupMember`(allow_family_alarms 포함)·`FamilyAlarmCreatePayload` 타입 추가. `App.tsx` '가족 알람' 🏠 탭 라우팅. **백엔드 보조 변경**: `GET /api/family/groups/current` members 응답에 `u.allow_family_alarms` SELECT 추가 + `Number(...) === 1` 로 boolean 정규화 (기존 테스트도 함께 업데이트). vitest familyAlarmForm 17건 + backend 기존 1건 업데이트 → 웹 47→64 / backend 409 파일 그린, tsc 0 에러.
+- 다음: Phase 6 #38 모바일 가족 알람 편집 화면 — React Native(Expo) 에 동일한 순수 헬퍼 이식(packages/web 과 계약 일치 보장) + `FamilyAlarmsScreen.tsx` + services 추가 + `react-native-picker/picker` 또는 Modal select.
+- 리스크: voice 모드 UI 미구현(추후 `FamilyAlarmsPage` 에 탭 추가). 수신자 voice_profile 부재 시 pre-check 미구현(서버 400 만 노출). 초대/탈퇴/양도 UI 분리 필요. 웹에서 `getUserProfile` 반환이 `any` — 타입 narrowing 은 후속 이슈에서.
+
+---
 
 ## 2026-04-21 15:28 · Issue #83 · 가족 알람 추가 API (voice 모드)
 - 브랜치: `feature/issue-83-family-alarm-voice`
