@@ -24,6 +24,7 @@ export interface AuthState {
   error: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
   register: (email: string, password: string, name: string) => Promise<AuthUser>;
+  loginWithToken: (token: string) => Promise<AuthUser | null>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -146,6 +147,37 @@ export function AuthProvider({ children, apiBase, storage, fetchImpl }: AuthProv
     [base, doFetch, persistToken],
   );
 
+  const loginWithToken = useCallback(
+    async (nextToken: string): Promise<AuthUser | null> => {
+      setError(null);
+      setIsLoading(true);
+      try {
+        persistToken(nextToken);
+        setToken(nextToken);
+        const res = await doFetch(`${base}/auth/me`, {
+          headers: { Authorization: `Bearer ${nextToken}` },
+        });
+        if (res.status === 401) {
+          persistToken(null);
+          setToken(null);
+          setUser(null);
+          throw new Error(await readError(res));
+        }
+        if (!res.ok) throw new Error(await readError(res));
+        const body = (await res.json()) as { user: AuthUser };
+        setUser(body.user);
+        return body.user;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'login failed';
+        setError(msg);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [base, doFetch, persistToken],
+  );
+
   const register = useCallback(
     async (email: string, password: string, name: string): Promise<AuthUser> => {
       setError(null);
@@ -182,10 +214,11 @@ export function AuthProvider({ children, apiBase, storage, fetchImpl }: AuthProv
       error,
       login,
       register,
+      loginWithToken,
       logout,
       refresh,
     }),
-    [user, token, isLoading, error, login, register, logout, refresh],
+    [user, token, isLoading, error, login, register, loginWithToken, logout, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
