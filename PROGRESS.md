@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:03)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:12)
 
 - 진행 중 Phase: 2 (인증·사용자 모델)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27 (7개)
-- 진행 중 이슈: 없음 (다음: Phase 2 #9 인증 미들웨어 / 공용 `useAuth`)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29 (8개)
+- 진행 중 이슈: 없음 (다음: Phase 2 #10 웹 로그인·가입 화면)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 12:12 · Issue #29 · 공용 useAuth 훅 + AuthProvider
+- 브랜치: `feature/issue-29-useauth-hook`
+- PR: #30 (merged)
+- 변경 파일: 5개 (신규)
+- 요약: 웹(`localStorage`)/모바일(`AsyncStorage`) 양쪽에 대응하는 `AuthProvider` + `useAuth` 훅 구현. 초기 마운트 시 저장된 토큰으로 `/auth/me` 복원, 401 자동 로그아웃, `fetchImpl`·`storage` 주입으로 테스트 용이. 모바일 쪽은 `authApi.ts` 순수 함수로 fetch 분리. vitest 7 + jest 7 추가.
+- 다음: #10 웹 로그인·가입 화면 (`useAuth` 를 실제 UI 에 연결)
+- 리스크: `AuthProvider` 는 아직 App.tsx / mobile _layout.tsx 에 장착되지 않음 — 다음 이슈에서 연결.
+
+---
 
 ## 2026-04-21 12:03 · Issue #27 · 이메일+비밀번호 가입/로그인 API
 - 브랜치: `feature/issue-27-email-password-auth`
