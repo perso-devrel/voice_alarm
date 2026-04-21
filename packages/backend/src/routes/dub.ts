@@ -90,6 +90,19 @@ dub.post('/', async (c) => {
   }
 });
 
+dub.get('/jobs', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const result = await db.execute({
+    sql: `SELECT id, source_message_id, source_language, target_language, status, progress, result_message_id, error_message, created_at
+          FROM dub_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
+    args: [userId],
+  });
+
+  return c.json({ jobs: result.rows });
+});
+
 dub.get('/:id', async (c) => {
   const userId = c.get('userId');
   const db = getDB(c.env);
@@ -234,19 +247,6 @@ dub.get('/:id', async (c) => {
       500,
     );
   }
-});
-
-dub.get('/jobs', async (c) => {
-  const userId = c.get('userId');
-  const db = getDB(c.env);
-
-  const result = await db.execute({
-    sql: `SELECT id, source_message_id, source_language, target_language, status, progress, result_message_id, error_message, created_at
-          FROM dub_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
-    args: [userId],
-  });
-
-  return c.json({ jobs: result.rows });
 });
 
 export default dub;
