@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import OnboardingOverlay from './components/OnboardingOverlay';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useAuth } from './hooks/useAuth';
 
@@ -89,6 +90,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[var(--color-bg)]">
+      <OnboardingOverlay />
       {/* Sidebar — desktop only */}
       <nav
         aria-label="메인 메뉴"
