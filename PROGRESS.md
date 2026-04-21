@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:28)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:35)
 
-- 진행 중 Phase: 7 진행 중 (#40~#42 완료). 다음 #43 웹 캐릭터 화면.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95 (41개). Phase 1~6 완료.
-- 진행 중 이슈: 없음 (다음: Phase 7 #43 웹 캐릭터 화면)
+- 진행 중 Phase: 7 진행 중 (#40~#43 완료). 다음 #44 모바일 캐릭터 화면.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97 (42개). Phase 1~6 완료.
+- 진행 중 이슈: 없음 (다음: Phase 7 #44 모바일 캐릭터 화면)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 16:35 · Issue #97 · 웹 캐릭터 화면 + XP 지급 테스트
+- 브랜치: `feature/issue-97-web-character-page`
+- PR: #98 (merged)
+- 변경 파일: 5개 (신규 3 + 수정 2)
+- 요약: Phase 7 #43 — 백엔드 #40~#42 를 웹 대시보드로 노출. `packages/web/src/lib/character.ts` 순수 함수 — `CharacterStage` 유니온, `STAGE_EMOJI`(seed🌱 sprout🌿 tree🌳 bloom🌸) / `STAGE_LABEL`(씨앗/새싹/나무/꽃), `DIALOGUES` 스테이지별 4대사, `normalizeStage`(유효값 whitelist + seed 폴백), `pickRandomDialogue(stage, rng=Math.random)` 결정성 주입 가능(NaN 방어/클램프 `[0,0.999999]`), `formatProgress(p)` "XP 120 / 400 (30%)" + null·NaN·음수 방어, `progressBarWidthPct` 0..100 클램프. `services/api.ts` 에 `XpEvent`/`CharacterPayload`/`CharacterResponse`/`CharacterGrantResponse` 타입 + `getCharacterMe`/`grantCharacterXp` 두 fetcher 추가. `pages/CharacterPage.tsx` — TanStack Query `['character-me']`, 큰 이모지(스테이지) + Lv·라벨 뱃지 + 탭 시 dialogueSeed 증가로 결정성 rng 기반 랜덤 대사 전환(role=button, Enter/Space 지원), XP 게이지 바 `role=progressbar`·aria-valuenow, 총 XP/애정도/오늘 획득(daily_xp/200) 3-column 요약, 개발용 3개 버튼(alarm_completed/alarm_snoozed/family_alarm_received) → `grantMutation` → 성공 시 "+N XP · +M 애정도 (일일 캡 도달)?" 알림 + `invalidateQueries`. `App.tsx` 에 lazy `CharacterPage` + Page 유니온 'character' + NAV_ITEMS 🌱 내 캐릭터 + renderPage case. vitest 15건(normalize 8 + 이모지·라벨 2 + 대사 리스트 1 + 결정성 4 + format 4 + bar 2 — listDialogues 포함) → 웹 76→91 / 10 파일 그린, tsc 0 에러(3 패키지).
+- 다음: Phase 7 #44 모바일 캐릭터 화면 — 웹과 동일 계약으로 `apps/mobile/src/lib/character.ts` 이식(이모지·라벨·대사·pickRandomDialogue·formatProgress) + `services/api.ts` 에 `getCharacterMe`/`grantCharacterXp` 추가 + `app/(tabs)/character.tsx` 신규 탭(Pressable → 대사 전환, aria progressbar 대응 `accessibilityRole="progressbar"` + `accessibilityValue`) + `_layout.tsx` 탭 등록(🌱 아이콘) + jest 테스트. 웹과 대사·이모지 매핑 정확히 일치시켜 공용 스냅샷성 유지.
+- 리스크: 개발용 XP 지급 버튼이 런타임에 항상 노출됨 — Phase 8 폴리시에서 `import.meta.env.DEV` 또는 role 기반 숨김 처리 예정. 이모지 기반 아바타는 MVP 범위 — 커스텀 일러스트/스프라이트 전환은 Phase 10 후보. `pickRandomDialogue` 의 rng 주입은 테스트 결정성 용이지만 UI 는 `dialogueSeed` 기반 LCG 유사 계산으로 깜박임 시 순서가 재현 가능해 UX 상 "진짜 랜덤" 감 부족 — Phase 8 에서 `Math.random()` 으로 전환하거나 seed 를 시간 기반으로 교체 검토.
+
+---
 
 ## 2026-04-21 16:28 · Issue #95 · XP 지급 API (POST /characters/xp)
 - 브랜치: `feature/issue-95-xp-grant-api`
