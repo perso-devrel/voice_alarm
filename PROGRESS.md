@@ -1,10 +1,17 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-17)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21)
 
 - 진행 중 Phase: 1 (기존 코드 진단 & 모노레포 정비)
 - 완료 이슈: #15, #17 (2개)
-- 진행 중 이슈: 없음 (다음 후보: 루트 typecheck 집계 + 웹/모바일 vitest/jest 셋업)
+- 진행 중 이슈: 없음
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
+
+### 🚨 BLOCKER: GitHub CLI 인증 만료 (2026-04-21)
+- `gh auth status` 실패: 토큰 invalid (`alpaka206` 계정)
+- `git push`는 정상 동작
+- **영향**: 이슈 생성, PR 생성, PR 머지 등 전체 워크플로우 불가
+- **해결 방법**: 사용자가 `gh auth login -h github.com` 실행 필요
+- TASK.md Phase 0 규칙에 따라 gh 실패 시 DONE 처리
 
 ---
 
