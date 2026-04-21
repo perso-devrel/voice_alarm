@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:23)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:28)
 
-- 진행 중 Phase: 5 진행 중 (#26 완료, 다음 #27 결제 스텁)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63 (25개). Phase 4 완료 + Phase 5 #26 완료.
-- 진행 중 이슈: 없음 (다음: Phase 5 #27 스텁 결제 엔드포인트 — 실 PG 미연동, "완료" 더미 응답 → Subscription 생성)
+- 진행 중 Phase: 5 진행 중 (#26, #27 완료, 다음 #28 이용권 코드 발급)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65 (26개). Phase 4 완료 + Phase 5 #26, #27 완료.
+- 진행 중 이슈: 없음 (다음: Phase 5 #28 이용권 코드 발급 — /billing/checkout 완료 훅에서 `VA-XXXX-XXXX-XXXX` 1회용 코드 자동 생성)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:28 · Issue #65 · 스텁 결제 엔드포인트 (/billing/checkout, /subscription)
+- 브랜치: `feature/issue-65-billing-stub`
+- PR: #66 (merged)
+- 변경 파일: 3개 (신규 2 + 수정 1)
+- 요약: `packages/backend/src/routes/billing.ts` 신규 — `POST /checkout { plan_key }` 가 plans 테이블 조회 → 사용자 조회 → `subscriptions` 행 생성(status=`active`, expires_at=now+period_days) → `users.plan` 동기화(personal→`plus`, family→`family`). free 플랜/없는/비활성 plan_key/없는 사용자 모두 적절한 에러 응답. `GET /subscription` 가 활성 구독 + plans JOIN 으로 반환(없으면 `{subscription:null,plan:null}`). 실 PG(TossPayments/Iamport) 미연동 — `// TODO: integrate real PG` 주석, 결제수단 받지 않고 항상 성공 가정. `index.ts` 에 `/billing` 라우팅(api 하위, 인증 미들웨어 적용). vitest `billing.test.ts` 11건 (checkout 8 + subscription 3), 백엔드 302→313 / 25 파일 그린, tsc 에러 없음.
+- 다음: Phase 5 #28 이용권 코드 발급 — checkout 완료 훅에서 `VA-XXXX-XXXX-XXXX` 포맷 1회용 코드 자동 발급, plans 테이블과 별도로 `voucher_codes` 테이블 추가(hash + status issued/used/expired).
+- 리스크: 실 PG 연동 이전이라 checkout idempotency/재시도/환불 로직 없음. 기존 활성 구독이 있는 상태에서 재결제 시 중복 row 생성됨 — 후속 이슈에서 단일화 필요. plan_group_id 는 #31 가족 플랜 이전까지 nullable 유지.
+
+---
 
 ## 2026-04-21 14:23 · Issue #63 · Plan·Subscription 모델 및 기본 플랜 3종 시드 (Phase 5 진입)
 - 브랜치: `feature/issue-63-plan-subscription-model`
