@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
+import { selectFiringAlarms, type ScheduledAlarm } from '../lib/scheduler';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ALARM_MODES = ['sound-only', 'tts'] as const;
@@ -42,6 +43,49 @@ function normalizeAlarmRow(row: AlarmRow) {
 }
 
 const alarm = new Hono<AppEnv>();
+
+/** 디버그용 cron 틱 — 현재 UTC 시각 기준으로 발화 대상 알람을 반환 (푸시 전송은 하지 않음) */
+alarm.get('/tick', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const result = await db.execute({
+    sql: `SELECT id, user_id, target_user_id, time, repeat_days, is_active,
+                 mode, voice_profile_id, speaker_id
+          FROM alarms
+          WHERE (user_id = ? OR target_user_id = ?) AND is_active = 1`,
+    args: [userId, userId],
+  });
+
+  const alarms: ScheduledAlarm[] = (result.rows as AlarmRow[]).map((r) => {
+    const n = normalizeAlarmRow(r);
+    return {
+      id: String(r.id),
+      user_id: String(r.user_id),
+      target_user_id: (r.target_user_id as string | null) ?? null,
+      time: String(r.time),
+      repeat_days: n.repeat_days,
+      is_active: n.is_active,
+      mode: n.mode,
+      voice_profile_id: n.voice_profile_id,
+      speaker_id: n.speaker_id,
+    };
+  });
+
+  const now = new Date();
+  const firing = selectFiringAlarms(alarms, now);
+  return c.json({
+    now: now.toISOString(),
+    checked: alarms.length,
+    firing: firing.map((a) => ({
+      id: a.id,
+      time: a.time,
+      mode: a.mode,
+      voice_profile_id: a.voice_profile_id,
+      speaker_id: a.speaker_id,
+    })),
+  });
+});
 
 /** 알람 목록 조회 */
 alarm.get('/', async (c) => {
