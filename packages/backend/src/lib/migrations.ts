@@ -259,6 +259,35 @@ export const migrations: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_voucher_codes_status ON voucher_codes(status)',
     ],
   },
+  {
+    id: 8,
+    name: 'plan-groups',
+    statements: [
+      // 가족 플랜 그룹: 소유자 1인 + 멤버 N인 (최대 max_members = 6).
+      // 1 그룹 = 1 가족 구독 (subscriptions.plan_group_id 로 역참조).
+      `CREATE TABLE IF NOT EXISTS plan_groups (
+        id TEXT PRIMARY KEY,
+        owner_user_id TEXT NOT NULL REFERENCES users(id),
+        plan_id TEXT NOT NULL REFERENCES plans(id),
+        max_members INTEGER NOT NULL DEFAULT 6,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      // 그룹 멤버: (plan_group_id, user_id) 조합 유일.
+      // role='owner' 는 그룹당 1명만 허용 (애플리케이션 레벨에서 보장).
+      `CREATE TABLE IF NOT EXISTS plan_group_members (
+        id TEXT PRIMARY KEY,
+        plan_group_id TEXT NOT NULL REFERENCES plan_groups(id),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        role TEXT NOT NULL DEFAULT 'member' CHECK(role IN ('owner','member')),
+        joined_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_plan_groups_owner ON plan_groups(owner_user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_members_group ON plan_group_members(plan_group_id)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_members_user ON plan_group_members(user_id)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_group_members_unique ON plan_group_members(plan_group_id, user_id)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {
