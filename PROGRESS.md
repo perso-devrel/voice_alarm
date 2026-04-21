@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 17:05)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 17:10)
 
-- 진행 중 Phase: 8 (크로스플랫폼 품질). **Phase 1~7 완료.** 다음 #46 공용 디자인 토큰.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99, #101 (44개). Phase 1~7 완료.
-- 진행 중 이슈: 없음 (다음: Phase 8 #46 공용 디자인 토큰)
+- 진행 중 Phase: 8 (크로스플랫폼 품질). **Phase 1~7 완료.** 다음 #47 접근성 기본 체크.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99, #101, #103 (45개). Phase 1~7 완료.
+- 진행 중 이슈: 없음 (다음: Phase 8 #47 접근성 기본 체크)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 17:10 · Issue #103 · 공용 디자인 토큰 패키지
+- 브랜치: `feature/issue-103-design-tokens`
+- PR: #104 (merged)
+- 변경 파일: 6개 (신규 5 + package-lock)
+- 요약: Phase 8 #46 — `packages/ui` 워크스페이스 (`@voice-alarm/ui`) 신규. `tokens.ts`에 ColorPalette(19색 hex), LightColors/DarkColors(16 시맨틱 키 일치), Spacing(xs~xxl 6단계), BorderRadius(sm~full 5단계), FontSize(xs~hero 7단계), FontWeight(normal~bold 4단계), FontFamily(system/mono), `getColors(mode)` 헬퍼. `index.ts` 에서 전부 re-export + 타입 export. vitest 10건(hex 검증·키 일치·모드 분기·spacing 오름차순·borderRadius full·fontSize 오름차순·fontWeight bold) → ui 10건 / 전체 tsc 0 에러.
+- 다음: Phase 8 #47 접근성 기본 체크 — 스크린리더 aria, 색 대비, 터치 타겟 44px 이상.
+- 리스크: 웹/모바일 기존 하드코딩 색상을 `@voice-alarm/ui` import로 교체하는 것은 별도 리팩토링 이슈(Phase 10 후보).
+
+---
 
 ## 2026-04-21 17:05 · Issue #101 · 성장 단계 전환 애니메이션
 - 브랜치: `feature/issue-101-stage-transition-anim`
