@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:41)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:48)
 
-- 진행 중 Phase: 5 진행 중 (#26~#29 완료, 다음 #30 코드 공유 UI)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69 (28개). Phase 4 완료 + Phase 5 #26~#29 완료.
-- 진행 중 이슈: 없음 (다음: Phase 5 #30 코드 공유 UI — 웹/모바일에서 발급 코드 목록 + 복사/공유 버튼, 발급자 본인에게만 노출)
+- 진행 중 Phase: 5 진행 중 (#26~#30 완료, 다음 #31 가족 플랜 그룹 모델)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71 (29개). Phase 4 완료 + Phase 5 #26~#30 완료.
+- 진행 중 이슈: 없음 (다음: Phase 5 #31 가족 플랜 그룹 모델 — 최대 6명, 소유자 1인 + 멤버 N인, plan_groups 테이블 + subscriptions.plan_group_id 연결)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:48 · Issue #71 · 이용권 코드 공유 UI + voucherShare 순수 헬퍼
+- 브랜치: `feature/issue-71-voucher-share-ui`
+- PR: #72 (merged)
+- 변경 파일: 7개 (신규 4 + 수정 3)
+- 요약: `packages/web/src/lib/voucherShare.ts` + `apps/mobile/src/lib/voucherShare.ts` 신규 — 동일 계약의 순수 헬퍼(`maskVoucherCode` 첫 그룹만 노출, `formatVoucherStatus` issued→미사용/used→사용됨/expired→만료, `isVoucherRedeemable` status=issued + 만료 전, `buildVoucherShareText` 플랜·코드·만료일·등록 안내 포함 한국어 문구). `getVouchers()` 서비스 함수 + `VoucherItem` 타입 웹/모바일 각각 추가. 웹 `SettingsPage` 에 '내 이용권 코드' 섹션 — 플랜명·상태 뱃지(초록/회색/빨강)·코드 평문·만료일·복사(clipboard)·공유(`navigator.share` 우선, fallback clipboard) 버튼. 비활성 코드는 disabled. vitest 웹 11건 + jest 모바일 7건 → 웹 36→47 / 모바일 67→74 그린, tsc 에러 없음.
+- 다음: Phase 5 #31 가족 플랜 그룹 모델 — 마이그레이션 #8 `plan_groups`(id, owner_user_id, plan_id, max_members, created_at) + `plan_group_members`(plan_group_id, user_id, role owner|member, joined_at). `subscriptions.plan_group_id` 연결, 가족 플랜 결제 시 자동 그룹 생성 + owner 추가. vitest 마이그레이션·모델 테스트.
+- 리스크: 모바일 전용 Settings 스크린 UI 미구현(서비스·헬퍼만 이식, 후속 이슈 예정). QR 렌더링·코드 URL 딥링크는 Phase 8+. `navigator.share` 미지원 브라우저에서 clipboard 권한이 없으면 최종 실패 토스트.
+
+---
 
 ## 2026-04-21 14:41 · Issue #69 · 이용권 코드 등록 API (/billing/redeem)
 - 브랜치: `feature/issue-69-voucher-redeem`
