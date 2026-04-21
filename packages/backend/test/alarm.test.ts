@@ -414,6 +414,59 @@ describe('PATCH /alarm/:id — 알람 수정', () => {
   });
 });
 
+describe('GET /alarm/tick — 발화 대상 조회', () => {
+  it('활성 알람 중 현재 시각과 일치하는 것만 반환', async () => {
+    // 현재 UTC 분 기준 HH:mm
+    const now = new Date();
+    const pad = (n: number) => (n < 10 ? `0${n}` : String(n));
+    const hhmm = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}`;
+
+    mockDB.pushResult([
+      {
+        id: ID.alarm,
+        user_id: 'user-1',
+        target_user_id: null,
+        time: hhmm,
+        repeat_days: '[]',
+        is_active: 1,
+        mode: 'tts',
+        voice_profile_id: null,
+        speaker_id: null,
+      },
+      {
+        id: '00000000-0000-4000-8000-0000000000aa',
+        user_id: 'user-1',
+        target_user_id: null,
+        time: '23:58', // 거의 확실히 일치 안 함 (현재 시각과 다를 확률 매우 높음)
+        repeat_days: '[]',
+        is_active: 1,
+        mode: 'tts',
+        voice_profile_id: null,
+        speaker_id: null,
+      },
+    ]);
+
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/alarm/tick'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.checked).toBe(2);
+    // 첫 번째는 현재 시각 매칭 → 발화
+    expect(body.firing.length).toBeGreaterThanOrEqual(1);
+    expect(body.firing[0].id).toBe(ID.alarm);
+  });
+
+  it('알람이 하나도 없으면 firing=[]', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/alarm/tick'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.checked).toBe(0);
+    expect(body.firing).toEqual([]);
+  });
+});
+
 describe('DELETE /alarm/:id — 알람 삭제', () => {
   it('존재하지 않으면 404', async () => {
     mockDB.pushResult([], 0);
