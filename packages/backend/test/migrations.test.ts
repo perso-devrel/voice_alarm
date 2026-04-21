@@ -44,4 +44,13 @@ describe('migrations', () => {
     expect(sample.id).toBe(999);
     expect(sample.name).toBe('test');
   });
+
+  it('마이그레이션 #2 에서 users 테이블 재생성 + password_hash 추가', () => {
+    const m = migrations.find((x) => x.id === 2);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('users_new');
+    expect(all).toContain('password_hash');
+    expect(all).toContain('idx_users_email_unique');
+  });
 });

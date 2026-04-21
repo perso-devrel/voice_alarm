@@ -1,0 +1,170 @@
+import { Hono } from 'hono';
+import type { Env } from '../types';
+import { getDB } from '../lib/db';
+import { hashPassword, verifyPassword } from '../lib/password';
+import { signAppJwt, verifyAppJwt } from '../lib/jwt';
+import { RegisterRequestSchema, LoginRequestSchema } from '@voice-alarm/shared';
+
+const auth = new Hono<{ Bindings: Env }>();
+
+function jsonError(code: string, message: string) {
+  return { error: message, code };
+}
+
+auth.post('/register', async (c) => {
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(jsonError('AUTH_INVALID_JSON', 'Invalid JSON body'), 400);
+  }
+
+  const parsed = RegisterRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      { ...jsonError('AUTH_VALIDATION_FAILED', 'Validation failed'), issues: parsed.error.issues },
+      400,
+    );
+  }
+
+  const { email, password, name } = parsed.data;
+  const normalizedEmail = email.toLowerCase().trim();
+  const db = getDB(c.env);
+
+  try {
+    const existing = await db.execute({
+      sql: 'SELECT id FROM users WHERE email = ?',
+      args: [normalizedEmail],
+    });
+    if (existing.rows.length > 0) {
+      return c.json(jsonError('AUTH_EMAIL_TAKEN', 'Email is already registered'), 409);
+    }
+
+    const id = crypto.randomUUID();
+    const passwordHash = await hashPassword(password, c.env.PASSWORD_PEPPER);
+    const today = new Date().toISOString().split('T')[0];
+
+    await db.execute({
+      sql: `INSERT INTO users (id, email, password_hash, name, daily_tts_reset_at)
+            VALUES (?, ?, ?, ?, ?)`,
+      args: [id, normalizedEmail, passwordHash, name, today],
+    });
+
+    const token = await signAppJwt({ sub: id, email: normalizedEmail, name }, c.env.JWT_SECRET);
+
+    return c.json(
+      {
+        token,
+        user: { id, email: normalizedEmail, name, plan: 'free' as const },
+      },
+      201,
+    );
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error(`POST /auth/register failed: ${detail}`);
+    return c.json(jsonError('AUTH_REGISTER_FAILED', 'Registration failed'), 500);
+  }
+});
+
+auth.post('/login', async (c) => {
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(jsonError('AUTH_INVALID_JSON', 'Invalid JSON body'), 400);
+  }
+
+  const parsed = LoginRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(jsonError('AUTH_VALIDATION_FAILED', 'Validation failed'), 400);
+  }
+
+  const { email, password } = parsed.data;
+  const normalizedEmail = email.toLowerCase().trim();
+  const db = getDB(c.env);
+
+  try {
+    const result = await db.execute({
+      sql: `SELECT id, email, password_hash, name, plan FROM users WHERE email = ?`,
+      args: [normalizedEmail],
+    });
+
+    if (result.rows.length === 0) {
+      return c.json(jsonError('AUTH_INVALID_CREDENTIALS', 'Invalid email or password'), 401);
+    }
+
+    const row = result.rows[0] as unknown as {
+      id: string;
+      email: string;
+      password_hash: string | null;
+      name: string | null;
+      plan: 'free' | 'plus' | 'family' | null;
+    };
+
+    if (!row.password_hash) {
+      return c.json(jsonError('AUTH_OAUTH_ONLY', 'This account uses OAuth sign-in'), 401);
+    }
+
+    const ok = await verifyPassword(password, row.password_hash, c.env.PASSWORD_PEPPER);
+    if (!ok) {
+      return c.json(jsonError('AUTH_INVALID_CREDENTIALS', 'Invalid email or password'), 401);
+    }
+
+    const token = await signAppJwt(
+      { sub: row.id, email: row.email, name: row.name ?? undefined },
+      c.env.JWT_SECRET,
+    );
+
+    return c.json({
+      token,
+      user: {
+        id: row.id,
+        email: row.email,
+        name: row.name ?? '',
+        plan: row.plan ?? 'free',
+      },
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error(`POST /auth/login failed: ${detail}`);
+    return c.json(jsonError('AUTH_LOGIN_FAILED', 'Login failed'), 500);
+  }
+});
+
+auth.get('/me', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json(jsonError('AUTH_MISSING', 'Authorization header required'), 401);
+  }
+  const token = authHeader.slice(7);
+  try {
+    const payload = await verifyAppJwt(token, c.env.JWT_SECRET);
+    const db = getDB(c.env);
+    const result = await db.execute({
+      sql: `SELECT id, email, name, plan FROM users WHERE id = ?`,
+      args: [payload.sub],
+    });
+    if (result.rows.length === 0) {
+      return c.json(jsonError('AUTH_USER_NOT_FOUND', 'User not found'), 404);
+    }
+    const row = result.rows[0] as unknown as {
+      id: string;
+      email: string;
+      name: string | null;
+      plan: 'free' | 'plus' | 'family' | null;
+    };
+    return c.json({
+      user: {
+        id: row.id,
+        email: row.email,
+        name: row.name ?? '',
+        plan: row.plan ?? 'free',
+      },
+    });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return c.json(jsonError('AUTH_INVALID_TOKEN', detail), 401);
+  }
+});
+
+export default auth;

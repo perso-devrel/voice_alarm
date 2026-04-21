@@ -4,6 +4,9 @@ import {
   UserSchema,
   VoiceProfileSchema,
   VoiceProfileStatusSchema,
+  RegisterRequestSchema,
+  LoginRequestSchema,
+  AuthResponseSchema,
 } from "../src/index.js";
 
 describe("UserPlanSchema", () => {
@@ -38,6 +41,65 @@ describe("UserSchema", () => {
         createdAt: "2026-04-17T00:00:00.000Z",
       }),
     ).toThrow();
+  });
+});
+
+describe("RegisterRequestSchema", () => {
+  it("accepts a well-formed registration", () => {
+    const r = RegisterRequestSchema.parse({
+      email: "kim@example.com",
+      password: "s3curepass!",
+      name: "김규원",
+    });
+    expect(r.email).toBe("kim@example.com");
+  });
+  it("rejects password shorter than 8 chars", () => {
+    expect(() =>
+      RegisterRequestSchema.parse({
+        email: "kim@example.com",
+        password: "short",
+        name: "kim",
+      }),
+    ).toThrow();
+  });
+  it("rejects malformed email", () => {
+    expect(() =>
+      RegisterRequestSchema.parse({
+        email: "not-an-email",
+        password: "s3curepass!",
+        name: "kim",
+      }),
+    ).toThrow();
+  });
+});
+
+describe("LoginRequestSchema", () => {
+  it("accepts a login payload", () => {
+    const l = LoginRequestSchema.parse({
+      email: "kim@example.com",
+      password: "any-non-empty",
+    });
+    expect(l.password).toBe("any-non-empty");
+  });
+  it("rejects empty password", () => {
+    expect(() =>
+      LoginRequestSchema.parse({ email: "kim@example.com", password: "" }),
+    ).toThrow();
+  });
+});
+
+describe("AuthResponseSchema", () => {
+  it("accepts a valid auth response", () => {
+    const a = AuthResponseSchema.parse({
+      token: "eyJ.payload.sig",
+      user: {
+        id: "u_1",
+        email: "kim@example.com",
+        name: "김규원",
+        plan: "free",
+      },
+    });
+    expect(a.token).toContain("eyJ");
   });
 });
 
