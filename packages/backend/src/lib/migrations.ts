@@ -338,6 +338,31 @@ export const migrations: Migration[] = [
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_user ON characters(user_id)',
     ],
   },
+  {
+    id: 12,
+    name: 'character-xp-logs',
+    statements: [
+      // 일일 XP 캡 관리: 지급 시점 날짜(YYYY-MM-DD) 와 달라지면 daily_xp 리셋.
+      `ALTER TABLE characters ADD COLUMN daily_xp INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE characters ADD COLUMN daily_xp_reset_at TEXT`,
+      // 지급 이력 + 멱등성 로그. client_nonce 가 있으면 (character_id, client_nonce) 유니크.
+      `CREATE TABLE IF NOT EXISTS character_xp_logs (
+        id TEXT PRIMARY KEY,
+        character_id TEXT NOT NULL REFERENCES characters(id),
+        event TEXT NOT NULL,
+        client_nonce TEXT,
+        granted_xp INTEGER NOT NULL DEFAULT 0,
+        affection_delta INTEGER NOT NULL DEFAULT 0,
+        capped INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_character_xp_logs_character ON character_xp_logs(character_id)',
+      'CREATE INDEX IF NOT EXISTS idx_character_xp_logs_created ON character_xp_logs(created_at)',
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_character_xp_logs_nonce
+        ON character_xp_logs(character_id, client_nonce)
+        WHERE client_nonce IS NOT NULL`,
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

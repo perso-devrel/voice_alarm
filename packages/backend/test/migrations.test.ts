@@ -171,6 +171,22 @@ describe('migrations', () => {
     expect(all).toContain('idx_characters_user');
   });
 
+  it('마이그레이션 #12 에서 character_xp_logs 테이블 + daily_xp 컬럼 추가', () => {
+    const m = migrations.find((x) => x.id === 12);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('ALTER TABLE characters ADD COLUMN daily_xp');
+    expect(all).toContain('ALTER TABLE characters ADD COLUMN daily_xp_reset_at');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS character_xp_logs');
+    expect(all).toContain('character_id TEXT NOT NULL REFERENCES characters(id)');
+    expect(all).toContain('client_nonce TEXT');
+    expect(all).toContain('granted_xp INTEGER NOT NULL DEFAULT 0');
+    expect(all).toContain('affection_delta INTEGER NOT NULL DEFAULT 0');
+    expect(all).toContain('idx_character_xp_logs_character');
+    expect(all).toContain('idx_character_xp_logs_nonce');
+    expect(all).toContain('WHERE client_nonce IS NOT NULL');
+  });
+
   it('마이그레이션 #6 에서 기본 플랜 3종(free / plus_personal / family) 을 시드한다', () => {
     const m = migrations.find((x) => x.id === 6);
     expect(m).toBeDefined();
