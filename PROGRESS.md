@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:28)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:23)
 
 - 진행 중 Phase: 3
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43 (15개)
-- 진행 중 이슈: 없음 (다음: Phase 3 #17 음성 라이브러리 화면)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45 (16개)
+- 진행 중 이슈: 없음 (다음: Phase 3 #18 음성 업로드/재생 E2E 또는 업로드 라이브러리 화면)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:23 · Issue #45 · 음성 프로필 이름 변경
+- 브랜치: `feature/issue-45-voice-profile-rename`
+- PR: #46 (merged)
+- 변경 파일: 10개 (신규 4 + 수정 6)
+- 요약: 백엔드 `PATCH /voice/:id` 신규 — UUID 검증 + JSON body 파싱 + trim 후 1~50자 검증 + 소유권 확인 + `updated_at = datetime('now')` 갱신. 웹 `services/api.ts::updateVoiceProfile` + `VoicesPage` 카드에 "이름 변경" 버튼(window.prompt) + `src/lib/voiceName.ts` 순수 함수. 모바일 `services/api.ts::updateVoiceProfile` + `app/voice/[id].tsx` 인라인 `TextInput` 편집 UI(iOS/Android 공통) + `src/lib/voiceName.ts` 순수 함수. 테스트 16건 추가 (backend 6 + web 5 + mobile 5). 모노레포 백엔드 271건 / 전체 353건 통과.
+- 다음: #18 음성 업로드·재생 E2E (또는 업로드 라이브러리 리스트 화면 — 업로드/화자 섹션은 별도 이슈로 분리된 상태)
+- 리스크: `VoicesPage` 이름 변경은 `window.prompt` 로 단순화 — 완전한 모달 UI 는 추후 개선. 모바일 이름 편집은 `_layout.tsx` 헤더 제목과 동기화되지 않을 수 있음(쿼리 invalidate 로 리스트는 최신).
+
+---
 
 ## 2026-04-21 13:28 · Issue #43 · 화자 선택 UI 모바일
 - 브랜치: `feature/issue-43-mobile-speaker-picker`
