@@ -4,9 +4,9 @@ import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 import { getSharedInMemoryVoiceStorage, MockVoiceProvider } from '@voice-alarm/voice';
 
-const voice = new Hono<AppEnv>();
+import { UUID_RE } from '../lib/validate';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const voice = new Hono<AppEnv>();
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MiB
 const MAX_SPEAKERS = 3;
 

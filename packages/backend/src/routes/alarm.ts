@@ -2,8 +2,7 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 import { selectFiringAlarms, type ScheduledAlarm } from '../lib/scheduler';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_RE } from '../lib/validate';
 const ALARM_MODES = ['sound-only', 'tts'] as const;
 type AlarmMode = (typeof ALARM_MODES)[number];
 
