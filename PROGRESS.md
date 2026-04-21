@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:05)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:18)
 
 - 진행 중 Phase: 3
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39 (13개)
-- 진행 중 이슈: 없음 (다음: Phase 3 #15 화자 선택 UI 웹)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41 (14개)
+- 진행 중 이슈: 없음 (다음: Phase 3 #16 화자 선택 UI 모바일)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:18 · Issue #41 · 화자 선택 UI 웹 + 라벨 편집 API
+- 브랜치: `feature/issue-41-web-speaker-picker`
+- PR: #42 (merged)
+- 변경 파일: 6개 (신규 2 + 수정 4)
+- 요약: 백엔드에 `PATCH /voice/uploads/:uploadId/speakers/:speakerId` 추가 (라벨 1~50자, 소유권+매칭 검증). 웹 `services/api.ts` 에 `uploadVoiceAudio`/`separateUpload`/`listSpeakers`/`renameSpeaker` 헬퍼 + 타입 추가 (snake ↔ camel 흡수). 신규 `SpeakerPicker` 컴포넌트 — 모달 내 업로드 → 기존 결과 재사용 or 분리 → radio 선택 + inline 라벨 편집. `VoicesPage` 헤더에 "화자 감지" 버튼 연결. 기존 `Row` 캐스트 3곳을 `unknown` 경유로 변경해 tsc strict 통과. 테스트 14건 추가 (backend 7 + web 7). 모노레포 총 325건 통과.
+- 다음: #16 모바일 화자 선택 UI
+- 리스크: 선택 화자의 voice_profiles 클론 전환은 후속. 모바일은 #16 담당. 오디오 세그먼트 재생 UI 미포함(InlineAudioPlayer 연결은 URL 체계 정리 후).
+
+---
 
 ## 2026-04-21 13:05 · Issue #39 · 업로드 오디오 화자 분리 mock
 - 브랜치: `feature/issue-39-voice-separate-mock`
