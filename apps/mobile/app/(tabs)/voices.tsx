@@ -182,6 +182,14 @@ export default function VoicesScreen() {
             </Text>
           </View>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/picker')}>
+          <Text style={styles.addEmoji}>🧩</Text>
+          <View>
+            <Text style={styles.addTitle}>화자 감지 (mock)</Text>
+            <Text style={styles.addDesc}>업로드 후 감지된 화자를 직접 선택·편집합니다.</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.listSection}>

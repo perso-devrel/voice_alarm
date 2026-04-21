@@ -147,6 +147,80 @@ export async function deleteVoiceProfile(id: string) {
   await del(`/voice/${id}`);
 }
 
+// ===== Voice upload + speaker picker (mock path) =====
+
+export interface VoiceUploadMeta {
+  id: string;
+  objectKey: string;
+  mimeType: string;
+  sizeBytes: number;
+  durationMs: number | null;
+  originalName: string | null;
+  createdAt: string;
+}
+
+export interface SpeakerSegment {
+  id: string;
+  upload_id: string;
+  label: string;
+  start_ms: number;
+  end_ms: number;
+  confidence: number;
+  created_at?: string;
+}
+
+function normalizeSpeakerSegment(raw: Record<string, unknown>): SpeakerSegment {
+  return {
+    id: String(raw.id ?? raw['speaker_id'] ?? ''),
+    upload_id: String(raw.upload_id ?? raw.uploadId ?? ''),
+    label: String(raw.label ?? ''),
+    start_ms: Number(raw.start_ms ?? raw.startMs ?? 0),
+    end_ms: Number(raw.end_ms ?? raw.endMs ?? 0),
+    confidence: Number(raw.confidence ?? 0),
+    created_at: raw.created_at as string | undefined,
+  };
+}
+
+export async function uploadVoiceAudio(
+  audioFile: { uri: string; name: string; type: string },
+  durationMs?: number,
+): Promise<VoiceUploadMeta> {
+  const formData = new FormData();
+  formData.append('audio', audioFile as unknown as Blob);
+  if (durationMs !== undefined) formData.append('durationMs', String(durationMs));
+  if (audioFile.name) formData.append('originalName', audioFile.name);
+  const data = await post<{ upload: VoiceUploadMeta }>('/voice/upload', formData, {
+    isFormData: true,
+  });
+  return data.upload;
+}
+
+export async function separateUpload(uploadId: string): Promise<SpeakerSegment[]> {
+  const data = await post<{ speakers: Array<Record<string, unknown>> }>(
+    `/voice/uploads/${uploadId}/separate`,
+  );
+  return data.speakers.map(normalizeSpeakerSegment);
+}
+
+export async function listSpeakers(uploadId: string): Promise<SpeakerSegment[]> {
+  const data = await get<{ speakers: Array<Record<string, unknown>> }>(
+    `/voice/uploads/${uploadId}/speakers`,
+  );
+  return data.speakers.map(normalizeSpeakerSegment);
+}
+
+export async function renameSpeaker(
+  uploadId: string,
+  speakerId: string,
+  label: string,
+): Promise<{ id: string; label: string }> {
+  const data = await patch<{ speaker: { id: string; label: string } }>(
+    `/voice/uploads/${uploadId}/speakers/${speakerId}`,
+    { label },
+  );
+  return data.speaker;
+}
+
 // ===== TTS API =====
 
 export async function generateTTS(params: {
