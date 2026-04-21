@@ -1,8 +1,8 @@
 # 📌 현재 상태 (마지막 업데이트: 2026-04-21)
 
 - 진행 중 Phase: 1 (기존 코드 진단 & 모노레포 정비)
-- 완료 이슈: #15, #17, #19 (3개)
-- 진행 중 이슈: 없음 (다음: #5 테스트 러너 설정)
+- 완료 이슈: #15, #17, #19, #21 (4개)
+- 진행 중 이슈: 없음 (다음: #6 CI 초안)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
@@ -17,6 +17,16 @@
 - 요약: `TASK.md` 커밋, `docs/STRUCTURE_BASELINE.md` · `docs/ARCHITECTURE_DECISION.md` · `docs/DIAGNOSIS.md` 신규, `PROGRESS.md` 초기화.
 - 다음: #17 모노레포 구조 유지 확정 + `packages/shared` 스캐폴드
 - 리스크: 없음 (문서 PR)
+
+---
+
+## 2026-04-21 · Issue #21 · 기본 테스트 러너 설정
+- 브랜치: `feature/issue-21-test-runner-setup`
+- PR: #22 (merged)
+- 변경 파일: 6개
+- 요약: `packages/web`에 vitest+jsdom, `apps/mobile`에 jest-expo 설정. 기본 테스트 각 2건 추가. 루트 `npm test`로 전체 222건 일괄 실행 가능.
+- 다음: #6 CI 초안 (GitHub Actions)
+- 리스크: 없음
 
 ---
 
