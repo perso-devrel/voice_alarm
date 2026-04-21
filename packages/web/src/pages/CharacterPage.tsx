@@ -149,6 +149,7 @@ export default function CharacterPage() {
         </div>
       </section>
 
+      {import.meta.env.DEV && (
       <section className="mt-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6">
         <h2 className="text-sm font-semibold mb-3 text-[var(--color-text)]">테스트용 XP 지급</h2>
         <p className="text-xs text-[var(--color-text-tertiary)] mb-3">
@@ -172,6 +173,7 @@ export default function CharacterPage() {
           </p>
         )}
       </section>
+      )}
     </div>
   );
 }
