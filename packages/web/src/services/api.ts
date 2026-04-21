@@ -98,6 +98,10 @@ export async function createAlarm(params: {
   message_id: string;
   time: string;
   repeat_days?: number[];
+  mode?: 'tts' | 'sound-only';
+  voice_profile_id?: string;
+  speaker_id?: string;
+  snooze_minutes?: number;
 }) {
   const { data } = await api.post('/alarm', params);
   return data.alarm;
