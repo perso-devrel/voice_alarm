@@ -2,17 +2,34 @@ name: CI
 
 on:
   push:
-    branches: [develop, main]
+    branches: [develop, develop_loop, main]
   pull_request:
-    branches: [develop, main]
+    branches: [develop, develop_loop, main]
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Lint
+        run: npm run lint
+
   typecheck:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: [packages/backend, packages/web, apps/mobile]
+        package: [packages/backend, packages/shared, packages/web, apps/mobile]
     steps:
       - uses: actions/checkout@v4
 
@@ -33,3 +50,37 @@ jobs:
       - name: Typecheck
         working-directory: ${{ matrix.package }}
         run: npx tsc --noEmit
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - package: packages/backend
+            command: npm test
+          - package: packages/shared
+            command: npm test
+          - package: packages/web
+            command: npm test
+          - package: apps/mobile
+            command: npm test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci || npm install
+
+      - name: Install package dependencies
+        if: matrix.package == 'apps/mobile'
+        working-directory: apps/mobile
+        run: npm install
+
+      - name: Test
+        working-directory: ${{ matrix.package }}
+        run: ${{ matrix.command }}
