@@ -1,7 +1,8 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useDarkMode } from './hooks/useDarkMode';
+import { useAuth } from './hooks/useAuth';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
@@ -25,27 +26,28 @@ const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const darkMode = useDarkMode();
+  const { isAuthenticated, isLoading, logout } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    setIsLoggedIn(!!token);
-  }, []);
+  if (isLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]"
+        role="status"
+        aria-label="인증 확인 중"
+      >
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]" />
+      </div>
+    );
+  }
 
-  const handleLogin = (idToken: string) => {
-    localStorage.setItem('auth_token', idToken);
-    setIsLoggedIn(true);
-  };
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    setIsLoggedIn(false);
+    logout();
   };
-
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
 
   const renderPage = () => {
     switch (page) {
