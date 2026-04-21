@@ -150,6 +150,14 @@ describe('migrations', () => {
     expect(all).toContain('idx_plan_group_invites_status');
   });
 
+  it('마이그레이션 #10 에서 users.allow_family_alarms 컬럼을 추가한다 (기본 0/false)', () => {
+    const m = migrations.find((x) => x.id === 10);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('ALTER TABLE users ADD COLUMN allow_family_alarms');
+    expect(all).toContain('INTEGER NOT NULL DEFAULT 0');
+  });
+
   it('마이그레이션 #6 에서 기본 플랜 3종(free / plus_personal / family) 을 시드한다', () => {
     const m = migrations.find((x) => x.id === 6);
     expect(m).toBeDefined();
