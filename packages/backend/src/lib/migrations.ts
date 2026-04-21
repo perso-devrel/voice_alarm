@@ -164,6 +164,22 @@ export const migrations: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_voice_uploads_created ON voice_uploads(created_at)',
     ],
   },
+  {
+    id: 4,
+    name: 'voice-speakers',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS voice_speakers (
+        id TEXT PRIMARY KEY,
+        upload_id TEXT NOT NULL REFERENCES voice_uploads(id),
+        label TEXT NOT NULL,
+        start_ms INTEGER NOT NULL,
+        end_ms INTEGER NOT NULL,
+        confidence REAL NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_voice_speakers_upload ON voice_speakers(upload_id)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

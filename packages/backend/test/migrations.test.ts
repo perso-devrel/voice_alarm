@@ -61,4 +61,14 @@ describe('migrations', () => {
     expect(all).toContain('size_bytes');
     expect(all).toContain('idx_voice_uploads_user');
   });
+
+  it('마이그레이션 #4 에서 voice_speakers 테이블과 인덱스를 추가한다', () => {
+    const m = migrations.find((x) => x.id === 4);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS voice_speakers');
+    expect(all).toContain('upload_id');
+    expect(all).toContain('confidence');
+    expect(all).toContain('idx_voice_speakers_upload');
+  });
 });

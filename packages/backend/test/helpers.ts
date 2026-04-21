@@ -20,6 +20,11 @@ export function createMockDB() {
     results.push({ rows, rowsAffected });
   }
 
+  function reset() {
+    calls.length = 0;
+    results.length = 0;
+  }
+
   const client = {
     execute: async (query: { sql: string; args: (string | number | null)[] }) => {
       calls.push({ sql: query.sql, args: query.args });
@@ -28,7 +33,7 @@ export function createMockDB() {
     batch: async () => {},
   };
 
-  return { client, calls, pushResult };
+  return { client, calls, pushResult, reset };
 }
 
 export function fakeAuthMiddleware(userId = 'user-1', email = 'user@test.com') {

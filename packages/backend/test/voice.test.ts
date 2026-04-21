@@ -23,7 +23,7 @@ function buildApp(userId = 'user-1') {
 }
 
 beforeEach(() => {
-  mockDB.calls.length = 0;
+  mockDB.reset();
   resetSharedInMemoryVoiceStorage();
 });
 
@@ -210,6 +210,115 @@ describe('POST /voice/upload — 원본 오디오 업로드', () => {
       }),
     );
     expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /voice/uploads/:uploadId/separate — 화자 분리 mock', () => {
+  const UPLOAD_ID = '50000000-0000-4000-8000-000000000001';
+
+  it('잘못된 UUID 형식이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/voice/uploads/bad-id/separate'));
+    expect(res.status).toBe(400);
+  });
+
+  it('업로드가 없으면 404', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', `/voice/uploads/${UPLOAD_ID}/separate`));
+    expect(res.status).toBe(404);
+  });
+
+  it('타인 소유 업로드면 403', async () => {
+    mockDB.pushResult([{ id: UPLOAD_ID, user_id: 'other-user', object_key: 'mem://other/x' }]);
+    const app = buildApp('user-1');
+    const res = await app.request(jsonReq('POST', `/voice/uploads/${UPLOAD_ID}/separate`));
+    expect(res.status).toBe(403);
+  });
+
+  it('정상 호출은 화자 1~3명과 201 을 반환하고 INSERT 를 수행한다', async () => {
+    mockDB.pushResult([{ id: UPLOAD_ID, user_id: 'user-1', object_key: 'mem://user-1/abc' }]);
+    mockDB.pushResult([], 0); // DELETE
+    for (let i = 0; i < 3; i++) mockDB.pushResult([], 1); // INSERTs
+
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', `/voice/uploads/${UPLOAD_ID}/separate`));
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(Array.isArray(body.speakers)).toBe(true);
+    expect(body.speakers.length).toBeGreaterThanOrEqual(1);
+    expect(body.speakers.length).toBeLessThanOrEqual(3);
+    expect(body.provider).toBe('mock');
+    expect(body.speakers[0].label).toMatch(/^화자 \d+$/);
+    expect(body.speakers[0].uploadId).toBe(UPLOAD_ID);
+
+    const del = mockDB.calls.find((c) => c.sql.includes('DELETE FROM voice_speakers'));
+    expect(del).toBeDefined();
+    const ins = mockDB.calls.filter((c) => c.sql.includes('INSERT INTO voice_speakers'));
+    expect(ins.length).toBe(body.speakers.length);
+  });
+
+  it('같은 업로드에 대해 재호출해도 멱등적으로 동일한 화자 수', async () => {
+    const prime = () => {
+      mockDB.pushResult([{ id: UPLOAD_ID, user_id: 'user-1', object_key: 'mem://user-1/abc' }]);
+      mockDB.pushResult([], 0);
+      for (let i = 0; i < 3; i++) mockDB.pushResult([], 1);
+    };
+    const app = buildApp();
+    prime();
+    const r1 = await app.request(jsonReq('POST', `/voice/uploads/${UPLOAD_ID}/separate`));
+    const b1 = await r1.json();
+
+    mockDB.reset();
+    prime();
+    const r2 = await app.request(jsonReq('POST', `/voice/uploads/${UPLOAD_ID}/separate`));
+    const b2 = await r2.json();
+    expect(b1.speakers.length).toBe(b2.speakers.length);
+  });
+});
+
+describe('GET /voice/uploads/:uploadId/speakers — 저장된 화자 조회', () => {
+  const UPLOAD_ID = '50000000-0000-4000-8000-000000000002';
+
+  it('잘못된 UUID 형식이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/voice/uploads/bad/speakers'));
+    expect(res.status).toBe(400);
+  });
+
+  it('업로드가 없으면 404', async () => {
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', `/voice/uploads/${UPLOAD_ID}/speakers`));
+    expect(res.status).toBe(404);
+  });
+
+  it('저장된 화자를 start_ms 순으로 돌려준다', async () => {
+    mockDB.pushResult([{ id: UPLOAD_ID, user_id: 'user-1' }]);
+    mockDB.pushResult([
+      {
+        id: 's1',
+        upload_id: UPLOAD_ID,
+        label: '화자 1',
+        start_ms: 0,
+        end_ms: 3000,
+        confidence: 0.9,
+      },
+      {
+        id: 's2',
+        upload_id: UPLOAD_ID,
+        label: '화자 2',
+        start_ms: 3000,
+        end_ms: 6000,
+        confidence: 0.85,
+      },
+    ]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', `/voice/uploads/${UPLOAD_ID}/speakers`));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.speakers).toHaveLength(2);
+    expect(body.speakers[0].label).toBe('화자 1');
   });
 });
 
