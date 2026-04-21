@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:28)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:37)
 
-- 진행 중 Phase: 5 진행 중 (#26, #27 완료, 다음 #28 이용권 코드 발급)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65 (26개). Phase 4 완료 + Phase 5 #26, #27 완료.
-- 진행 중 이슈: 없음 (다음: Phase 5 #28 이용권 코드 발급 — /billing/checkout 완료 훅에서 `VA-XXXX-XXXX-XXXX` 1회용 코드 자동 생성)
+- 진행 중 Phase: 5 진행 중 (#26~#28 완료, 다음 #29 코드 등록 API)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67 (27개). Phase 4 완료 + Phase 5 #26~#28 완료.
+- 진행 중 이슈: 없음 (다음: Phase 5 #29 코드 등록 API — 평문 코드 POST → hash lookup → status issued→used, 재사용 방지)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:37 · Issue #67 · 이용권 코드 발급 (checkout 훅 + /billing/vouchers)
+- 브랜치: `feature/issue-67-voucher-codes`
+- PR: #68 (merged)
+- 변경 파일: 6개 (신규 2 + 수정 4)
+- 요약: 마이그레이션 #7 `voucher_codes` (code UNIQUE / code_hash UNIQUE / plan_id / issuer_user_id / issuer_subscription_id / redeemed_by_user_id nullable / status `issued|used|expired` / issued_at / used_at / expires_at) + 인덱스 3종. `lib/vouchers.ts` 신규 — VA-XXXX-XXXX-XXXX 포맷 생성(X=A-Z0-9, 시각적 혼동 문자 `0/O/1/I/L` 제외), SHA-256 hash hex(64자), `generateVoucherCode`/`hashVoucherCode`/`isValidVoucherCodeFormat` 노출. `/api/billing/checkout` 훅에 subscription INSERT 후 voucher 자동 1건 INSERT, 응답에 `{ voucher: { id, code, expires_at } }` 평문 노출(이 응답에서만). `GET /api/billing/vouchers` 신규 — 본인 `issuer_user_id` 필터 + plan JOIN 으로 발급 코드 전체 반환(평문 포함, 발급자에게만). vitest vouchers 10건(포맷/hash 결정성/혼동문자 회피/고유성) + billing 11→15건 + migrations 11→12건 → 백엔드 313→326 / 26 파일 그린, tsc 에러 없음.
+- 다음: Phase 5 #29 코드 등록 API — `POST /api/billing/redeem { code }` 가 hash lookup 으로 voucher 조회 → 상태/만료 검증 → `status=used`, `redeemed_by_user_id` 세팅, 발급자와 등록자가 동일인이면 금지. 재사용 시 409.
+- 리스크: 기존 활성 subscription 있는 사용자가 재결제 시 중복 voucher 발급됨 — 단일화는 후속. plan_group_id 는 여전히 #31 에서 채움. hash 는 SHA-256 salt 없음 (딕셔너리 공격 위험 있으나 코드 길이·알파벳 고려 시 실용적 안전).
+
+---
 
 ## 2026-04-21 14:28 · Issue #65 · 스텁 결제 엔드포인트 (/billing/checkout, /subscription)
 - 브랜치: `feature/issue-65-billing-stub`
