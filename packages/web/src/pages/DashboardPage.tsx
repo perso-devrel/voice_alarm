@@ -4,6 +4,7 @@ import { getStats, getRecentActivity, getVoiceProfiles } from '../services/api';
 import type { Stats, Activity, WeekTrend } from '../services/api';
 import type { VoiceProfile } from '../types';
 import { VoiceDetailModal } from './VoicesPage';
+import { formatRelativeTime } from '../lib/timeFormat';
 
 interface StatCardProps {
   emoji: string;
@@ -50,17 +51,6 @@ const TYPE_META: Record<Activity['type'], { emoji: string; label: string; page: 
   gift: { emoji: '🎁', label: '선물', page: 'gifts' },
   voice: { emoji: '🎙️', label: '음성', page: 'voices' },
 };
-
-function formatRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '방금 전';
-  if (mins < 60) return `${mins}분 전`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  return `${days}일 전`;
-}
 
 export default function DashboardPage({ onNavigate }: { onNavigate: (page: string) => void }) {
   const { data: stats, isLoading, isError: statsError, refetch: refetchStats } = useQuery<Stats>({
