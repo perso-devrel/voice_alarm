@@ -194,6 +194,47 @@ export const migrations: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_alarms_speaker ON alarms(speaker_id)',
     ],
   },
+  {
+    id: 6,
+    name: 'plans-and-subscriptions',
+    statements: [
+      // plan_type: 'free'=무료, 'personal'=개인 1인, 'family'=가족 최대 6인
+      `CREATE TABLE IF NOT EXISTS plans (
+        id TEXT PRIMARY KEY,
+        key TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        plan_type TEXT NOT NULL CHECK(plan_type IN ('free','personal','family')),
+        period_days INTEGER NOT NULL DEFAULT 30,
+        max_members INTEGER NOT NULL DEFAULT 1,
+        price_krw INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      // plan_group_id 는 #31 (가족 플랜 그룹) 에서 채움. 현재는 nullable.
+      `CREATE TABLE IF NOT EXISTS subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        plan_id TEXT NOT NULL REFERENCES plans(id),
+        plan_group_id TEXT,
+        status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','expired','cancelled')),
+        starts_at TEXT NOT NULL DEFAULT (datetime('now')),
+        expires_at TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_key ON plans(key)',
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status)',
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_expires ON subscriptions(expires_at)',
+      // 기본 플랜 3개 시드 — 고정 UUID 로 재마이그레이션 시 중복 방지
+      `INSERT OR IGNORE INTO plans (id, key, name, plan_type, period_days, max_members, price_krw, is_active)
+        VALUES ('70000000-0000-4000-8000-000000000001', 'free', '무료', 'free', 36500, 1, 0, 1)`,
+      `INSERT OR IGNORE INTO plans (id, key, name, plan_type, period_days, max_members, price_krw, is_active)
+        VALUES ('70000000-0000-4000-8000-000000000002', 'plus_personal', '플러스 개인', 'personal', 30, 1, 4900, 1)`,
+      `INSERT OR IGNORE INTO plans (id, key, name, plan_type, period_days, max_members, price_krw, is_active)
+        VALUES ('70000000-0000-4000-8000-000000000003', 'family', '가족', 'family', 30, 6, 9900, 1)`,
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {
