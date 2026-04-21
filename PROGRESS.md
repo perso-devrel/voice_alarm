@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:48)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:57)
 
-- 진행 중 Phase: 5 진행 중 (#26~#30 완료, 다음 #31 가족 플랜 그룹 모델)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71 (29개). Phase 4 완료 + Phase 5 #26~#30 완료.
-- 진행 중 이슈: 없음 (다음: Phase 5 #31 가족 플랜 그룹 모델 — 최대 6명, 소유자 1인 + 멤버 N인, plan_groups 테이블 + subscriptions.plan_group_id 연결)
+- 진행 중 Phase: 5 진행 중 (#26~#31 완료, 다음 #32 가족 플랜 초대)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73 (30개). Phase 4 완료 + Phase 5 #26~#31 완료.
+- 진행 중 이슈: 없음 (다음: Phase 5 #32 가족 플랜 초대 — 초대 코드 + 딥링크 하이브리드, 6자리 숫자 + 만료 + 일회용, 비교 문서 작성)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:57 · Issue #73 · 가족 플랜 그룹 모델 + checkout 자동 그룹 생성
+- 브랜치: `feature/issue-73-family-plan-group-model`
+- PR: #74 (merged)
+- 변경 파일: 4개 (수정)
+- 요약: 마이그레이션 #8 `plan-groups` — `plan_groups`(id, owner_user_id, plan_id, max_members=6, created_at/updated_at) + `plan_group_members`(id, plan_group_id, user_id, role CHECK(`owner|member`), joined_at) + 인덱스 4종 (idx_plan_groups_owner / idx_plan_group_members_group / idx_plan_group_members_user / UNIQUE idx_plan_group_members_unique(group_id,user_id)). `POST /billing/checkout` 에 가족 분기 추가 — `plan_type==='family'` 이면 plan_groups INSERT → plan_group_members role=`owner` INSERT → subscriptions.plan_group_id 에 그룹 id 연결. 응답 JSON 에 `plan_group:{id,owner_user_id,max_members}` (family 외 null) + `subscription.plan_group_id` 노출. vitest 마이그레이션 #8 스키마 테스트 + billing family 그룹 생성·연결 검증 + plus_personal 은 그룹 INSERT 미호출 검증 → 백엔드 326→339 / 26 파일 그린, tsc 에러 없음.
+- 다음: Phase 5 #32 가족 플랜 초대 — `초대 코드` vs `이메일 초대` vs `링크 초대` 비교 문서 작성 후 `초대 코드(6자리 숫자, 만료 시간, 일회용) + 딥링크 하이브리드` 채택. `plan_group_invites` 테이블 + `POST /family/invites` 발급 + `POST /family/invites/:code/accept` 수락.
+- 리스크: 가족 플랜 재결제 시 새 그룹이 중복 생성됨 — #32 초대 흐름 구현 시 기존 그룹 재사용 로직 필요. role='owner' 유일성은 애플리케이션 레벨 (partial UNIQUE index 후속 검토). 권한 양도(#33)도 별도.
+
+---
 
 ## 2026-04-21 14:48 · Issue #71 · 이용권 코드 공유 UI + voucherShare 순수 헬퍼
 - 브랜치: `feature/issue-71-voucher-share-ui`
