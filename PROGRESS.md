@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 17:10)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 17:15)
 
-- 진행 중 Phase: 8 (크로스플랫폼 품질). **Phase 1~7 완료.** 다음 #47 접근성 기본 체크.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99, #101, #103 (45개). Phase 1~7 완료.
-- 진행 중 이슈: 없음 (다음: Phase 8 #47 접근성 기본 체크)
+- 진행 중 Phase: 8 (크로스플랫폼 품질). **Phase 1~7 완료.** 다음 #48 에러 경계 & 전역 에러 핸들러.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99, #101, #103, #105 (46개). Phase 1~7 완료.
+- 진행 중 이슈: 없음 (다음: Phase 8 #48 에러 경계 & 전역 에러 핸들러)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 17:15 · Issue #105 · 접근성 유틸 + 터치 타겟 보강
+- 브랜치: `feature/issue-105-a11y-basics`
+- PR: #106 (merged)
+- 변경 파일: 4개 (신규 2 + 수정 2)
+- 요약: Phase 8 #47 — `packages/ui/src/a11y.ts` 에 WCAG 2.1 AA 색 대비 계산 유틸(`relativeLuminance`, `contrastRatio`, `meetsAA`) + 상수(`MIN_TOUCH_TARGET=44`, `WCAG_AA_NORMAL=4.5`, `WCAG_AA_LARGE=3.0`). sRGB→linear→relative luminance→대비비 계산. `index.ts` re-export. vitest 13건(luminance black=0/white=1 + ratio black-white=21/same=1/commutative + meetsAA pass/fail/largeText + constants 2 + token audit 3). 디자인 토큰 감사: coral(#FF7F6B) on white는 2.7:1로 AA 미달 → 장식용 한정 사용 문서화. 모바일 character 화면 devButton에 `minHeight:44` 적용. ui 10→23건 / web 96 / mobile 127 그린, tsc 0 에러.
+- 다음: Phase 8 #48 에러 경계 & 전역 에러 핸들러 — React ErrorBoundary(웹), RN ErrorBoundary(모바일), 백엔드 글로벌 에러 핸들링 미들웨어.
+- 리스크: 전체 모바일 버튼 44px 보강은 Phase 10 범위. `meetsAA`는 hex 컬러만 지원 — rgba/hsl 은 미지원.
+
+---
 
 ## 2026-04-21 17:10 · Issue #103 · 공용 디자인 토큰 패키지
 - 브랜치: `feature/issue-103-design-tokens`
