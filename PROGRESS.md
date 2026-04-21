@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:03)
 
 - 진행 중 Phase: 2 (인증·사용자 모델)
-- 완료 이슈: #15, #17, #19, #21, #23, #25 (6개) — Phase 1 완료, Phase 2 진행 중
-- 진행 중 이슈: 없음 (다음: Phase 2 #8 User 모델 & 가입/로그인 API)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27 (7개)
+- 진행 중 이슈: 없음 (다음: Phase 2 #9 인증 미들웨어 / 공용 `useAuth`)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 12:03 · Issue #27 · 이메일+비밀번호 가입/로그인 API
+- 브랜치: `feature/issue-27-email-password-auth`
+- PR: #28 (merged)
+- 변경 파일: 17개
+- 요약: bcryptjs + 환경 페퍼로 비밀번호 해싱, Web Crypto HS256 JWT 발급/검증, `/api/auth/register|login|me` 추가, `authMiddleware` 에서 자체 JWT 수용. 마이그레이션 #2 로 users 테이블 재정비 (google_id nullable, password_hash, email UNIQUE). zod 스키마 및 vitest 25건 추가.
+- 다음: #9 인증 미들웨어 통합 + 웹/앱 공용 `useAuth` 훅 설계
+- 리스크: 프로덕션에 `JWT_SECRET`·`PASSWORD_PEPPER` 시크릿 등록 필요 (배포 시 `wrangler secret put`). 비밀번호 재설정 플로우는 별도 이슈.
+
+---
 
 ## 2026-04-17 · Issue #15 · 프로젝트 진단 및 베이스라인 문서화
 - 브랜치: `feature/issue-15-project-diagnosis`
