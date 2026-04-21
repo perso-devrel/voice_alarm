@@ -146,6 +146,24 @@ export const migrations: Migration[] = [
       'CREATE UNIQUE INDEX idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL',
     ],
   },
+  {
+    id: 3,
+    name: 'voice-uploads',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS voice_uploads (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        object_key TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        duration_ms INTEGER,
+        original_name TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_voice_uploads_user ON voice_uploads(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_voice_uploads_created ON voice_uploads(created_at)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {
@@ -154,7 +172,7 @@ export async function runMigrations(db: Client): Promise<string[]> {
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
       applied_at TEXT DEFAULT (datetime('now'))
-    )`
+    )`,
   );
 
   const applied = await db.execute('SELECT id FROM _migrations ORDER BY id');

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import type { AppEnv } from '../src/types';
 import { createMockDB, fakeAuthMiddleware, jsonReq, ID } from './helpers';
+import { resetSharedInMemoryVoiceStorage } from '@voice-alarm/voice';
 
 const V1 = '40000000-0000-4000-8000-000000000001';
 const V404 = '40000000-0000-4000-8000-0000000000ff';
@@ -23,7 +24,29 @@ function buildApp(userId = 'user-1') {
 
 beforeEach(() => {
   mockDB.calls.length = 0;
+  resetSharedInMemoryVoiceStorage();
 });
+
+function uploadRequest(
+  path: string,
+  opts: {
+    audio?: { bytes: Uint8Array; type: string; name?: string } | null;
+    fields?: Record<string, string>;
+    noAudio?: boolean;
+  } = {},
+): Request {
+  const form = new FormData();
+  if (opts.audio) {
+    const blob = new Blob([opts.audio.bytes], { type: opts.audio.type });
+    form.append('audio', blob, opts.audio.name ?? 'sample.mp3');
+  }
+  if (opts.fields) {
+    for (const [k, v] of Object.entries(opts.fields)) {
+      form.append(k, v);
+    }
+  }
+  return new Request(`http://localhost${path}`, { method: 'POST', body: form });
+}
 
 describe('GET /voice — 음성 프로필 목록', () => {
   it('빈 목록 반환', async () => {
@@ -117,6 +140,79 @@ describe('GET /voice/:id/stats — 음성 프로필 통계', () => {
   });
 });
 
+describe('POST /voice/upload — 원본 오디오 업로드', () => {
+  it('정상 업로드는 201 과 upload 메타를 돌려준다', async () => {
+    mockDB.pushResult([], 1);
+    const app = buildApp();
+    const res = await app.request(
+      uploadRequest('/voice/upload', {
+        audio: { bytes: new Uint8Array([1, 2, 3, 4]), type: 'audio/mpeg', name: 'hi.mp3' },
+        fields: { durationMs: '3200' },
+      }),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.upload.sizeBytes).toBe(4);
+    expect(body.upload.mimeType).toBe('audio/mpeg');
+    expect(body.upload.durationMs).toBe(3200);
+    expect(body.upload.objectKey.startsWith('mem://user-1/')).toBe(true);
+    expect(typeof body.upload.id).toBe('string');
+
+    const insert = mockDB.calls.find((c) => c.sql.includes('INSERT INTO voice_uploads'));
+    expect(insert).toBeDefined();
+    expect(insert!.args).toContain('user-1');
+    expect(insert!.args).toContain('audio/mpeg');
+  });
+
+  it('audio 파일이 없으면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(uploadRequest('/voice/upload', { audio: null }));
+    expect(res.status).toBe(400);
+  });
+
+  it('MIME 이 audio/* 가 아니면 415', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      uploadRequest('/voice/upload', {
+        audio: { bytes: new Uint8Array([1, 2]), type: 'image/png', name: 'x.png' },
+      }),
+    );
+    expect(res.status).toBe(415);
+  });
+
+  it('빈 파일이면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      uploadRequest('/voice/upload', {
+        audio: { bytes: new Uint8Array([]), type: 'audio/wav' },
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('10 MiB 초과면 413', async () => {
+    const tooBig = new Uint8Array(10 * 1024 * 1024 + 1);
+    const app = buildApp();
+    const res = await app.request(
+      uploadRequest('/voice/upload', {
+        audio: { bytes: tooBig, type: 'audio/mpeg' },
+      }),
+    );
+    expect(res.status).toBe(413);
+  });
+
+  it('durationMs 가 숫자가 아니면 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      uploadRequest('/voice/upload', {
+        audio: { bytes: new Uint8Array([1]), type: 'audio/mpeg' },
+        fields: { durationMs: 'abc' },
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('DELETE /voice/:id — 음성 프로필 삭제', () => {
   it('잘못된 UUID 형식이면 400', async () => {
     const app = buildApp();
@@ -132,7 +228,9 @@ describe('DELETE /voice/:id — 음성 프로필 삭제', () => {
   });
 
   it('연관 메시지 있으면 409 경고', async () => {
-    mockDB.pushResult([{ id: V1, name: 'Voice A', perso_voice_id: null, elevenlabs_voice_id: null }]);
+    mockDB.pushResult([
+      { id: V1, name: 'Voice A', perso_voice_id: null, elevenlabs_voice_id: null },
+    ]);
     mockDB.pushResult([{ cnt: 3 }]);
     const app = buildApp();
     const res = await app.request(jsonReq('DELETE', `/voice/${V1}`));
@@ -143,7 +241,9 @@ describe('DELETE /voice/:id — 음성 프로필 삭제', () => {
   });
 
   it('force=true로 연관 메시지 있어도 삭제', async () => {
-    mockDB.pushResult([{ id: V1, name: 'Voice A', perso_voice_id: null, elevenlabs_voice_id: null }]);
+    mockDB.pushResult([
+      { id: V1, name: 'Voice A', perso_voice_id: null, elevenlabs_voice_id: null },
+    ]);
     mockDB.pushResult([{ cnt: 3 }]);
     mockDB.pushResult([], 1);
     const app = buildApp();
@@ -154,7 +254,9 @@ describe('DELETE /voice/:id — 음성 프로필 삭제', () => {
   });
 
   it('연관 메시지 없으면 바로 삭제', async () => {
-    mockDB.pushResult([{ id: V1, name: 'Voice A', perso_voice_id: null, elevenlabs_voice_id: null }]);
+    mockDB.pushResult([
+      { id: V1, name: 'Voice A', perso_voice_id: null, elevenlabs_voice_id: null },
+    ]);
     mockDB.pushResult([{ cnt: 0 }]);
     mockDB.pushResult([], 1);
     const app = buildApp();

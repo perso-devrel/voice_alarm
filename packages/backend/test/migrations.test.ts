@@ -23,9 +23,7 @@ describe('migrations', () => {
     const initial = migrations.find((m) => m.id === 1);
     expect(initial).toBeDefined();
 
-    const createStatements = initial!.statements.filter((s) =>
-      s.trim().startsWith('CREATE TABLE')
-    );
+    const createStatements = initial!.statements.filter((s) => s.trim().startsWith('CREATE TABLE'));
     expect(createStatements.length).toBe(8);
   });
 
@@ -33,8 +31,8 @@ describe('migrations', () => {
     const initial = migrations.find((m) => m.id === 1);
     expect(initial).toBeDefined();
 
-    const indexStatements = initial!.statements.filter((s) =>
-      s.trim().startsWith('CREATE INDEX') || s.trim().startsWith('CREATE UNIQUE INDEX')
+    const indexStatements = initial!.statements.filter(
+      (s) => s.trim().startsWith('CREATE INDEX') || s.trim().startsWith('CREATE UNIQUE INDEX'),
     );
     expect(indexStatements.length).toBe(19);
   });
@@ -52,5 +50,15 @@ describe('migrations', () => {
     expect(all).toContain('users_new');
     expect(all).toContain('password_hash');
     expect(all).toContain('idx_users_email_unique');
+  });
+
+  it('마이그레이션 #3 에서 voice_uploads 테이블과 인덱스를 추가한다', () => {
+    const m = migrations.find((x) => x.id === 3);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS voice_uploads');
+    expect(all).toContain('object_key');
+    expect(all).toContain('size_bytes');
+    expect(all).toContain('idx_voice_uploads_user');
   });
 });
