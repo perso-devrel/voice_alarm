@@ -115,6 +115,28 @@ export async function deleteAlarm(id: string) {
   await api.delete(`/alarm/${id}`);
 }
 
+// ===== Billing / Voucher API =====
+
+export interface VoucherItem {
+  id: string;
+  code: string;
+  plan_id: string;
+  plan_key: string;
+  plan_name: string;
+  plan_type: string;
+  subscription_id: string | null;
+  redeemed_by_user_id: string | null;
+  status: 'issued' | 'used' | 'expired';
+  issued_at: string;
+  used_at: string | null;
+  expires_at: string;
+}
+
+export async function getVouchers(): Promise<VoucherItem[]> {
+  const { data } = await api.get('/billing/vouchers');
+  return data.vouchers as VoucherItem[];
+}
+
 // ===== Friend API =====
 
 export async function sendFriendRequest(email: string) {
