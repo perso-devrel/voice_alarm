@@ -294,6 +294,237 @@ describe('POST /family/invites/:code/accept', () => {
   });
 });
 
+describe('GET /family/groups/current', () => {
+  it('멤버십 + 멤버 목록 반환', async () => {
+    mockDB.pushResult([{ id: 'user-member' }]);
+    mockDB.pushResult([
+      {
+        id: 'group-1',
+        owner_user_id: 'user-owner',
+        plan_id: 'plan-family',
+        max_members: 6,
+        created_at: '2026-04-21T00:00:00.000Z',
+        my_role: 'member',
+      },
+    ]);
+    mockDB.pushResult([
+      {
+        id: 'm-owner',
+        user_id: 'user-owner',
+        role: 'owner',
+        joined_at: '2026-04-21T00:00:00.000Z',
+        email: 'owner@x.com',
+        name: 'Owner',
+        picture: null,
+      },
+      {
+        id: 'm-mem',
+        user_id: 'user-member',
+        role: 'member',
+        joined_at: '2026-04-21T00:05:00.000Z',
+        email: 'm@x.com',
+        name: 'Member',
+        picture: null,
+      },
+    ]);
+
+    const app = buildApp('google-member');
+    const res = await app.request(jsonReq('GET', '/family/groups/current'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.group.id).toBe('group-1');
+    expect(body.group.owner_user_id).toBe('user-owner');
+    expect(body.role).toBe('member');
+    expect(body.members).toHaveLength(2);
+    expect(body.members[0].role).toBe('owner');
+  });
+
+  it('소속 그룹 없음 → null 응답', async () => {
+    mockDB.pushResult([{ id: 'user-x' }]);
+    mockDB.pushResult([]);
+    const app = buildApp('google-x');
+    const res = await app.request(jsonReq('GET', '/family/groups/current'));
+    const body = await res.json();
+    expect(body.group).toBeNull();
+    expect(body.members).toEqual([]);
+  });
+});
+
+describe('POST /family/groups/:groupId/leave', () => {
+  it('member 탈퇴 → 200 + plan_group_members DELETE', async () => {
+    mockDB.pushResult([{ id: 'user-member' }]);
+    mockDB.pushResult([{ id: 'm-1', role: 'member' }]);
+    mockDB.pushResult([], 1); // DELETE
+
+    const app = buildApp('google-member');
+    const res = await app.request(jsonReq('POST', '/family/groups/group-1/leave'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.left_group_id).toBe('group-1');
+
+    const del = mockDB.calls.find((c) => c.sql.includes('DELETE FROM plan_group_members'));
+    expect(del?.args[0]).toBe('m-1');
+  });
+
+  it('owner 가 탈퇴 시도 → 409 (양도/해체 먼저)', async () => {
+    mockDB.pushResult([{ id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'm-o', role: 'owner' }]);
+
+    const app = buildApp('google-owner');
+    const res = await app.request(jsonReq('POST', '/family/groups/group-1/leave'));
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toContain('소유자');
+  });
+
+  it('그룹 멤버 아님 → 403', async () => {
+    mockDB.pushResult([{ id: 'user-x' }]);
+    mockDB.pushResult([]);
+    const app = buildApp('google-x');
+    const res = await app.request(jsonReq('POST', '/family/groups/group-1/leave'));
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('POST /family/groups/:groupId/transfer-ownership', () => {
+  it('정상 양도 → 200, UPDATE 순서는 (owner→member) 먼저 후 (target→owner)', async () => {
+    mockDB.pushResult([{ id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'group-1', owner_user_id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'm-target', role: 'member' }]);
+    mockDB.pushResult([], 1); // UPDATE self → member
+    mockDB.pushResult([], 1); // UPDATE target → owner
+    mockDB.pushResult([], 1); // UPDATE plan_groups.owner_user_id
+
+    const app = buildApp('google-owner');
+    const res = await app.request(
+      jsonReq('POST', '/family/groups/group-1/transfer-ownership', {
+        target_user_id: 'user-target',
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.group.owner_user_id).toBe('user-target');
+    expect(body.group.previous_owner_user_id).toBe('user-owner');
+
+    const updates = mockDB.calls.filter((c) => c.sql.includes('UPDATE plan_group_members'));
+    expect(updates).toHaveLength(2);
+    // (1) 기존 owner 강등이 먼저
+    expect(updates[0].sql).toContain("role = 'member'");
+    expect(updates[0].args[1]).toBe('user-owner');
+    // (2) target 승격이 나중
+    expect(updates[1].sql).toContain("role = 'owner'");
+    expect(updates[1].args[1]).toBe('user-target');
+
+    const groupUpd = mockDB.calls.find((c) => c.sql.includes('UPDATE plan_groups SET owner_user_id'));
+    expect(groupUpd?.args[0]).toBe('user-target');
+  });
+
+  it('target_user_id 누락 → 400', async () => {
+    const app = buildApp('google-owner');
+    const res = await app.request(
+      jsonReq('POST', '/family/groups/group-1/transfer-ownership', {}),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('self-양도 시도 → 400', async () => {
+    mockDB.pushResult([{ id: 'user-owner' }]);
+    const app = buildApp('google-owner');
+    const res = await app.request(
+      jsonReq('POST', '/family/groups/group-1/transfer-ownership', {
+        target_user_id: 'user-owner',
+      }),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('자기');
+  });
+
+  it('owner 아님 → 403', async () => {
+    mockDB.pushResult([{ id: 'user-other' }]);
+    mockDB.pushResult([{ id: 'group-1', owner_user_id: 'user-owner' }]);
+    const app = buildApp('google-other');
+    const res = await app.request(
+      jsonReq('POST', '/family/groups/group-1/transfer-ownership', {
+        target_user_id: 'user-target',
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('target 이 그룹 멤버 아님 → 400', async () => {
+    mockDB.pushResult([{ id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'group-1', owner_user_id: 'user-owner' }]);
+    mockDB.pushResult([]); // target 조회 empty
+    const app = buildApp('google-owner');
+    const res = await app.request(
+      jsonReq('POST', '/family/groups/group-1/transfer-ownership', {
+        target_user_id: 'user-target',
+      }),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('멤버');
+  });
+});
+
+describe('DELETE /family/groups/:groupId/members/:userId', () => {
+  it('owner 가 member 제거 → 200 + DELETE 호출', async () => {
+    mockDB.pushResult([{ id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'group-1', owner_user_id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'm-target', role: 'member' }]);
+    mockDB.pushResult([], 1);
+
+    const app = buildApp('google-owner');
+    const res = await app.request(
+      new Request('http://localhost/family/groups/group-1/members/user-target', {
+        method: 'DELETE',
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.removed_user_id).toBe('user-target');
+  });
+
+  it('owner 본인 제거 시도 → 400', async () => {
+    mockDB.pushResult([{ id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'group-1', owner_user_id: 'user-owner' }]);
+    const app = buildApp('google-owner');
+    const res = await app.request(
+      new Request('http://localhost/family/groups/group-1/members/user-owner', {
+        method: 'DELETE',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('owner 아님 → 403', async () => {
+    mockDB.pushResult([{ id: 'user-other' }]);
+    mockDB.pushResult([{ id: 'group-1', owner_user_id: 'user-owner' }]);
+    const app = buildApp('google-other');
+    const res = await app.request(
+      new Request('http://localhost/family/groups/group-1/members/user-target', {
+        method: 'DELETE',
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('대상 owner 는 제거 불가 → 400', async () => {
+    mockDB.pushResult([{ id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'group-1', owner_user_id: 'user-owner' }]);
+    mockDB.pushResult([{ id: 'm-x', role: 'owner' }]);
+    const app = buildApp('google-owner');
+    const res = await app.request(
+      new Request('http://localhost/family/groups/group-1/members/user-co-owner', {
+        method: 'DELETE',
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('POST /family/invites/:code/revoke', () => {
   it('발급자 + pending → 200, status=revoked', async () => {
     mockDB.pushResult([{ id: 'user-owner' }]);
