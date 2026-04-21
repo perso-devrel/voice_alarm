@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:35)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:50)
 
-- 진행 중 Phase: 6 진행 중 (#34~#37 완료). 다음 #38 모바일 가족 알람 편집 화면.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85 (36개). Phase 1~5 완료.
-- 진행 중 이슈: 없음 (다음: Phase 6 #38 모바일 가족 알람 편집 화면)
+- 진행 중 Phase: 6 진행 중 (#34~#38 완료). 다음 #39 가족 알람 수신 표시 UI.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87 (37개). Phase 1~5 완료.
+- 진행 중 이슈: 없음 (다음: Phase 6 #39 가족 알람 수신 표시 UI)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 15:50 · Issue #87 · 모바일 가족 알람 편집 화면
+- 브랜치: `feature/issue-87-mobile-family-alarms`
+- PR: #88 (merged)
+- 변경 파일: 7개 (신규 3 + 수정 4)
+- 요약: 웹(#85) 과 동일한 순수 헬퍼 계약을 React Native(Expo) 로 이식. `apps/mobile/src/lib/familyAlarmForm.ts` — `filterFamilyAlarmRecipients`/`validateFamilyAlarmForm`/`buildMemberDisplayName` 3종. `apps/mobile/app/(tabs)/family.tsx` 신규 탭 스크린 — 3-state UI(로딩/그룹 없음/그룹+폼), 수신자 칩 선택(owner·소유자 뱃지), 기상 시간 TextInput(HH:mm), 메시지 textarea(500자 카운터), 반복 요일 7개 Pill 토글, TanStack Query mutation 으로 `createFamilyAlarmText` 호출, 에러/성공 Text 인라인 표시, SafeAreaView + ScrollView. `services/api.ts` 에 `FamilyGroupMember`/`FamilyGroupCurrent`/`FamilyAlarmCreatePayload`/`FamilyAlarmCreateResponse` 타입 + 두 엔드포인트 추가. `(tabs)/_layout.tsx` 에 `family` 탭 등록(아이콘 👨‍👩‍👧, home 🏠 와 구분). i18n ko/en 에 `tab.family` 추가. jest familyAlarmForm 17건 신규 → 모바일 74→91 / 9 파일 그린, tsc 0 에러. 백엔드·웹 suite 변경 없이 409·64 유지.
+- 다음: Phase 6 #39 가족 알람 수신 표시 — 수신자 쪽 홈/알람 탭에서 "가족이 보낸 알람" 구분 표시(예: 발신자 뱃지/아이콘 + 메시지 출처 라벨). 기존 `getAlarms` 응답에 `sender_user_id`·`sender_name` 노출 필드 추가 여부 판단 + 모바일·웹 공통 UI.
+- 리스크: 모바일 폼은 현재 텍스트 모드만 — voice 모드(#83 백엔드) UI 는 미구현(후속 이슈에서 음성 업로드 + 더빙 선택 추가). React Native `TextInput` 의 HH:mm 가드는 정규식으로만 방어(네이티브 time picker 미연동) — Phase 8 폴리시 단계에서 개선 예정. `getUserProfile` 반환 타입이 모바일/웹 간 다름(모바일 flat, 웹 wrapped) — 공통 타입 정리는 Phase 8.
+
+---
 
 ## 2026-04-21 15:35 · Issue #85 · 웹 가족 알람 편집 화면
 - 브랜치: `feature/issue-85-web-family-alarms`
