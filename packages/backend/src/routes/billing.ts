@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
+import { generateVoucherCode } from '../lib/vouchers';
 
 const billing = new Hono<AppEnv>();
 
@@ -78,6 +79,25 @@ billing.post('/checkout', async (c) => {
     args: [mirroredPlan, userPk],
   });
 
+  // 1회용 이용권 코드 자동 발급 (#28)
+  const voucherId = crypto.randomUUID();
+  const { code: voucherCode, hash: voucherHash } = await generateVoucherCode();
+  await db.execute({
+    sql: `INSERT INTO voucher_codes
+          (id, code, code_hash, plan_id, issuer_user_id, issuer_subscription_id, status, issued_at, expires_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'issued', ?, ?)`,
+    args: [
+      voucherId,
+      voucherCode,
+      voucherHash,
+      String(plan.id),
+      userPk,
+      subscriptionId,
+      startsAt.toISOString(),
+      expiresAt.toISOString(),
+    ],
+  });
+
   return c.json({
     success: true,
     checkout_stub: true,
@@ -98,6 +118,54 @@ billing.post('/checkout', async (c) => {
       max_members: Number(plan.max_members),
       price_krw: Number(plan.price_krw),
     },
+    voucher: {
+      id: voucherId,
+      code: voucherCode,
+      expires_at: expiresAt.toISOString(),
+    },
+  });
+});
+
+/** GET /billing/vouchers — 내가 발급한 이용권 코드 목록 (발급자에게만 평문 노출) */
+billing.get('/vouchers', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const userRes = await db.execute({
+    sql: 'SELECT id FROM users WHERE google_id = ?',
+    args: [userId],
+  });
+  if (userRes.rows.length === 0) {
+    return c.json({ vouchers: [] });
+  }
+  const userPk = String(userRes.rows[0].id);
+
+  const result = await db.execute({
+    sql: `SELECT v.id, v.code, v.plan_id, v.issuer_subscription_id, v.redeemed_by_user_id,
+                 v.status, v.issued_at, v.used_at, v.expires_at,
+                 p.key AS plan_key, p.name AS plan_name, p.plan_type
+          FROM voucher_codes v
+          JOIN plans p ON p.id = v.plan_id
+          WHERE v.issuer_user_id = ?
+          ORDER BY v.issued_at DESC`,
+    args: [userPk],
+  });
+
+  return c.json({
+    vouchers: result.rows.map((r) => ({
+      id: String(r.id),
+      code: String(r.code),
+      plan_id: String(r.plan_id),
+      plan_key: String(r.plan_key),
+      plan_name: String(r.plan_name),
+      plan_type: String(r.plan_type),
+      subscription_id: (r.issuer_subscription_id as string | null) ?? null,
+      redeemed_by_user_id: (r.redeemed_by_user_id as string | null) ?? null,
+      status: String(r.status),
+      issued_at: String(r.issued_at),
+      used_at: (r.used_at as string | null) ?? null,
+      expires_at: String(r.expires_at),
+    })),
   });
 });
 
