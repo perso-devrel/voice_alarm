@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:50)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 17:05)
 
-- 진행 중 Phase: 7 진행 중 (#40~#44 완료). 다음 #45 성장 단계 전환 애니메이션.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99 (43개). Phase 1~6 완료.
-- 진행 중 이슈: 없음 (다음: Phase 7 #45 성장 단계 전환 애니메이션)
+- 진행 중 Phase: 8 (크로스플랫폼 품질). **Phase 1~7 완료.** 다음 #46 공용 디자인 토큰.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99, #101 (44개). Phase 1~7 완료.
+- 진행 중 이슈: 없음 (다음: Phase 8 #46 공용 디자인 토큰)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 17:05 · Issue #101 · 성장 단계 전환 애니메이션
+- 브랜치: `feature/issue-101-stage-transition-anim`
+- PR: #102 (merged)
+- 변경 파일: 7개 (수정)
+- 요약: Phase 7 #45 마지막 이슈. seed→sprout→tree→bloom 전환 시 심플한 scale+fade 애니메이션. `stageIndex`/`shouldShowStageTransition` 순수 함수를 웹/모바일 양쪽 `character.ts`에 추가. 웹은 `@keyframes stage-pop`(0→scale 0.3/opacity 0 → 50% scale 1.2/opacity 1 → 100% scale 1) + `prevStageRef`/`stageAnimating` 상태로 CSS 전환 트리거. 모바일은 `Animated.spring`(scale 0.3→1.2→1) + `Animated.timing`(opacity 0→1, 200ms)의 `Animated.sequence` 조합, `useNativeDriver: true`. vitest 웹 +5건(stageIndex 2 + shouldShowStageTransition 4) + jest 모바일 +6건(stageIndex 2 + shouldShowStageTransition 4) → 웹 91→96 / 모바일 121→127 그린, tsc 0 에러. **Phase 7 완료.**
+- 다음: Phase 8 #46 공용 디자인 토큰 — `packages/ui/tokens.ts` 에 색/타이포/spacing 통합, 웹·앱에서 참조.
+- 리스크: 애니메이션은 XP 지급 후 stage 변경 시에만 트리거 — 최초 로딩 시에는 발생하지 않음. Lottie/스프라이트 기반 복잡한 전환은 Phase 10 후보.
+
+---
 
 ## 2026-04-21 16:50 · Issue #99 · 모바일 캐릭터 화면 + 🌱 탭 등록
 - 브랜치: `feature/issue-99-mobile-character-page`
