@@ -10,6 +10,7 @@ vi.mock('../src/lib/db', () => ({
 }));
 
 import billingRoutes from '../src/routes/billing';
+import { hashVoucherCode } from '../src/lib/vouchers';
 
 const PLAN_PLUS = {
   id: '70000000-0000-4000-8000-000000000002',
@@ -294,5 +295,223 @@ describe('GET /billing/vouchers', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.vouchers).toEqual([]);
+  });
+});
+
+describe('POST /billing/redeem', () => {
+  const VALID_CODE = 'VA-ABCD-EFGH-JKLM';
+  const FUTURE = '2027-12-31T00:00:00.000Z';
+  const PAST = '2020-01-01T00:00:00.000Z';
+
+  it('유효 코드 → 200, voucher status=used, 새 subscription, users.plan=plus', async () => {
+    const hash = await hashVoucherCode(VALID_CODE);
+    mockDB.pushResult([{ id: 'user-pk-2' }]); // SELECT user
+    mockDB.pushResult([
+      {
+        id: 'v-1',
+        code_hash: hash,
+        plan_id: PLAN_PLUS.id,
+        issuer_user_id: 'user-pk-1',
+        status: 'issued',
+        expires_at: FUTURE,
+      },
+    ]); // SELECT voucher
+    mockDB.pushResult([PLAN_PLUS]); // SELECT plan
+    mockDB.pushResult([], 1); // INSERT subscription
+    mockDB.pushResult([], 1); // UPDATE voucher
+    mockDB.pushResult([], 1); // UPDATE users.plan
+
+    const app = buildApp('google-2');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.subscription.user_id).toBe('user-pk-2');
+    expect(body.subscription.plan_id).toBe(PLAN_PLUS.id);
+    expect(body.voucher.status).toBe('used');
+
+    const updateVoucher = mockDB.calls.find((c) =>
+      c.sql.includes("UPDATE voucher_codes") && c.sql.includes("status = 'used'"),
+    );
+    expect(updateVoucher?.args[0]).toBe('user-pk-2');
+
+    const updateUser = mockDB.calls.find((c) => c.sql.includes('UPDATE users SET plan'));
+    expect(updateUser?.args[0]).toBe('plus');
+  });
+
+  it('family 코드 등록 → users.plan=family', async () => {
+    const hash = await hashVoucherCode(VALID_CODE);
+    mockDB.pushResult([{ id: 'user-pk-2' }]);
+    mockDB.pushResult([
+      {
+        id: 'v-2',
+        code_hash: hash,
+        plan_id: PLAN_FAMILY.id,
+        issuer_user_id: 'user-pk-1',
+        status: 'issued',
+        expires_at: FUTURE,
+      },
+    ]);
+    mockDB.pushResult([PLAN_FAMILY]);
+    mockDB.pushResult([], 1);
+    mockDB.pushResult([], 1);
+    mockDB.pushResult([], 1);
+
+    const app = buildApp('google-2');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE }),
+    );
+    expect(res.status).toBe(200);
+    const updateUser = mockDB.calls.find((c) => c.sql.includes('UPDATE users SET plan'));
+    expect(updateUser?.args[0]).toBe('family');
+  });
+
+  it('code 누락 → 400', async () => {
+    const app = buildApp();
+    const res = await app.request(jsonReq('POST', '/billing/redeem', {}));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('code');
+  });
+
+  it('잘못된 포맷 → 400', async () => {
+    const app = buildApp();
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: 'INVALID-123' }),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('형식');
+  });
+
+  it('존재하지 않는 코드 → 404', async () => {
+    mockDB.pushResult([{ id: 'user-pk-2' }]); // user
+    mockDB.pushResult([]); // voucher not found
+    const app = buildApp('google-2');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE }),
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toContain('찾을 수 없');
+  });
+
+  it('이미 사용된 코드 → 409', async () => {
+    const hash = await hashVoucherCode(VALID_CODE);
+    mockDB.pushResult([{ id: 'user-pk-2' }]);
+    mockDB.pushResult([
+      {
+        id: 'v-1',
+        code_hash: hash,
+        plan_id: PLAN_PLUS.id,
+        issuer_user_id: 'user-pk-1',
+        status: 'used',
+        expires_at: FUTURE,
+      },
+    ]);
+    const app = buildApp('google-2');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE }),
+    );
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toContain('이미 사용');
+  });
+
+  it('만료된 코드(status=expired) → 409', async () => {
+    const hash = await hashVoucherCode(VALID_CODE);
+    mockDB.pushResult([{ id: 'user-pk-2' }]);
+    mockDB.pushResult([
+      {
+        id: 'v-1',
+        code_hash: hash,
+        plan_id: PLAN_PLUS.id,
+        issuer_user_id: 'user-pk-1',
+        status: 'expired',
+        expires_at: PAST,
+      },
+    ]);
+    const app = buildApp('google-2');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE }),
+    );
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toContain('만료');
+  });
+
+  it('expires_at 지났지만 status=issued 인 경우 → 409 + expired 전환', async () => {
+    const hash = await hashVoucherCode(VALID_CODE);
+    mockDB.pushResult([{ id: 'user-pk-2' }]);
+    mockDB.pushResult([
+      {
+        id: 'v-1',
+        code_hash: hash,
+        plan_id: PLAN_PLUS.id,
+        issuer_user_id: 'user-pk-1',
+        status: 'issued',
+        expires_at: PAST,
+      },
+    ]);
+    mockDB.pushResult([], 1); // UPDATE voucher → expired
+
+    const app = buildApp('google-2');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE }),
+    );
+    expect(res.status).toBe(409);
+    const expireUpdate = mockDB.calls.find((c) =>
+      c.sql.includes("UPDATE voucher_codes SET status = 'expired'"),
+    );
+    expect(expireUpdate).toBeDefined();
+  });
+
+  it('본인이 발급한 코드 등록 시도 → 400', async () => {
+    const hash = await hashVoucherCode(VALID_CODE);
+    mockDB.pushResult([{ id: 'user-pk-1' }]);
+    mockDB.pushResult([
+      {
+        id: 'v-1',
+        code_hash: hash,
+        plan_id: PLAN_PLUS.id,
+        issuer_user_id: 'user-pk-1',
+        status: 'issued',
+        expires_at: FUTURE,
+      },
+    ]);
+    const app = buildApp('google-1');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE }),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('본인');
+  });
+
+  it('소문자 입력도 대문자로 정규화하여 동작', async () => {
+    const hash = await hashVoucherCode(VALID_CODE);
+    mockDB.pushResult([{ id: 'user-pk-2' }]);
+    mockDB.pushResult([
+      {
+        id: 'v-1',
+        code_hash: hash,
+        plan_id: PLAN_PLUS.id,
+        issuer_user_id: 'user-pk-1',
+        status: 'issued',
+        expires_at: FUTURE,
+      },
+    ]);
+    mockDB.pushResult([PLAN_PLUS]);
+    mockDB.pushResult([], 1);
+    mockDB.pushResult([], 1);
+    mockDB.pushResult([], 1);
+
+    const app = buildApp('google-2');
+    const res = await app.request(
+      jsonReq('POST', '/billing/redeem', { code: VALID_CODE.toLowerCase() }),
+    );
+    expect(res.status).toBe(200);
   });
 });

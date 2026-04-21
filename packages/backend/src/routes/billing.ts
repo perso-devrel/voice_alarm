@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
-import { generateVoucherCode } from '../lib/vouchers';
+import { generateVoucherCode, hashVoucherCode, isValidVoucherCodeFormat } from '../lib/vouchers';
 
 const billing = new Hono<AppEnv>();
 
@@ -213,6 +213,138 @@ billing.get('/subscription', async (c) => {
       period_days: Number(r.period_days),
       max_members: Number(r.max_members),
       price_krw: Number(r.price_krw),
+    },
+  });
+});
+
+/**
+ * POST /billing/redeem — 이용권 코드 등록.
+ * 평문 코드를 해시로 변환해 voucher_codes 에서 lookup → 상태/만료/자기발급 검증 후
+ * status=used 로 전이하고 등록자에게 새 subscription 을 발행한다.
+ */
+billing.post('/redeem', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const body = await c.req
+    .json<{ code?: unknown }>()
+    .catch(() => ({ code: undefined }));
+
+  const raw = typeof body.code === 'string' ? body.code.trim().toUpperCase() : '';
+  if (!raw) {
+    return c.json({ error: 'code 는 필수입니다' }, 400);
+  }
+  if (!isValidVoucherCodeFormat(raw)) {
+    return c.json({ error: '잘못된 코드 형식입니다' }, 400);
+  }
+
+  const userRes = await db.execute({
+    sql: 'SELECT id FROM users WHERE google_id = ?',
+    args: [userId],
+  });
+  if (userRes.rows.length === 0) {
+    return c.json({ error: '사용자를 찾을 수 없습니다' }, 404);
+  }
+  const userPk = String(userRes.rows[0].id);
+
+  const codeHash = await hashVoucherCode(raw);
+  const voucherRes = await db.execute({
+    sql: `SELECT id, code_hash, plan_id, issuer_user_id, status, expires_at
+          FROM voucher_codes WHERE code_hash = ?`,
+    args: [codeHash],
+  });
+  if (voucherRes.rows.length === 0) {
+    return c.json({ error: '해당 코드를 찾을 수 없습니다' }, 404);
+  }
+  const voucher = voucherRes.rows[0];
+  const status = String(voucher.status);
+  const voucherId = String(voucher.id);
+  const planId = String(voucher.plan_id);
+  const issuerUserId = String(voucher.issuer_user_id);
+
+  if (status === 'used') {
+    return c.json({ error: '이미 사용된 코드입니다' }, 409);
+  }
+  if (status === 'expired') {
+    return c.json({ error: '만료된 코드입니다' }, 409);
+  }
+
+  const now = new Date();
+  const expiresAt = new Date(String(voucher.expires_at));
+  if (Number.isFinite(expiresAt.getTime()) && expiresAt.getTime() <= now.getTime()) {
+    await db.execute({
+      sql: `UPDATE voucher_codes SET status = 'expired' WHERE id = ?`,
+      args: [voucherId],
+    });
+    return c.json({ error: '만료된 코드입니다' }, 409);
+  }
+
+  if (issuerUserId === userPk) {
+    return c.json({ error: '본인이 발급한 코드는 등록할 수 없습니다' }, 400);
+  }
+
+  const planRes = await db.execute({
+    sql: `SELECT id, key, name, plan_type, period_days, max_members, price_krw
+          FROM plans WHERE id = ?`,
+    args: [planId],
+  });
+  if (planRes.rows.length === 0) {
+    return c.json({ error: '연결된 플랜을 찾을 수 없습니다' }, 404);
+  }
+  const plan = planRes.rows[0];
+  const planType = String(plan.plan_type);
+  const periodDays = Number(plan.period_days) || 30;
+  const startsAt = now;
+  const newExpiresAt = new Date(startsAt.getTime() + periodDays * 24 * 60 * 60 * 1000);
+
+  const subscriptionId = crypto.randomUUID();
+  await db.execute({
+    sql: `INSERT INTO subscriptions (id, user_id, plan_id, status, starts_at, expires_at)
+          VALUES (?, ?, ?, 'active', ?, ?)`,
+    args: [
+      subscriptionId,
+      userPk,
+      planId,
+      startsAt.toISOString(),
+      newExpiresAt.toISOString(),
+    ],
+  });
+
+  await db.execute({
+    sql: `UPDATE voucher_codes
+          SET status = 'used', redeemed_by_user_id = ?, used_at = ?
+          WHERE id = ? AND status = 'issued'`,
+    args: [userPk, startsAt.toISOString(), voucherId],
+  });
+
+  const mirroredPlan = planTypeToUserPlan(planType);
+  await db.execute({
+    sql: `UPDATE users SET plan = ?, updated_at = datetime('now') WHERE id = ?`,
+    args: [mirroredPlan, userPk],
+  });
+
+  return c.json({
+    success: true,
+    subscription: {
+      id: subscriptionId,
+      user_id: userPk,
+      plan_id: planId,
+      status: 'active',
+      starts_at: startsAt.toISOString(),
+      expires_at: newExpiresAt.toISOString(),
+    },
+    plan: {
+      id: planId,
+      key: String(plan.key),
+      name: String(plan.name),
+      plan_type: planType,
+      period_days: periodDays,
+      max_members: Number(plan.max_members),
+      price_krw: Number(plan.price_krw),
+    },
+    voucher: {
+      id: voucherId,
+      status: 'used',
     },
   });
 });
