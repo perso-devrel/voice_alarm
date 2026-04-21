@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:06)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:12)
 
 - 진행 중 Phase: 4
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57 (22개)
-- 진행 중 이슈: 없음 (다음: Phase 4 #24 알람 재생(sound-only) — mock 음성 파일 재생 파이프라인)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59 (23개)
+- 진행 중 이슈: 없음 (다음: Phase 4 #25 알람 재생(tts) — 샘플 + 자막 오버레이)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 14:12 · Issue #59 · 알람 재생 resolver (sound-only mock) + 모드 뱃지
+- 브랜치: `feature/issue-59-mobile-alarm-playback-resolver`
+- PR: #60 (merged)
+- 변경 파일: 3개 (신규 2 + 수정 1)
+- 요약: `apps/mobile/src/lib/alarmPlayback.ts` 신규 — 순수 함수 `resolveAlarmPlayback(alarm, messages, voices)` 가 `mode` / `voice_profile` / 메시지 매칭 여부에 따라 `tts` / `sound-only` / `fallback` / `error` 계획을 반환. sound-only 는 voice_profile 미지정·미매칭·`processing|failed` 모두 `MOCK_DEFAULT_ALARM_URI` fallback 하고, 정상 경로에서만 `MOCK_VOICE_SAMPLE_URI` 반환. 실 교체 지점에 `// TODO: real perso.ai voice sample URL` 주석. `getAlarmModeBadge` 헬퍼로 `(tabs)/alarms.tsx` 알람 카드에 🔊 원본 / 🗣️ TTS 뱃지 표시. jest 11건 (resolveAlarmPlayback 8 + getAlarmModeBadge 3), 모바일 50→61 / 전체 409→420.
+- 다음: Phase 4 #25 알람 재생 (tts) — 샘플 + 자막 오버레이 방식의 mock TTS 재생 경로. 이어서 알람 시각 도달 시 자동 재생 파이프라인(노티피케이션 → 포그라운드 player 라우팅).
+- 리스크: `asset:///audio/mock-*.mp3` 는 계약 URI 만 정의 — 실제 번들 파일은 후속 이슈. Player 화면은 여전히 TTS 로컬 캐시 기반이라 sound-only 경로 실재생은 #25 에서 연결.
+
+---
 
 ## 2026-04-21 14:06 · Issue #57 · 모바일 알람 편집 화면 mode 토글 및 voice_profile 연결
 - 브랜치: `feature/issue-57-mobile-alarm-mode-ui`
