@@ -166,6 +166,7 @@ export default function CharacterScreen() {
           </View>
         </View>
 
+        {__DEV__ && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>테스트용 XP 지급</Text>
           <Text style={styles.devHint}>
@@ -189,6 +190,7 @@ export default function CharacterScreen() {
             </Text>
           )}
         </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
