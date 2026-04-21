@@ -71,4 +71,16 @@ describe('migrations', () => {
     expect(all).toContain('confidence');
     expect(all).toContain('idx_voice_speakers_upload');
   });
+
+  it('마이그레이션 #5 에서 alarms 에 mode/voice_profile_id/speaker_id 컬럼을 추가한다', () => {
+    const m = migrations.find((x) => x.id === 5);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('ALTER TABLE alarms ADD COLUMN mode');
+    expect(all).toContain("CHECK(mode IN ('sound-only','tts'))");
+    expect(all).toContain('ALTER TABLE alarms ADD COLUMN voice_profile_id');
+    expect(all).toContain('ALTER TABLE alarms ADD COLUMN speaker_id');
+    expect(all).toContain('idx_alarms_voice_profile');
+    expect(all).toContain('idx_alarms_speaker');
+  });
 });
