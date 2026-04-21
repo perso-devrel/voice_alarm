@@ -1,17 +1,10 @@
 # 📌 현재 상태 (마지막 업데이트: 2026-04-21)
 
 - 진행 중 Phase: 1 (기존 코드 진단 & 모노레포 정비)
-- 완료 이슈: #15, #17 (2개)
-- 진행 중 이슈: 없음
+- 완료 이슈: #15, #17, #19 (3개)
+- 진행 중 이슈: 없음 (다음: #5 테스트 러너 설정)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
-
-### 🚨 BLOCKER: GitHub CLI 인증 만료 (2026-04-21)
-- `gh auth status` 실패: 토큰 invalid (`alpaka206` 계정)
-- `git push`는 정상 동작
-- **영향**: 이슈 생성, PR 생성, PR 머지 등 전체 워크플로우 불가
-- **해결 방법**: 사용자가 `gh auth login -h github.com` 실행 필요
-- TASK.md Phase 0 규칙에 따라 gh 실패 시 DONE 처리
 
 ---
 
@@ -24,6 +17,16 @@
 - 요약: `TASK.md` 커밋, `docs/STRUCTURE_BASELINE.md` · `docs/ARCHITECTURE_DECISION.md` · `docs/DIAGNOSIS.md` 신규, `PROGRESS.md` 초기화.
 - 다음: #17 모노레포 구조 유지 확정 + `packages/shared` 스캐폴드
 - 리스크: 없음 (문서 PR)
+
+---
+
+## 2026-04-21 · Issue #19 · 린트·포맷·타입체크 파이프라인 통합
+- 브랜치: `feature/issue-19-lint-typecheck-pipeline`
+- PR: #20 (merged)
+- 변경 파일: 3개
+- 요약: 루트 `typecheck` 스크립트 추가, `packages/web`·`apps/mobile`에 typecheck 스크립트 추가. `lint`, `format:check`, `typecheck` 루트에서 일괄 실행 가능.
+- 다음: #5 기본 테스트 러너 설정 (Vitest + Jest)
+- 리스크: 기존 포맷 미적용 파일 103건, ESLint 경고 12건 (별도 이슈로 처리)
 
 ---
 
