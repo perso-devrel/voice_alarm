@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, generateTTS, getMessagesByVoice, getAlarms } from '../services/api';
+import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, updateVoiceProfile, generateTTS, getMessagesByVoice, getAlarms } from '../services/api';
 import type { VoiceProfile, Message, Alarm } from '../types';
 import { getApiErrorMessage } from '../types';
 import { VoiceCardSkeleton } from '../components/Skeleton';
 import SpeakerPicker from '../components/SpeakerPicker';
+import { sanitizeVoiceName } from '../lib/voiceName';
 
 export default function VoicesPage() {
   const queryClient = useQueryClient();
@@ -33,6 +34,28 @@ export default function VoicesPage() {
       setUploadFile(null);
     },
   });
+
+  const renameMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => updateVoiceProfile(id, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
+    },
+    onError: (err) => {
+      alert(`이름 변경 실패: ${getApiErrorMessage(err, '네트워크 오류')}`);
+    },
+  });
+
+  const handleRename = (profile: VoiceProfile) => {
+    const raw = window.prompt('새 이름을 입력하세요 (1~50자)', profile.name);
+    if (raw === null) return;
+    const sanitized = sanitizeVoiceName(raw);
+    if (!sanitized.ok) {
+      alert(sanitized.error ?? '이름이 올바르지 않습니다.');
+      return;
+    }
+    if (sanitized.value === profile.name) return;
+    renameMutation.mutate({ id: profile.id, name: sanitized.value });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: deleteVoiceProfile,
@@ -278,6 +301,16 @@ export default function VoicesPage() {
                   onClick={(e) => { e.stopPropagation(); handleTest(profile.id); }}
                 >
                   {testingId === profile.id ? '생성 중...' : '테스트'}
+                </button>
+                <button
+                  aria-label={`${profile.name} 이름 변경`}
+                  className="text-sm text-[var(--color-text-secondary)] font-medium hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRename(profile);
+                  }}
+                >
+                  이름 변경
                 </button>
                 <button
                   aria-label={`${profile.name} 프로필 삭제`}

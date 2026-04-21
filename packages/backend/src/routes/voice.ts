@@ -289,6 +289,44 @@ voice.get('/:id', async (c) => {
   return c.json({ profile: result.rows[0] });
 });
 
+/** 음성 프로필 이름 변경 */
+voice.patch('/:id', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
+
+  let body: { name?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'JSON body required' }, 400);
+  }
+
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  if (name.length === 0 || name.length > 50) {
+    return c.json({ error: 'name must be 1-50 characters' }, 400);
+  }
+
+  const existing = await db.execute({
+    sql: 'SELECT id FROM voice_profiles WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
+  if (existing.rows.length === 0) {
+    return c.json({ error: 'Voice profile not found' }, 404);
+  }
+
+  await db.execute({
+    sql: "UPDATE voice_profiles SET name = ?, updated_at = datetime('now') WHERE id = ?",
+    args: [name, id],
+  });
+
+  return c.json({ profile: { id, name } });
+});
+
 /** 음성 클론 생성 (오디오 업로드) */
 voice.post('/clone', async (c) => {
   const userId = c.get('userId');
