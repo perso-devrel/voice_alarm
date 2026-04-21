@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildCreatePayload,
+  parseRepeatDays,
   validateAlarmForm,
   type AlarmFormInput,
 } from '../src/lib/alarmForm';
@@ -11,6 +12,28 @@ const baseInput: AlarmFormInput = {
   repeatDays: [],
   mode: 'tts',
 };
+
+describe('parseRepeatDays', () => {
+  it('배열은 정수만 필터', () => {
+    expect(parseRepeatDays([0, 1, 6])).toEqual([0, 1, 6]);
+  });
+  it('문자열 JSON 파싱', () => {
+    expect(parseRepeatDays('[1,3,5]')).toEqual([1, 3, 5]);
+  });
+  it('빈 문자열 → 빈 배열', () => {
+    expect(parseRepeatDays('')).toEqual([]);
+  });
+  it('잘못된 JSON → 빈 배열', () => {
+    expect(parseRepeatDays('{bad')).toEqual([]);
+  });
+  it('null/undefined → 빈 배열', () => {
+    expect(parseRepeatDays(null)).toEqual([]);
+    expect(parseRepeatDays(undefined)).toEqual([]);
+  });
+  it('비정수 필터링', () => {
+    expect(parseRepeatDays([1, '2', 3.5, null, 4])).toEqual([1, 4]);
+  });
+});
 
 describe('buildCreatePayload', () => {
   it('기본 TTS 모드 — voice_profile_id/speaker_id 제외', () => {

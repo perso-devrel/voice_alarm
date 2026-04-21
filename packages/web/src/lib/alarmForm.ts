@@ -1,3 +1,20 @@
+export function parseRepeatDays(raw: unknown): number[] {
+  if (Array.isArray(raw)) {
+    return raw.filter((n): n is number => Number.isInteger(n));
+  }
+  if (typeof raw === 'string' && raw.length > 0) {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((n): n is number => Number.isInteger(n));
+      }
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export type AlarmMode = 'tts' | 'sound-only';
 
 export interface AlarmFormInput {
