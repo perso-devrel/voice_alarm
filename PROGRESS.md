@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:05)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 16:12)
 
-- 진행 중 Phase: 6 완료 (#34~#39 전부 완료). 다음 Phase 7 게이미피케이션 (#40~#45).
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89 (38개). Phase 1~6 완료.
-- 진행 중 이슈: 없음 (다음: Phase 7 #40 캐릭터 모델 + XP 규칙)
+- 진행 중 Phase: 7 진행 중 (#40 완료). 다음 #41 경험치 규칙 설계 문서.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91 (39개). Phase 1~6 완료.
+- 진행 중 이슈: 없음 (다음: Phase 7 #41 경험치 규칙 설계 문서)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 16:12 · Issue #91 · 캐릭터 모델 + XP/성장단계 헬퍼
+- 브랜치: `feature/issue-91-character-model`
+- PR: #92 (merged)
+- 변경 파일: 7개 (신규 4 + 수정 3)
+- 요약: Phase 7 게이미피케이션 첫 이슈. 마이그레이션 #11 `characters` 테이블 — `(id, user_id UNIQUE FK users(id), name DEFAULT '내 캐릭터', level=1, xp=0, affection=0, stage CHECK IN ('seed','sprout','tree','bloom') DEFAULT 'seed', created_at, updated_at)` + `idx_characters_user` 유니크 인덱스(1 사용자 1 캐릭터). `lib/character.ts` 순수 함수 3종 — `xpThresholdForLevel(n)=100*(n-1)^2` (L1→0, L2→100, L3→400, L5→1600), `computeLevelFromXp(xp)=1+floor(sqrt(xp/100))`, `computeStageFromLevel` (1-2 seed, 3-5 sprout, 6-9 tree, 10+ bloom) + `computeStageFromXp` 복합 경로. `routes/character.ts` `GET /api/characters/me` — 사용자 PK 없으면 404, 캐릭터 없으면 기본값 INSERT 후 반환, **저장된 level/stage 를 신뢰하지 않고 서버가 xp 기준으로 재계산**하여 응답(클라이언트 오염 방어). `progress` 필드로 xp_into_level / xp_to_next_level / progress_ratio 제공. vitest 17건 추가 (헬퍼 13 + 라우트 5, 마이그레이션 #11 검증 1 보강) → 백엔드 412→429 / 30 파일 그린, tsc 0 에러.
+- 다음: Phase 7 #41 경험치 규칙 설계 문서 — `docs/XP_RULES.md` 에 알람 정상 종료 +30 XP / 스누즈 +5 XP / 강제 종료 0 XP / 일일 최대 200 XP 캡 등 규칙 정리. 근거·예시·애정도 증가 조건 포함.
+- 리스크: XP 지급 API(`POST /characters/xp`) 는 #42 에서 구현 — 현재는 read-only 경로만 제공. 웹/모바일 UI 는 #43/#44 에서. `characters.level`·`stage` 컬럼은 저장은 하지만 응답 시 재계산되므로 DB 값과 응답 값 불일치 가능 — `POST xp` 구현 시 UPDATE 로 DB 값도 동기화 예정. 1 사용자 복수 캐릭터·나무 종류 분기 미지원(MVP 범위).
+
+---
 
 ## 2026-04-21 16:05 · Issue #89 · 가족 알람 수신 뱃지 + sender 메타 노출
 - 브랜치: `feature/issue-89-family-alarm-receive-badge`
