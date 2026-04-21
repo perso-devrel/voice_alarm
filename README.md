@@ -4,13 +4,61 @@
 
 통화 녹음 → 화자 분리 → 음성 클론 → TTS → 알람/푸시
 
-## 구조
+## 아키텍처
+
+```mermaid
+graph TB
+    subgraph Client
+        Mobile["📱 Mobile App<br/>React Native + Expo"]
+        Web["🌐 Web Dashboard<br/>React + Vite + Tailwind"]
+    end
+
+    subgraph Backend
+        API["⚡ API Server<br/>Cloudflare Workers + Hono"]
+        DB["🗄️ Database<br/>Turso (libSQL)"]
+        Cron["⏰ Cron Trigger<br/>알람 스케줄러"]
+    end
+
+    subgraph Packages
+        Shared["📦 shared<br/>zod 스키마 + 타입"]
+        Voice["🎙️ voice<br/>VoiceProvider 어댑터"]
+        UI["🎨 ui<br/>디자인 토큰 + 유틸"]
+    end
+
+    subgraph External["외부 서비스 (mock)"]
+        PersoAI["Perso.ai<br/>(음성 클론)"]
+        ElevenLabs["ElevenLabs<br/>(TTS/화자분리)"]
+        PG["결제 PG<br/>(스텁)"]
+        FCM["FCM/APNs<br/>(TODO)"]
+    end
+
+    Mobile --> API
+    Web --> API
+    API --> DB
+    API --> Voice
+    Cron --> API
+    Voice -.-> PersoAI
+    Voice -.-> ElevenLabs
+    API -.-> PG
+    Cron -.-> FCM
+    Mobile --> UI
+    Web --> UI
+    API --> Shared
+```
+
+## 모노레포 구조
 
 ```
-apps/mobile/       React Native (Expo) 앱
-packages/backend/  Cloudflare Workers + Hono API
-packages/web/      React + Vite + Tailwind 웹 대시보드
-docs/              E2E 테스트 가이드 등
+voice_alarm/
+├── apps/
+│   └── mobile/        React Native (Expo) 앱
+├── packages/
+│   ├── backend/       Cloudflare Workers + Hono API
+│   ├── web/           React + Vite + Tailwind 웹 대시보드
+│   ├── shared/        공용 타입 + zod 스키마
+│   ├── voice/         음성 어댑터 (VoiceProvider + Mock)
+│   └── ui/            디자인 토큰 + 접근성 유틸
+└── docs/              설계 문서 + QA 체크리스트
 ```
 
 ## 기술 스택
