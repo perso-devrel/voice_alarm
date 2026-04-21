@@ -95,6 +95,19 @@ export function formatProgress(progress: ProgressPayload | null | undefined): st
   return `XP ${into} / ${span} (${pct}%)`;
 }
 
+const STAGE_ORDER: CharacterStage[] = ['seed', 'sprout', 'tree', 'bloom'];
+
+export function stageIndex(stage: unknown): number {
+  return STAGE_ORDER.indexOf(normalizeStage(stage));
+}
+
+export function shouldShowStageTransition(prev: unknown, next: unknown): boolean {
+  if (prev == null || next == null) return false;
+  const p = normalizeStage(prev);
+  const n = normalizeStage(next);
+  return p !== n;
+}
+
 export function progressBarWidthPct(progress: ProgressPayload | null | undefined): number {
   const ratio = Number(progress?.progress_ratio ?? 0);
   if (!Number.isFinite(ratio)) return 0;

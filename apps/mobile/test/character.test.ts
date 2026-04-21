@@ -2,6 +2,8 @@ import {
   normalizeStage,
   stageToEmoji,
   stageToLabel,
+  stageIndex,
+  shouldShowStageTransition,
   listDialogues,
   pickRandomDialogue,
   formatProgress,
@@ -37,6 +39,33 @@ describe('stageToEmoji / stageToLabel', () => {
   it('falls back to seed for unknown', () => {
     expect(stageToEmoji('xyz')).toBe('🌱');
     expect(stageToLabel(null)).toBe('씨앗');
+  });
+});
+
+describe('stageIndex', () => {
+  it('returns correct order', () => {
+    expect(stageIndex('seed')).toBe(0);
+    expect(stageIndex('sprout')).toBe(1);
+    expect(stageIndex('tree')).toBe(2);
+    expect(stageIndex('bloom')).toBe(3);
+  });
+  it('returns 0 for unknown (normalized to seed)', () => {
+    expect(stageIndex('nope')).toBe(0);
+  });
+});
+
+describe('shouldShowStageTransition', () => {
+  it('returns true for different stages', () => {
+    expect(shouldShowStageTransition('seed', 'sprout')).toBe(true);
+  });
+  it('returns false for same stage', () => {
+    expect(shouldShowStageTransition('tree', 'tree')).toBe(false);
+  });
+  it('returns false when prev is null', () => {
+    expect(shouldShowStageTransition(null, 'seed')).toBe(false);
+  });
+  it('returns false when next is null', () => {
+    expect(shouldShowStageTransition('seed', null)).toBe(false);
   });
 });
 
