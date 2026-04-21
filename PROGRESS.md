@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:11)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:15)
 
-- 진행 중 Phase: 5 완료 (#26~#33 전부 완료). 다음 Phase 6 가족 간 알람 기능 (#34~#39).
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77 (32개). Phase 1~5 완료.
-- 진행 중 이슈: 없음 (다음: Phase 6 #34 가족 허용 설정 — `users.allow_family_alarms` 컬럼 + `PATCH /user/me` 토글)
+- 진행 중 Phase: 6 진행 중 (#34 완료). 다음 #35 가족 알람 추가 API(text).
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79 (33개). Phase 1~5 완료.
+- 진행 중 이슈: 없음 (다음: Phase 6 #35 가족 알람 추가 API text 모드 — `POST /family/alarms`)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 15:15 · Issue #79 · 가족 허용 설정 컬럼 + PATCH /user/me 토글
+- 브랜치: `feature/issue-79-allow-family-alarms`
+- PR: #80 (merged)
+- 변경 파일: 4개 (수정)
+- 요약: 마이그레이션 #10 `user-allow-family-alarms` — `ALTER TABLE users ADD COLUMN allow_family_alarms INTEGER NOT NULL DEFAULT 0` (기본 false). `GET /user/me` 응답에서 `allow_family_alarms` 를 `Number(raw) === 1` 로 boolean 직렬화. `PATCH /user/me { allow_family_alarms }` 신규 — `toBoolFlag` 헬퍼로 true/false/1/0/'1'/'0'/'true'/'false' 허용, 필드 누락/잘못된 타입 400, 사용자 없음 404. 다른 필드 확장을 위해 플랜 경로(`PATCH /user/plan`)와 분리. vitest 마이그레이션 #10 1건 + GET 직렬화 1건 + PATCH happy/invalid/404 5건 추가 → 백엔드 379→386 / 28 파일 그린, tsc 에러 없음.
+- 다음: Phase 6 #35 가족 알람 추가 API (text 모드) — `POST /family/alarms { recipient_user_id, wake_at, message_text, repeat_days }` 가 발신자·수신자 모두 family subscription active + 수신자 `allow_family_alarms=1` 검증(403) 후 `alarms` 테이블에 `sender_user_id` 세팅하고 INSERT. vitest: 정상 + 403(수신자 거부) + 403(발신자 플랜 아님) + 404(수신자 없음) + 400(양식).
+- 리스크: 현재 `allow_family_alarms=0` 이어도 기존에 수신한 알람은 그대로 재생 — 토글 후 기존 예약 알람 처리 정책은 #35 이후에 합의. 모바일/웹 설정 UI(Toggle) 미구현 — 별도 이슈(#38/#37) 에서 다룸.
+
+---
 
 ## 2026-04-21 15:11 · Issue #77 · 가족 플랜 참여/탈퇴 + 소유자 권한 양도
 - 브랜치: `feature/issue-77-family-leave-transfer`
