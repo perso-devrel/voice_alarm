@@ -15,6 +15,7 @@ import {
   SNOOZE_ACTION,
 } from '../src/services/notifications';
 import { OfflineBanner } from '../src/components/OfflineBanner';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { AuthProvider } from '../src/hooks/useAuth';
 import '../src/i18n';
 
@@ -83,6 +84,7 @@ export default function RootLayout() {
   }, []);
 
   return (
+    <ErrorBoundary>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
@@ -161,5 +163,6 @@ export default function RootLayout() {
         </AuthProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
