@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:57)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:04)
 
-- 진행 중 Phase: 5 진행 중 (#26~#31 완료, 다음 #32 가족 플랜 초대)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73 (30개). Phase 4 완료 + Phase 5 #26~#31 완료.
-- 진행 중 이슈: 없음 (다음: Phase 5 #32 가족 플랜 초대 — 초대 코드 + 딥링크 하이브리드, 6자리 숫자 + 만료 + 일회용, 비교 문서 작성)
+- 진행 중 Phase: 5 진행 중 (#26~#32 완료, 다음 #33 가족 참여/탈퇴·권한 양도)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75 (31개). Phase 4 완료 + Phase 5 #26~#32 완료.
+- 진행 중 이슈: 없음 (다음: Phase 5 #33 가족 플랜 참여/탈퇴·소유자 권한 양도 — 멤버 자진 탈퇴, owner 양도(`role='owner'` 단일성 보장), owner 삭제 시 그룹 해체 정책)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 15:04 · Issue #75 · 가족 플랜 초대 코드 + 딥링크 하이브리드
+- 브랜치: `feature/issue-75-family-plan-invites`
+- PR: #76 (merged)
+- 변경 파일: 8개 (신규 5 + 수정 3)
+- 요약: TASK.md ⚠️ 모호 지점 해소 — 3가지 초대 방식 비교(`docs/INVITE_METHOD_COMPARISON.md`) 후 **초대 코드(6자리 숫자, 10분 만료, 일회용) + 딥링크 하이브리드** 채택. 마이그레이션 #9 `plan_group_invites` (code UNIQUE / status `pending|used|revoked|expired` / expires_at / used_by_user_id) + 인덱스 3종. `lib/invites.ts` 순수 함수 6종(crypto.getRandomValues 기반 생성, 포맷 검증, 딥링크/웹URL 빌더, TTL 계산). `routes/family.ts` 4 엔드포인트 — `POST /invites`(plan_group_id 선택적·owner 확인·정원 pre-check·딥링크 동반), `GET /invites`, `POST /invites/:code/accept`(포맷/상태/만료/자기발급/이미멤버/정원 6단 검증 + 만료 시 자동 expired 전환), `POST /invites/:code/revoke`(발급자·pending 한정). `index.ts` 에 `/api/family` 라우팅. vitest +26건 → 백엔드 339→365 / 28 파일 그린, tsc 0 에러.
+- 다음: Phase 5 #33 참여/탈퇴·소유자 권한 양도 — 멤버 자진 탈퇴 엔드포인트 + owner 양도(`role='owner'` 단일성을 애플리케이션 레벨 트랜잭션으로 보장) + owner 탈퇴 시 그룹 해체 또는 자동 양도 규칙.
+- 리스크: 브루트포스 — 100만 경우 × 10분 × 분당 60 req rate limit 으로 실용적 안전 but 공격 탐지 훅 없음. 딥링크 scheme 설정(app.json) 과 웹 `/invite/:code` UI 는 Phase 8 별도 이슈. 초대 발급 정원 pre-check 는 동시성 race 가능 — 수락 시 재확인으로 보완.
+
+---
 
 ## 2026-04-21 14:57 · Issue #73 · 가족 플랜 그룹 모델 + checkout 자동 그룹 생성
 - 브랜치: `feature/issue-73-family-plan-group-model`
