@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCharacterMe, grantCharacterXp } from '../services/api';
 import type { XpEvent } from '../services/api';
@@ -6,6 +6,7 @@ import {
   formatProgress,
   pickRandomDialogue,
   progressBarWidthPct,
+  shouldShowStageTransition,
   stageToEmoji,
   stageToLabel,
 } from '../lib/character';
@@ -40,6 +41,19 @@ export default function CharacterPage() {
   });
 
   const stage = data?.character.stage ?? 'seed';
+  const prevStageRef = useRef(stage);
+  const [stageAnimating, setStageAnimating] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowStageTransition(prevStageRef.current, stage)) {
+      setStageAnimating(true);
+      const timer = setTimeout(() => setStageAnimating(false), 600);
+      prevStageRef.current = stage;
+      return () => clearTimeout(timer);
+    }
+    prevStageRef.current = stage;
+  }, [stage]);
+
   const dialogue = useMemo(
     () => pickRandomDialogue(stage, () => ((dialogueSeed * 9301 + 49297) % 233280) / 233280),
     [stage, dialogueSeed],
@@ -86,7 +100,10 @@ export default function CharacterPage() {
         aria-label="캐릭터를 탭하면 새 대사가 나와요"
         className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 text-center cursor-pointer hover:bg-[var(--color-surface-alt)] transition-colors"
       >
-        <div className="text-7xl mb-4" aria-hidden="true">
+        <div
+          className={`text-7xl mb-4 transition-all duration-500 ${stageAnimating ? 'scale-125 opacity-0 animate-[stage-pop_0.6s_ease-out_forwards]' : ''}`}
+          aria-hidden="true"
+        >
           {stageToEmoji(character.stage)}
         </div>
         <div className="flex items-center justify-center gap-2 mb-2">

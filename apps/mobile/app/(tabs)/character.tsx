@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ import {
   formatProgress,
   pickRandomDialogue,
   progressBarWidthPct,
+  shouldShowStageTransition,
   stageToEmoji,
   stageToLabel,
 } from '../../src/lib/character';
@@ -52,6 +54,25 @@ export default function CharacterScreen() {
   });
 
   const stage = data?.character.stage ?? 'seed';
+  const prevStageRef = useRef(stage);
+  const emojiScale = useRef(new Animated.Value(1)).current;
+  const emojiOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (shouldShowStageTransition(prevStageRef.current, stage)) {
+      emojiScale.setValue(0.3);
+      emojiOpacity.setValue(0);
+      Animated.sequence([
+        Animated.parallel([
+          Animated.spring(emojiScale, { toValue: 1.2, useNativeDriver: true, speed: 12 }),
+          Animated.timing(emojiOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+        ]),
+        Animated.spring(emojiScale, { toValue: 1, useNativeDriver: true, speed: 14 }),
+      ]).start();
+    }
+    prevStageRef.current = stage;
+  }, [stage, emojiScale, emojiOpacity]);
+
   const dialogue = useMemo(
     () => pickRandomDialogue(stage, () => ((dialogueSeed * 9301 + 49297) % 233280) / 233280),
     [stage, dialogueSeed],
@@ -96,7 +117,11 @@ export default function CharacterScreen() {
           accessibilityRole="button"
           accessibilityLabel="캐릭터를 탭하면 새 대사가 나와요"
         >
-          <Text style={styles.emoji}>{stageToEmoji(character.stage)}</Text>
+          <Animated.Text
+            style={[styles.emoji, { transform: [{ scale: emojiScale }], opacity: emojiOpacity }]}
+          >
+            {stageToEmoji(character.stage)}
+          </Animated.Text>
           <View style={styles.nameRow}>
             <Text style={styles.characterName}>{character.name}</Text>
             <View style={styles.badge}>

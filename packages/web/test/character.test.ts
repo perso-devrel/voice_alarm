@@ -5,6 +5,8 @@ import {
   normalizeStage,
   pickRandomDialogue,
   progressBarWidthPct,
+  shouldShowStageTransition,
+  stageIndex,
   stageToEmoji,
   stageToLabel,
 } from '../src/lib/character';
@@ -36,6 +38,32 @@ describe('stageToEmoji / stageToLabel', () => {
   it('라벨 한국어 매핑', () => {
     expect(stageToLabel('seed')).toBe('씨앗');
     expect(stageToLabel('bloom')).toBe('꽃');
+  });
+});
+
+describe('stageIndex', () => {
+  it('올바른 순서 반환', () => {
+    expect(stageIndex('seed')).toBe(0);
+    expect(stageIndex('sprout')).toBe(1);
+    expect(stageIndex('tree')).toBe(2);
+    expect(stageIndex('bloom')).toBe(3);
+  });
+  it('알 수 없는 값은 0 (seed)', () => {
+    expect(stageIndex('nope')).toBe(0);
+  });
+});
+
+describe('shouldShowStageTransition', () => {
+  it('다른 스테이지면 true', () => {
+    expect(shouldShowStageTransition('seed', 'sprout')).toBe(true);
+    expect(shouldShowStageTransition('tree', 'bloom')).toBe(true);
+  });
+  it('같은 스테이지면 false', () => {
+    expect(shouldShowStageTransition('tree', 'tree')).toBe(false);
+  });
+  it('null 이면 false', () => {
+    expect(shouldShowStageTransition(null, 'seed')).toBe(false);
+    expect(shouldShowStageTransition('seed', null)).toBe(false);
   });
 });
 
