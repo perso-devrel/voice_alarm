@@ -6,6 +6,41 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const ALARM_MODES = ['sound-only', 'tts'] as const;
 type AlarmMode = (typeof ALARM_MODES)[number];
 
+type AlarmRow = Record<string, unknown> & {
+  repeat_days?: unknown;
+  is_active?: unknown;
+  mode?: unknown;
+  voice_profile_id?: unknown;
+  speaker_id?: unknown;
+};
+
+function normalizeAlarmRow(row: AlarmRow) {
+  const rawRepeat = row.repeat_days;
+  let repeatDays: number[] = [];
+  if (typeof rawRepeat === 'string' && rawRepeat.length > 0) {
+    try {
+      const parsed: unknown = JSON.parse(rawRepeat);
+      if (Array.isArray(parsed)) repeatDays = parsed.filter((n): n is number => Number.isInteger(n));
+    } catch {
+      repeatDays = [];
+    }
+  } else if (Array.isArray(rawRepeat)) {
+    repeatDays = rawRepeat.filter((n): n is number => Number.isInteger(n));
+  }
+
+  const mode: AlarmMode =
+    row.mode === 'sound-only' || row.mode === 'tts' ? row.mode : 'tts';
+
+  return {
+    ...row,
+    repeat_days: repeatDays,
+    is_active: row.is_active === 1 || row.is_active === true,
+    mode,
+    voice_profile_id: (row.voice_profile_id ?? null) as string | null,
+    speaker_id: (row.speaker_id ?? null) as string | null,
+  };
+}
+
 const alarm = new Hono<AppEnv>();
 
 /** 알람 목록 조회 */
@@ -52,7 +87,8 @@ alarm.get('/', async (c) => {
   ]);
 
   const total = Number(countRes.rows[0].total);
-  return c.json({ alarms: result.rows, total, limit, offset });
+  const alarms = (result.rows as AlarmRow[]).map(normalizeAlarmRow);
+  return c.json({ alarms, total, limit, offset });
 });
 
 /** 단일 알람 조회 */
@@ -80,7 +116,7 @@ alarm.get('/:id', async (c) => {
     return c.json({ error: 'Alarm not found' }, 404);
   }
 
-  return c.json({ alarm: result.rows[0] });
+  return c.json({ alarm: normalizeAlarmRow(result.rows[0] as AlarmRow) });
 });
 
 /** 알람 생성 */
@@ -205,7 +241,18 @@ alarm.post('/', async (c) => {
     ],
   });
 
-  return c.json({ alarm: { id: alarmId, ...body, mode } }, 201);
+  return c.json(
+    {
+      alarm: {
+        id: alarmId,
+        ...body,
+        mode,
+        voice_profile_id: body.voice_profile_id ?? null,
+        speaker_id: body.speaker_id ?? null,
+      },
+    },
+    201,
+  );
 });
 
 /** 알람 수정 */
@@ -347,14 +394,9 @@ alarm.patch('/:id', async (c) => {
     args: [id],
   });
 
-  const row = updated.rows[0];
   return c.json({
     success: true,
-    alarm: {
-      ...row,
-      repeat_days: row.repeat_days ? JSON.parse(row.repeat_days as string) : [],
-      is_active: row.is_active === 1,
-    },
+    alarm: normalizeAlarmRow(updated.rows[0] as AlarmRow),
   });
 });
 
