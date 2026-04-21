@@ -14,7 +14,7 @@ import type { Alarm, Message, VoiceProfile, PresetCategory } from '../types';
 import { AlarmSkeleton } from '../components/Skeleton';
 import { getApiErrorMessage } from '../types';
 import { VoiceDetailModal } from './VoicesPage';
-import { validateAlarmForm } from '../lib/alarmForm';
+import { validateAlarmForm, parseRepeatDays } from '../lib/alarmForm';
 import { buildFamilyAlarmLabel } from '../lib/familyAlarmLabel';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -638,16 +638,7 @@ function AlarmEditInline({
   isPending: boolean;
   error: string | null;
 }) {
-  const initialRepeat: number[] = Array.isArray(alarm.repeat_days)
-    ? alarm.repeat_days.slice()
-    : (() => {
-        try {
-          const parsed: unknown = JSON.parse(String(alarm.repeat_days ?? '[]'));
-          return Array.isArray(parsed) ? parsed.filter((n): n is number => Number.isInteger(n)) : [];
-        } catch {
-          return [];
-        }
-      })();
+  const initialRepeat: number[] = parseRepeatDays(alarm.repeat_days);
   const [time, setTime] = useState(alarm.time);
   const [repeatDays, setRepeatDays] = useState<number[]>(initialRepeat);
   const [selectedMessageId, setSelectedMessageId] = useState(alarm.message_id);
