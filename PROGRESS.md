@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:12)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 12:28)
 
 - 진행 중 Phase: 2 (인증·사용자 모델)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29 (8개)
-- 진행 중 이슈: 없음 (다음: Phase 2 #10 웹 로그인·가입 화면)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31 (9개)
+- 진행 중 이슈: 없음 (다음: Phase 2 #11 모바일 로그인·가입 화면)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 12:28 · Issue #31 · 웹 로그인·가입 화면 (이메일+비밀번호)
+- 브랜치: `feature/issue-31-web-email-login`
+- PR: #32 (merged)
+- 변경 파일: 6개 (신규 2, 수정 4)
+- 요약: `EmailPasswordForm` 컴포넌트 신규 (로그인/가입 탭, 8자 검증, 에러 표시). `LoginPage` 는 `useAuth` 직접 사용 — 이메일 폼을 기본 경로로, Google 버튼은 새로 추가한 `loginWithToken(idToken)` 으로 일원화. `App.tsx` 에서 `useState(isLoggedIn)` + `localStorage` 직접 접근 제거 → `useAuth().isAuthenticated`. `main.tsx` 에서 `AuthProvider` 래핑. vitest 5건 추가.
+- 다음: #11 모바일 로그인·가입 화면 (React Native 대응)
+- 리스크: 없음. 루트 테스트 277건 / lint 0 errors / typecheck 전 워크스페이스 통과.
+
+---
 
 ## 2026-04-21 12:12 · Issue #29 · 공용 useAuth 훅 + AuthProvider
 - 브랜치: `feature/issue-29-useauth-hook`
