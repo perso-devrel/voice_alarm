@@ -20,6 +20,13 @@ export type {
 } from './tokens';
 
 export { resolveStateView } from './stateView';
+export {
+  ONBOARDING_STEPS,
+  ONBOARDING_STORAGE_KEY,
+  isLastStep,
+  clampStepIndex,
+} from './onboarding';
+export type { OnboardingStep } from './onboarding';
 export type { StateViewVariant, StateViewConfig } from './stateView';
 
 export {
