@@ -1,8 +1,8 @@
 # 📌 현재 상태 (마지막 업데이트: 2026-04-21)
 
 - 진행 중 Phase: 2 (인증·사용자 모델)
-- 완료 이슈: #15, #17, #19, #21, #23 (5개) — Phase 1 완료
-- 진행 중 이슈: 없음 (다음: Phase 2 #7 DB 선정 & 마이그레이션 도구)
+- 완료 이슈: #15, #17, #19, #21, #23, #25 (6개) — Phase 1 완료, Phase 2 진행 중
+- 진행 중 이슈: 없음 (다음: Phase 2 #8 User 모델 & 가입/로그인 API)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
@@ -17,6 +17,16 @@
 - 요약: `TASK.md` 커밋, `docs/STRUCTURE_BASELINE.md` · `docs/ARCHITECTURE_DECISION.md` · `docs/DIAGNOSIS.md` 신규, `PROGRESS.md` 초기화.
 - 다음: #17 모노레포 구조 유지 확정 + `packages/shared` 스캐폴드
 - 리스크: 없음 (문서 PR)
+
+---
+
+## 2026-04-21 · Issue #25 · DB 선정 & 번호 기반 마이그레이션 러너 도입
+- 브랜치: `feature/issue-25-db-migration-tool`
+- PR: #26 (merged)
+- 변경 파일: 4개
+- 요약: Turso + 자체 마이그레이션 러너 결정(ADR-006). 인라인 SQL → 번호 기반 마이그레이션으로 정비. db.ts 130줄→10줄 단순화. 테스트 5건 추가.
+- 다음: Phase 2 #8 User 모델 & 가입/로그인 API
+- 리스크: 없음
 
 ---
 
