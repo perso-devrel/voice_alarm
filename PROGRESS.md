@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 17:20)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 17:25)
 
-- 진행 중 Phase: 8 (크로스플랫폼 품질). **Phase 1~7 완료.** 다음 #49 로딩·빈 상태·에러 상태 UI 일관성.
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99, #101, #103, #105, #107 (47개). Phase 1~7 완료.
-- 진행 중 이슈: 없음 (다음: Phase 8 #49 로딩·빈 상태·에러 상태 UI 일관성)
+- 진행 중 Phase: 8 (크로스플랫폼 품질). **Phase 1~7 완료.** 다음 #50 온보딩 튜토리얼.
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81, #83, #85, #87, #89, #91, #93, #95, #97, #99, #101, #103, #105, #107, #109 (48개). Phase 1~7 완료.
+- 진행 중 이슈: 없음 (다음: Phase 8 #50 온보딩 튜토리얼)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 17:25 · Issue #109 · 공용 StateView 컴포넌트
+- 브랜치: `feature/issue-109-state-view`
+- PR: #110 (merged)
+- 변경 파일: 9개 (신규 7 + 수정 2)
+- 요약: Phase 8 #49 — loading/empty/error 3-in-1 상태 UI 통일. `packages/ui/src/stateView.ts` 에 `resolveStateView` 순수 함수(variant + overrides → {emoji, title, subtitle} 기본값 합성). 웹 `StateView.tsx`(Tailwind, spinner/emoji/action, role=alert|status, aria-busy). 모바일 `StateView.tsx`(ActivityIndicator, accessibilityRole, minHeight 44, Pressable action). 모바일은 `src/lib/stateView.ts` 로컬 복사(apps/mobile 은 packages/* 워크스페이스 밖). vitest ui +6건 + jest mobile +5건 → ui 23→29 / mobile 129→134 / web 98 그린, tsc 0 에러.
+- 다음: Phase 8 #50 온보딩 튜토리얼.
+- 리스크: 기존 화면의 인라인 상태 UI를 StateView로 교체하는 것은 Phase 10 후보. resolveStateView의 기본 문구가 한국어 고정 — i18n 통합은 후속.
+
+---
 
 ## 2026-04-21 17:20 · Issue #107 · 에러 경계(ErrorBoundary) 추가
 - 브랜치: `feature/issue-107-error-boundary`
