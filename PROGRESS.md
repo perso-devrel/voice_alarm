@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:29)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:38)
 
-- 진행 중 Phase: 4 (Phase 3 종료)
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47 (17개)
-- 진행 중 이슈: 없음 (다음: Phase 4 #19 Alarm 모델 확장 — 현재 모델 감사 후 누락 필드 보강)
+- 진행 중 Phase: 4
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49 (18개)
+- 진행 중 이슈: 없음 (다음: Phase 4 후속 — 알람 트리거 실행 경로 / 모드별 재생기 연결)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:38 · Issue #49 · Alarm 모델 확장 — mode/voice_profile_id/speaker_id (Phase 4 진입)
+- 브랜치: `feature/issue-49-alarm-model-mode`
+- PR: #50 (merged)
+- 변경 파일: 4개 (수정)
+- 요약: 마이그레이션 #5 `alarm-mode-voice-speaker` — `alarms` 에 `mode TEXT NOT NULL DEFAULT 'tts' CHECK(mode IN ('sound-only','tts'))`, `voice_profile_id TEXT`, `speaker_id TEXT` 컬럼 + 인덱스 2종 추가 (ALTER TABLE ADD COLUMN 방식). `routes/alarm.ts` POST/PATCH 모두에 mode 허용값 검증 + UUID 형식 검증 + INSERT/UPDATE/SELECT SQL 확장. 기본 mode = `tts`. vitest 7건 추가 (alarm 6 + migrations 1). 모노레포 backend 276→283 / 전체 358→332(다른 워크스페이스 변화 없음, 총합 체크로 backend 283 + shared 12 + voice 11 + web 26 = 332).
+- 다음: Phase 4 후속 — 알람 트리거 실행 경로(워커/크론) 및 모드별 재생 경로(TTS 합성 vs sound-only 원본 재생) 연결
+- 리스크: 컬럼 추가만 했을 뿐 실제 재생·트리거 경로는 아직 미연결 — 후속 이슈에서 구현. 기존 알람 레코드는 mode 기본값 `tts` 로 채워짐(스키마 NOT NULL DEFAULT).
+
+---
 
 ## 2026-04-21 13:29 · Issue #47 · 음성 업로드/화자 편집 E2E 테스트 (Phase 3 종료)
 - 브랜치: `feature/issue-47-voice-e2e-test`
