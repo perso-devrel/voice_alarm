@@ -1,8 +1,8 @@
 # 📌 현재 상태 (마지막 업데이트: 2026-04-21)
 
-- 진행 중 Phase: 1 (기존 코드 진단 & 모노레포 정비)
-- 완료 이슈: #15, #17, #19, #21 (4개)
-- 진행 중 이슈: 없음 (다음: #6 CI 초안)
+- 진행 중 Phase: 2 (인증·사용자 모델)
+- 완료 이슈: #15, #17, #19, #21, #23 (5개) — Phase 1 완료
+- 진행 중 이슈: 없음 (다음: Phase 2 #7 DB 선정 & 마이그레이션 도구)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
@@ -17,6 +17,16 @@
 - 요약: `TASK.md` 커밋, `docs/STRUCTURE_BASELINE.md` · `docs/ARCHITECTURE_DECISION.md` · `docs/DIAGNOSIS.md` 신규, `PROGRESS.md` 초기화.
 - 다음: #17 모노레포 구조 유지 확정 + `packages/shared` 스캐폴드
 - 리스크: 없음 (문서 PR)
+
+---
+
+## 2026-04-21 · Issue #23 · CI 워크플로우 보강
+- 브랜치: `feature/issue-23-ci-workflow`
+- PR: #24 (merged)
+- 변경 파일: 1개
+- 요약: ci.yml에 develop_loop 트리거, lint job, test job 추가. typecheck 매트릭스에 shared 추가. **Phase 1 완료.**
+- 다음: Phase 2 #7 DB 선정 & 마이그레이션 도구
+- 리스크: 없음
 
 ---
 
