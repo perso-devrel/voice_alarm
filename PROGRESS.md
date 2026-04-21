@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:47)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:54)
 
 - 진행 중 Phase: 4
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53 (20개)
-- 진행 중 이슈: 없음 (다음: Phase 4 #22 웹 알람 편집 화면 — mode/voice_profile/speaker 필드 UI 노출)
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55 (21개)
+- 진행 중 이슈: 없음 (다음: Phase 4 #23 모바일 알람 편집 화면 — mode/voice_profile/speaker UI)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 13:54 · Issue #55 · 웹 알람 편집 화면 mode 토글 및 voice_profile 연결
+- 브랜치: `feature/issue-55-web-alarm-mode-ui`
+- PR: #56 (merged)
+- 변경 파일: 5개 (신규 2 + 수정 3)
+- 요약: `packages/web/src/lib/alarmForm.ts` 신규 — `validateAlarmForm`/`buildCreatePayload` 순수 함수, sound-only 는 `voice_profile_id` 요구. `types.ts::Alarm` 에 mode/voice_profile_id/speaker_id 추가 및 repeat_days `number[] | string` 호환. `services/api.ts::createAlarm` 타입 확장. `AlarmsPage` 알람 카드에 모드 뱃지(🔊 원본 / 🗣️ TTS) + 생성/편집 폼에 재생 모드 라디오 그룹 추가 — sound-only 는 음성 프로필 필수로 버튼 disabled + 안내 문구. `formatRepeat`/편집 초기화의 `JSON.parse` 를 배열/문자열 양쪽 호환으로 교체. vitest 10건 추가. 모노레포 web 26→36 / 전체 349→359.
+- 다음: Phase 4 #23 모바일 알람 편집 화면 (동일 UX 의 RN 버전)
+- 리스크: speaker_id 선택 UI 는 후속 (speakerPicker 와 알람 폼 통합 미정). 기존 응답 호환을 위해 `repeat_days` 가 number[] | string 로 남아 있음 — 백엔드 구 엔드포인트 제거 후 단일화 가능.
+
+---
 
 ## 2026-04-21 13:47 · Issue #53 · 알람 스케줄러 + Cloudflare Cron Trigger 스텁
 - 브랜치: `feature/issue-53-alarm-scheduler`
