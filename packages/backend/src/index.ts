@@ -18,6 +18,7 @@ import friendRoutes from './routes/friend';
 import giftRoutes from './routes/gift';
 import statsRoutes from './routes/stats';
 import dubRoutes from './routes/dub';
+import billingRoutes from './routes/billing';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -111,6 +112,7 @@ api.route('/friend', friendRoutes);
 api.route('/gift', giftRoutes);
 api.route('/stats', statsRoutes);
 api.route('/dub', dubRoutes);
+api.route('/billing', billingRoutes);
 
 app.route('/api', api);
 
