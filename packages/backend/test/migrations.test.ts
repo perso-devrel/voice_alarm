@@ -134,6 +134,22 @@ describe('migrations', () => {
     expect(all).toContain('idx_plan_group_members_unique');
   });
 
+  it('마이그레이션 #9 에서 plan_group_invites 테이블과 인덱스를 추가한다', () => {
+    const m = migrations.find((x) => x.id === 9);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS plan_group_invites');
+    expect(all).toContain('plan_group_id TEXT NOT NULL REFERENCES plan_groups(id)');
+    expect(all).toContain('inviter_user_id TEXT NOT NULL REFERENCES users(id)');
+    expect(all).toContain('code TEXT NOT NULL UNIQUE');
+    expect(all).toContain("CHECK(status IN ('pending','used','revoked','expired'))");
+    expect(all).toContain('expires_at TEXT NOT NULL');
+    expect(all).toContain('used_by_user_id');
+    expect(all).toContain('idx_plan_group_invites_code');
+    expect(all).toContain('idx_plan_group_invites_group');
+    expect(all).toContain('idx_plan_group_invites_status');
+  });
+
   it('마이그레이션 #6 에서 기본 플랜 3종(free / plus_personal / family) 을 시드한다', () => {
     const m = migrations.find((x) => x.id === 6);
     expect(m).toBeDefined();
