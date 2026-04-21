@@ -95,3 +95,63 @@ export function getAlarmModeBadge(mode: Alarm['mode']): { emoji: string; label: 
   if (mode === 'sound-only') return { emoji: '🔊', label: '원본' };
   return { emoji: '🗣️', label: 'TTS' };
 }
+
+export interface NavigatePreviewAction {
+  type: 'navigate';
+  path: '/player';
+  params: {
+    messageId: string;
+    text: string;
+    voiceName: string;
+    category: string;
+  };
+}
+
+export interface AudioPreviewAction {
+  type: 'preview-audio';
+  uri: string;
+  caption: string;
+  voiceName: string;
+}
+
+export interface ToastPreviewAction {
+  type: 'toast';
+  message: string;
+}
+
+export type PreviewAction =
+  | NavigatePreviewAction
+  | AudioPreviewAction
+  | ToastPreviewAction;
+
+export function buildAlarmPreviewAction(plan: PlaybackPlan): PreviewAction {
+  switch (plan.kind) {
+    case 'tts':
+      return {
+        type: 'navigate',
+        path: '/player',
+        params: {
+          messageId: plan.messageId,
+          text: plan.text,
+          voiceName: plan.voiceName,
+          category: plan.category,
+        },
+      };
+    case 'sound-only':
+      return {
+        type: 'preview-audio',
+        uri: plan.uri,
+        caption: `${plan.voiceName} 의 원본 샘플`,
+        voiceName: plan.voiceName,
+      };
+    case 'fallback':
+      return {
+        type: 'preview-audio',
+        uri: plan.uri,
+        caption: plan.reason,
+        voiceName: '',
+      };
+    case 'error':
+      return { type: 'toast', message: plan.reason };
+  }
+}

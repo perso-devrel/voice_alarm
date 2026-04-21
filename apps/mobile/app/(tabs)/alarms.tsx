@@ -18,7 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { getAlarms, updateAlarm, deleteAlarm } from '../../src/services/api';
+import { getAlarms, updateAlarm, deleteAlarm, getMessages, getVoiceProfiles } from '../../src/services/api';
+import { playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { ErrorView } from '../../src/components/QueryStateView';
@@ -28,7 +29,12 @@ import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { parseRepeatDays } from '../../src/lib/alarmForm';
-import { getAlarmModeBadge } from '../../src/lib/alarmPlayback';
+import {
+  buildAlarmPreviewAction,
+  getAlarmModeBadge,
+  resolveAlarmPlayback,
+} from '../../src/lib/alarmPlayback';
+import type { Message, VoiceProfile } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 
@@ -100,6 +106,42 @@ export default function AlarmsScreen() {
     queryFn: getAlarms,
     enabled: isAuthenticated && isConnected,
   });
+
+  const { data: messages } = useQuery({
+    queryKey: ['messages'],
+    queryFn: () => getMessages(),
+    enabled: isAuthenticated && isConnected,
+  });
+
+  const { data: voices } = useQuery({
+    queryKey: ['voiceProfiles'],
+    queryFn: getVoiceProfiles,
+    enabled: isAuthenticated && isConnected,
+  });
+
+  const handlePreview = useCallback(
+    async (alarm: Alarm) => {
+      const plan = resolveAlarmPlayback(
+        alarm,
+        (messages ?? []) as Message[],
+        (voices ?? []) as VoiceProfile[],
+      );
+      const action = buildAlarmPreviewAction(plan);
+      if (action.type === 'navigate') {
+        router.push({ pathname: action.path, params: action.params });
+      } else if (action.type === 'preview-audio') {
+        toast.show(action.caption || '미리듣기 재생');
+        try {
+          await playAudio(action.uri);
+        } catch {
+          toast.show('재생에 실패했어요. mock 파일이 아직 번들되지 않았을 수 있어요.');
+        }
+      } else {
+        toast.show(action.message);
+      }
+    },
+    [messages, voices, router, toast],
+  );
 
   const computeCountdown = useCallback(() => {
     const all = alarms ?? cachedAlarms;
@@ -250,15 +292,27 @@ export default function AlarmsScreen() {
               </Text>
             </View>
           </View>
-          <Switch
-            value={!!item.is_active}
-            onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
-            trackColor={{
-              false: Colors.light.border,
-              true: Colors.light.primaryLight,
-            }}
-            thumbColor={item.is_active ? Colors.light.primary : '#f4f3f4'}
-          />
+          <View style={styles.alarmActions}>
+            <TouchableOpacity
+              style={styles.previewButton}
+              accessibilityLabel="미리듣기"
+              onPress={(e) => {
+                e.stopPropagation();
+                handlePreview(item);
+              }}
+            >
+              <Text style={styles.previewIcon}>🔈</Text>
+            </TouchableOpacity>
+            <Switch
+              value={!!item.is_active}
+              onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
+              trackColor={{
+                false: Colors.light.border,
+                true: Colors.light.primaryLight,
+              }}
+              thumbColor={item.is_active ? Colors.light.primary : '#f4f3f4'}
+            />
+          </View>
         </TouchableOpacity>
       </Swipeable>
     );
@@ -476,6 +530,22 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.light.primary,
     fontWeight: '600',
+  },
+  alarmActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  previewButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.surfaceVariant,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewIcon: {
+    fontSize: 18,
   },
   emptyState: {
     flex: 1,
