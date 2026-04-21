@@ -33,7 +33,7 @@ Ralph 루프 시작 시점에서 모노레포 구조와 기술 스택에 대해 
   - Workers 런타임은 Node.js 전제의 Fastify/Prisma 를 그대로 올릴 수 없고, 재구성 시 현재 머지된 모든 라우트·테스트를 재작성해야 한다.
   - 기존 테스트 러너가 이미 vitest 로 구성되어 있어 신규 테스트 추가 비용이 낮다.
 - 리스크 / 후속
-  - 스키마 마이그레이션은 현재 수동 SQL 이다. 이후 Phase 10 개선 후보로 `migrations/*.sql` + 실행 도구 도입을 고려.
+  - 스키마 마이그레이션은 ADR-006에서 정비. 번호 기반 마이그레이션 러너 도입.
 
 ## ADR-003 · 모바일 스택: React Native + Expo 유지
 
@@ -53,6 +53,24 @@ Ralph 루프 시작 시점에서 모노레포 구조와 기술 스택에 대해 
 - 근거
   - 현재 웹은 백엔드 API 를 호출하는 대시보드 성격이라 SSR 요구가 없다.
   - 기존 페이지 구조(`src/pages/*`) 와 axios 기반 서비스가 그대로 재사용 가능하다.
+
+## ADR-006 · DB 마이그레이션: 번호 기반 마이그레이션 러너 (ORM 미도입)
+
+- 상태: Accepted · 2026-04-21
+- 맥락
+  - TASK.md #7은 "SQLite(개발) + Prisma 권장"이지만, 현재 Cloudflare Workers + Turso 환경에서 Prisma는 런타임 호환성 문제가 있다.
+  - 기존 db.ts에는 CREATE TABLE IF NOT EXISTS + ALTER TABLE try-catch 패턴으로 마이그레이션이 인라인되어 있다.
+  - 테이블 8개, 인덱스 18개가 이미 구동 중.
+- 결정
+  - ORM(Prisma/Drizzle)을 도입하��� 않고, 번호 기반 마이그레이션 러너를 자체 구현한다.
+  - `_migrations` 메타 테이블에 실행 완료된 마이그레이션 ID를 기록한다.
+  - 각 마이그레이션은 `migrations.ts`에 순번·이름·SQL 배열로 정의한다.
+- 근거
+  - Workers 런타임에서 Prisma CLI(generate/migrate)가 직접 실행 불가.
+  - Drizzle은 가능하나 현재 코드 전부 raw SQL이므로 전환 비용 대비 이득이 작다.
+  - 번호 기반 러너는 ~50줄로 구현 가능하고 디버깅이 직관적이다.
+- 후��
+  - Phase 10에서 Drizzle 도입을 재평가할 수 있다.
 
 ## ADR-005 · 외부 AI·결제·푸시는 Mock 어댑터로 대체
 
