@@ -1,6 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getUserProfile, deleteAccount } from '../services/api';
+import { getUserProfile, deleteAccount, getVouchers, type VoucherItem } from '../services/api';
+import {
+  buildVoucherShareText,
+  formatVoucherStatus,
+  isVoucherRedeemable,
+} from '../lib/voucherShare';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -24,17 +29,62 @@ export default function SettingsPage({ darkMode }: Props) {
     queryFn: getUserProfile,
   });
 
+  const { data: vouchers = [] } = useQuery({
+    queryKey: ['vouchers'],
+    queryFn: getVouchers,
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'error' } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const showToast = useCallback((message: string) => {
-    setToast({ message, type: 'error' });
+  const showToast = useCallback((message: string, type: 'error' | 'success' = 'error') => {
+    setToast({ message, type });
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 4000);
   }, []);
+
+  const handleCopyVoucher = useCallback(
+    async (v: VoucherItem) => {
+      try {
+        await navigator.clipboard.writeText(v.code);
+        showToast('코드를 복사했어요', 'success');
+      } catch {
+        showToast('복사에 실패했어요');
+      }
+    },
+    [showToast],
+  );
+
+  const handleShareVoucher = useCallback(
+    async (v: VoucherItem) => {
+      const text = buildVoucherShareText({
+        code: v.code,
+        planName: v.plan_name,
+        expiresAt: v.expires_at,
+      });
+      const nav = navigator as Navigator & {
+        share?: (data: { title?: string; text?: string }) => Promise<void>;
+      };
+      if (nav.share) {
+        try {
+          await nav.share({ title: 'VoiceAlarm 이용권', text });
+          return;
+        } catch {
+          // fallthrough to clipboard
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('공유 문구를 복사했어요', 'success');
+      } catch {
+        showToast('공유에 실패했어요');
+      }
+    },
+    [showToast],
+  );
 
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
@@ -168,6 +218,76 @@ export default function SettingsPage({ darkMode }: Props) {
         </div>
       </div>
 
+      {/* 내 이용권 코드 */}
+      <div
+        className="bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] mb-6 transition-colors"
+        data-testid="voucher-section"
+      >
+        <h3 className="text-lg font-semibold text-[var(--color-text)] mb-1">내 이용권 코드</h3>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+          결제 시 자동 발급되는 1회용 코드예요. 본인에게만 보이며, 복사해서 지인에게 공유할 수 있어요.
+        </p>
+        {vouchers.length === 0 ? (
+          <p className="text-sm text-[var(--color-text-tertiary)]">아직 발급된 코드가 없어요.</p>
+        ) : (
+          <ul className="space-y-3">
+            {vouchers.map((v) => {
+              const redeemable = isVoucherRedeemable(v);
+              return (
+                <li
+                  key={v.id}
+                  data-testid="voucher-item"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-[var(--color-primary)]">
+                        {v.plan_name}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          redeemable
+                            ? 'bg-emerald-500/15 text-emerald-600'
+                            : v.status === 'used'
+                              ? 'bg-slate-500/15 text-slate-500'
+                              : 'bg-red-500/15 text-red-500'
+                        }`}
+                      >
+                        {formatVoucherStatus(v.status)}
+                      </span>
+                    </div>
+                    <code className="block text-sm font-mono text-[var(--color-text)] truncate">
+                      {v.code}
+                    </code>
+                    <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
+                      만료 {new Date(v.expires_at).toLocaleDateString('ko-KR')}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      aria-label={`${v.code} 복사`}
+                      disabled={!redeemable}
+                      onClick={() => handleCopyVoucher(v)}
+                      className="px-3 py-2 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      복사
+                    </button>
+                    <button
+                      aria-label={`${v.code} 공유`}
+                      disabled={!redeemable}
+                      onClick={() => handleShareVoucher(v)}
+                      className="px-3 py-2 rounded-lg bg-[var(--color-primary)] text-white text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all"
+                    >
+                      공유
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       {/* 정보 */}
       <div className="bg-[var(--color-surface)] rounded-2xl p-6 border border-[var(--color-border)] transition-colors">
         <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">정보</h3>
@@ -217,7 +337,11 @@ export default function SettingsPage({ darkMode }: Props) {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg text-sm font-medium animate-[fadeIn_0.2s_ease-out]">
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-white px-6 py-3 rounded-xl shadow-lg text-sm font-medium animate-[fadeIn_0.2s_ease-out] ${
+            toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'
+          }`}
+        >
           {toast.message}
         </div>
       )}
