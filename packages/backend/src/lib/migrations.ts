@@ -288,6 +288,28 @@ export const migrations: Migration[] = [
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_group_members_unique ON plan_group_members(plan_group_id, user_id)',
     ],
   },
+  {
+    id: 9,
+    name: 'plan-group-invites',
+    statements: [
+      // 가족 플랜 초대 코드 — 6자리 숫자 문자열, 10분 만료, 일회용.
+      // status 전이: pending → used | revoked | expired.
+      `CREATE TABLE IF NOT EXISTS plan_group_invites (
+        id TEXT PRIMARY KEY,
+        plan_group_id TEXT NOT NULL REFERENCES plan_groups(id),
+        inviter_user_id TEXT NOT NULL REFERENCES users(id),
+        code TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','used','revoked','expired')),
+        created_at TEXT DEFAULT (datetime('now')),
+        expires_at TEXT NOT NULL,
+        used_by_user_id TEXT REFERENCES users(id),
+        used_at TEXT
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_group_invites_code ON plan_group_invites(code)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_invites_group ON plan_group_invites(plan_group_id)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_invites_status ON plan_group_invites(status)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {
