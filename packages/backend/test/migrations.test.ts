@@ -103,6 +103,22 @@ describe('migrations', () => {
     expect(all).toContain('idx_subscriptions_expires');
   });
 
+  it('마이그레이션 #7 에서 voucher_codes 테이블과 인덱스를 추가한다', () => {
+    const m = migrations.find((x) => x.id === 7);
+    expect(m).toBeDefined();
+    const all = m!.statements.join('\n');
+    expect(all).toContain('CREATE TABLE IF NOT EXISTS voucher_codes');
+    expect(all).toContain('code TEXT NOT NULL UNIQUE');
+    expect(all).toContain('code_hash TEXT NOT NULL UNIQUE');
+    expect(all).toContain("CHECK(status IN ('issued','used','expired'))");
+    expect(all).toContain('issuer_user_id');
+    expect(all).toContain('redeemed_by_user_id');
+    expect(all).toContain('expires_at');
+    expect(all).toContain('idx_voucher_codes_hash');
+    expect(all).toContain('idx_voucher_codes_issuer');
+    expect(all).toContain('idx_voucher_codes_status');
+  });
+
   it('마이그레이션 #6 에서 기본 플랜 3종(free / plus_personal / family) 을 시드한다', () => {
     const m = migrations.find((x) => x.id === 6);
     expect(m).toBeDefined();

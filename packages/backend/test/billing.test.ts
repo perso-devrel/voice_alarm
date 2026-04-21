@@ -56,11 +56,12 @@ beforeEach(() => {
 });
 
 describe('POST /billing/checkout', () => {
-  it('plus_personal → 200, subscription 생성 + users.plan=plus', async () => {
+  it('plus_personal → 200, subscription 생성 + users.plan=plus + voucher 발급', async () => {
     mockDB.pushResult([PLAN_PLUS]); // SELECT plan
     mockDB.pushResult([{ id: 'user-pk-1' }]); // SELECT user
     mockDB.pushResult([], 1); // INSERT subscription
     mockDB.pushResult([], 1); // UPDATE users.plan
+    mockDB.pushResult([], 1); // INSERT voucher_code
 
     const app = buildApp();
     const res = await app.request(
@@ -74,15 +75,24 @@ describe('POST /billing/checkout', () => {
     expect(body.subscription.user_id).toBe('user-pk-1');
     expect(body.plan.key).toBe('plus_personal');
     expect(body.plan.price_krw).toBe(4900);
+    expect(body.voucher.code).toMatch(/^VA-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
+    expect(body.voucher.expires_at).toBe(body.subscription.expires_at);
 
     const updateCall = mockDB.calls.find((c) => c.sql.includes('UPDATE users SET plan'));
     expect(updateCall?.args[0]).toBe('plus');
     expect(updateCall?.args[1]).toBe('user-pk-1');
+
+    const insertVoucher = mockDB.calls.find((c) => c.sql.includes('INSERT INTO voucher_codes'));
+    expect(insertVoucher).toBeDefined();
+    expect(insertVoucher?.args[1]).toBe(body.voucher.code);
+    // code_hash 는 SHA-256 hex
+    expect(String(insertVoucher?.args[2])).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('family → 200, users.plan=family', async () => {
+  it('family → 200, users.plan=family, voucher 는 family plan_id 로 발급', async () => {
     mockDB.pushResult([PLAN_FAMILY]);
     mockDB.pushResult([{ id: 'user-pk-1' }]);
+    mockDB.pushResult([], 1);
     mockDB.pushResult([], 1);
     mockDB.pushResult([], 1);
 
@@ -95,11 +105,14 @@ describe('POST /billing/checkout', () => {
     expect(body.plan.plan_type).toBe('family');
     const updateCall = mockDB.calls.find((c) => c.sql.includes('UPDATE users SET plan'));
     expect(updateCall?.args[0]).toBe('family');
+    const insertVoucher = mockDB.calls.find((c) => c.sql.includes('INSERT INTO voucher_codes'));
+    expect(insertVoucher?.args[3]).toBe(PLAN_FAMILY.id);
   });
 
   it('subscription.expires_at 는 starts_at + period_days 후', async () => {
     mockDB.pushResult([PLAN_PLUS]);
     mockDB.pushResult([{ id: 'user-pk-1' }]);
+    mockDB.pushResult([], 1);
     mockDB.pushResult([], 1);
     mockDB.pushResult([], 1);
 
@@ -211,5 +224,75 @@ describe('GET /billing/subscription', () => {
     const sql = mockDB.calls[0].sql;
     expect(sql).toContain("s.status = 'active'");
     expect(sql).toContain("s.expires_at > datetime('now')");
+  });
+});
+
+describe('GET /billing/vouchers', () => {
+  it('발급한 코드 목록을 반환 (평문 포함, 발급자 본인)', async () => {
+    mockDB.pushResult([{ id: 'user-pk-1' }]); // SELECT user
+    mockDB.pushResult([
+      {
+        id: 'v1',
+        code: 'VA-ABCD-EFGH-JKLM',
+        plan_id: PLAN_PLUS.id,
+        issuer_subscription_id: 'sub-1',
+        redeemed_by_user_id: null,
+        status: 'issued',
+        issued_at: '2026-04-21T00:00:00.000Z',
+        used_at: null,
+        expires_at: '2026-05-21T00:00:00.000Z',
+        plan_key: 'plus_personal',
+        plan_name: '플러스 개인',
+        plan_type: 'personal',
+      },
+      {
+        id: 'v2',
+        code: 'VA-NPQR-STUV-WXYZ',
+        plan_id: PLAN_FAMILY.id,
+        issuer_subscription_id: 'sub-2',
+        redeemed_by_user_id: 'user-pk-2',
+        status: 'used',
+        issued_at: '2026-04-15T00:00:00.000Z',
+        used_at: '2026-04-16T00:00:00.000Z',
+        expires_at: '2026-05-15T00:00:00.000Z',
+        plan_key: 'family',
+        plan_name: '가족',
+        plan_type: 'family',
+      },
+    ]);
+
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/billing/vouchers'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.vouchers).toHaveLength(2);
+    expect(body.vouchers[0].code).toBe('VA-ABCD-EFGH-JKLM');
+    expect(body.vouchers[0].status).toBe('issued');
+    expect(body.vouchers[0].plan_key).toBe('plus_personal');
+    expect(body.vouchers[1].status).toBe('used');
+    expect(body.vouchers[1].redeemed_by_user_id).toBe('user-pk-2');
+
+    const listCall = mockDB.calls.find((c) => c.sql.includes('FROM voucher_codes'));
+    expect(listCall?.args[0]).toBe('user-pk-1');
+    expect(listCall?.sql).toContain('v.issuer_user_id = ?');
+  });
+
+  it('사용자 없으면 빈 배열', async () => {
+    mockDB.pushResult([]); // no user
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/billing/vouchers'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.vouchers).toEqual([]);
+  });
+
+  it('발급한 코드가 없으면 빈 배열', async () => {
+    mockDB.pushResult([{ id: 'user-pk-1' }]);
+    mockDB.pushResult([]);
+    const app = buildApp();
+    const res = await app.request(jsonReq('GET', '/billing/vouchers'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.vouchers).toEqual([]);
   });
 });

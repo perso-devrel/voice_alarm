@@ -235,6 +235,30 @@ export const migrations: Migration[] = [
         VALUES ('70000000-0000-4000-8000-000000000003', 'family', '가족', 'family', 30, 6, 9900, 1)`,
     ],
   },
+  {
+    id: 7,
+    name: 'voucher-codes',
+    statements: [
+      // code: plaintext 'VA-XXXX-XXXX-XXXX' (발급자 본인에게만 노출)
+      // code_hash: SHA-256(code) hex — 등록 시 lookup 용 (#29)
+      `CREATE TABLE IF NOT EXISTS voucher_codes (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE,
+        code_hash TEXT NOT NULL UNIQUE,
+        plan_id TEXT NOT NULL REFERENCES plans(id),
+        issuer_user_id TEXT NOT NULL REFERENCES users(id),
+        issuer_subscription_id TEXT REFERENCES subscriptions(id),
+        redeemed_by_user_id TEXT REFERENCES users(id),
+        status TEXT NOT NULL DEFAULT 'issued' CHECK(status IN ('issued','used','expired')),
+        issued_at TEXT NOT NULL DEFAULT (datetime('now')),
+        used_at TEXT,
+        expires_at TEXT NOT NULL
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_voucher_codes_hash ON voucher_codes(code_hash)',
+      'CREATE INDEX IF NOT EXISTS idx_voucher_codes_issuer ON voucher_codes(issuer_user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_voucher_codes_status ON voucher_codes(status)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {
