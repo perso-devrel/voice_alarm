@@ -1,14 +1,24 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:15)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 15:22)
 
-- 진행 중 Phase: 6 진행 중 (#34 완료). 다음 #35 가족 알람 추가 API(text).
-- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79 (33개). Phase 1~5 완료.
-- 진행 중 이슈: 없음 (다음: Phase 6 #35 가족 알람 추가 API text 모드 — `POST /family/alarms`)
+- 진행 중 Phase: 6 진행 중 (#34~#35 완료). 다음 #36 가족 알람 추가 API(voice).
+- 완료 이슈: #15, #17, #19, #21, #23, #25, #27, #29, #31, #33, #35, #37, #39, #41, #43, #45, #47, #49, #51, #53, #55, #57, #59, #61, #63, #65, #67, #69, #71, #73, #75, #77, #79, #81 (34개). Phase 1~5 완료.
+- 진행 중 이슈: 없음 (다음: Phase 6 #36 가족 알람 추가 API voice 모드 — 음성 업로드/더빙 mock)
 - blocked 이슈: 없음
 - 루프 작업 브랜치: `develop_loop` (origin 푸시 완료)
 
 ---
 
 ## 루프 로그
+
+## 2026-04-21 15:22 · Issue #81 · 가족 알람 추가 API (text 모드)
+- 브랜치: `feature/issue-81-family-alarm-text`
+- PR: #82 (merged)
+- 변경 파일: 2개 (수정)
+- 요약: `POST /api/family/alarms { recipient_user_id, wake_at(HH:mm), message_text(1..500), repeat_days?, voice_profile_id? }` 신규. 검증 체인 — 필수필드/포맷(400) → 송신자 PK resolve → self-send 400 → 송신자 그룹 소속 403 → 같은 그룹 수신자 403 → 수신자 존재 404 → `allow_family_alarms=1` 403 → voice_profile 소유권(명시 시) 또는 수신자의 최근 profile 자동 매핑(없으면 400). DB 쓰기: `messages` INSERT(user_id=수신자 PK, voice_profile_id, category='family', audio_url=NULL) + `alarms` INSERT(user_id=송신자 google_id, target_user_id=수신자 google_id, mode='tts', repeat_days JSON). 응답 201 + `{alarm, message}`. `// TODO: real perso.ai/elevenlabs integration` 주석. vitest 12건 추가 (정상 자동/명시 2 + 403×3 + 404 + 400×6) → 백엔드 386→398 / 28 파일 그린, tsc 0 에러.
+- 다음: Phase 6 #36 가족 알람 추가 API (voice 모드) — 음성 파일 업로드 후 원본 재생 또는 다국어 더빙(mock) 선택. `/api/family/alarms/voice` multipart 또는 `voice_file_id` 참조. 수신자 허용 체크 동일.
+- 리스크: 실제 TTS 합성은 아직 mock (audio_url=NULL). 알람 실행 시 `/api/tts` 경로에서 채워야 함 — 스케줄러 연계는 후속 이슈. 동일 수신자·동일 시간 중복 생성 가드 없음 — UX 단에서 방어 예정(#37/#38).
+
+---
 
 ## 2026-04-21 15:15 · Issue #79 · 가족 허용 설정 컬럼 + PATCH /user/me 토글
 - 브랜치: `feature/issue-79-allow-family-alarms`
