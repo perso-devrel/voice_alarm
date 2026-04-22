@@ -1,5 +1,6 @@
 import type { Context, Next } from 'hono';
 import type { AppEnv } from '../types';
+import { verifyAppJwt, APP_JWT_ISSUER } from '../lib/jwt';
 
 interface TokenPayload {
   sub: string;
@@ -34,7 +35,18 @@ export async function authMiddleware(c: Context<AppEnv>, next: Next) {
 
     let verified: TokenPayload;
 
-    if (payload.iss === 'https://appleid.apple.com') {
+    if (payload.iss === APP_JWT_ISSUER) {
+      const app = await verifyAppJwt(token, c.env.JWT_SECRET);
+      verified = {
+        sub: app.sub,
+        email: app.email,
+        name: app.name,
+        picture: undefined,
+        iss: app.iss,
+        aud: app.aud,
+        exp: app.exp,
+      };
+    } else if (payload.iss === 'https://appleid.apple.com') {
       verified = await verifyAppleToken(token);
     } else {
       verified = await verifyGoogleToken(token, c.env.GOOGLE_CLIENT_ID);

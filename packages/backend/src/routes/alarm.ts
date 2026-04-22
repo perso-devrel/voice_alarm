@@ -1,10 +1,107 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
+import { selectFiringAlarms, type ScheduledAlarm } from '../lib/scheduler';
+import { UUID_RE } from '../lib/validate';
+const ALARM_MODES = ['sound-only', 'tts'] as const;
+type AlarmMode = (typeof ALARM_MODES)[number];
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type AlarmRow = Record<string, unknown> & {
+  repeat_days?: unknown;
+  is_active?: unknown;
+  mode?: unknown;
+  voice_profile_id?: unknown;
+  speaker_id?: unknown;
+  user_id?: unknown;
+  creator_email?: unknown;
+  creator_name?: unknown;
+  category?: unknown;
+};
+
+function normalizeAlarmRow(row: AlarmRow, viewerUserId?: string | null) {
+  const rawRepeat = row.repeat_days;
+  let repeatDays: number[] = [];
+  if (typeof rawRepeat === 'string' && rawRepeat.length > 0) {
+    try {
+      const parsed: unknown = JSON.parse(rawRepeat);
+      if (Array.isArray(parsed)) repeatDays = parsed.filter((n): n is number => Number.isInteger(n));
+    } catch {
+      repeatDays = [];
+    }
+  } else if (Array.isArray(rawRepeat)) {
+    repeatDays = rawRepeat.filter((n): n is number => Number.isInteger(n));
+  }
+
+  const mode: AlarmMode =
+    row.mode === 'sound-only' || row.mode === 'tts' ? row.mode : 'tts';
+
+  const category = typeof row.category === 'string' ? row.category : null;
+  const isFamilyAlarm = category === 'family' || category === 'family-voice';
+  const senderUserId = typeof row.user_id === 'string' ? row.user_id : null;
+  const senderName = typeof row.creator_name === 'string' ? row.creator_name : null;
+  const senderEmail = typeof row.creator_email === 'string' ? row.creator_email : null;
+  const isReceivedFamilyAlarm =
+    isFamilyAlarm && !!viewerUserId && !!senderUserId && senderUserId !== viewerUserId;
+
+  return {
+    ...row,
+    repeat_days: repeatDays,
+    is_active: row.is_active === 1 || row.is_active === true,
+    mode,
+    voice_profile_id: (row.voice_profile_id ?? null) as string | null,
+    speaker_id: (row.speaker_id ?? null) as string | null,
+    sender_user_id: senderUserId,
+    sender_name: senderName,
+    sender_email: senderEmail,
+    is_family_alarm: isFamilyAlarm,
+    is_received_family_alarm: isReceivedFamilyAlarm,
+  };
+}
 
 const alarm = new Hono<AppEnv>();
+
+/** 디버그용 cron 틱 — 현재 UTC 시각 기준으로 발화 대상 알람을 반환 (푸시 전송은 하지 않음) */
+alarm.get('/tick', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const result = await db.execute({
+    sql: `SELECT id, user_id, target_user_id, time, repeat_days, is_active,
+                 mode, voice_profile_id, speaker_id
+          FROM alarms
+          WHERE (user_id = ? OR target_user_id = ?) AND is_active = 1`,
+    args: [userId, userId],
+  });
+
+  const alarms: ScheduledAlarm[] = (result.rows as AlarmRow[]).map((r) => {
+    const n = normalizeAlarmRow(r);
+    return {
+      id: String(r.id),
+      user_id: String(r.user_id),
+      target_user_id: (r.target_user_id as string | null) ?? null,
+      time: String(r.time),
+      repeat_days: n.repeat_days,
+      is_active: n.is_active,
+      mode: n.mode,
+      voice_profile_id: n.voice_profile_id,
+      speaker_id: n.speaker_id,
+    };
+  });
+
+  const now = new Date();
+  const firing = selectFiringAlarms(alarms, now);
+  return c.json({
+    now: now.toISOString(),
+    checked: alarms.length,
+    firing: firing.map((a) => ({
+      id: a.id,
+      time: a.time,
+      mode: a.mode,
+      voice_profile_id: a.voice_profile_id,
+      speaker_id: a.speaker_id,
+    })),
+  });
+});
 
 /** 알람 목록 조회 */
 alarm.get('/', async (c) => {
@@ -50,7 +147,8 @@ alarm.get('/', async (c) => {
   ]);
 
   const total = Number(countRes.rows[0].total);
-  return c.json({ alarms: result.rows, total, limit, offset });
+  const alarms = (result.rows as AlarmRow[]).map((r) => normalizeAlarmRow(r, userId));
+  return c.json({ alarms, total, limit, offset });
 });
 
 /** 단일 알람 조회 */
@@ -78,7 +176,7 @@ alarm.get('/:id', async (c) => {
     return c.json({ error: 'Alarm not found' }, 404);
   }
 
-  return c.json({ alarm: result.rows[0] });
+  return c.json({ alarm: normalizeAlarmRow(result.rows[0] as AlarmRow, userId) });
 });
 
 /** 알람 생성 */
@@ -92,6 +190,9 @@ alarm.post('/', async (c) => {
     repeat_days?: number[];
     snooze_minutes?: number;
     target_user_id?: string;
+    mode?: string;
+    voice_profile_id?: string;
+    speaker_id?: string;
   }>();
 
   if (!body.message_id || !body.time) {
@@ -104,6 +205,18 @@ alarm.post('/', async (c) => {
 
   if (body.target_user_id && typeof body.target_user_id !== 'string') {
     return c.json({ error: 'Invalid target_user_id' }, 400);
+  }
+
+  if (body.mode !== undefined && !ALARM_MODES.includes(body.mode as AlarmMode)) {
+    return c.json({ error: `mode must be one of: ${ALARM_MODES.join(', ')}` }, 400);
+  }
+
+  if (body.voice_profile_id !== undefined && !UUID_RE.test(body.voice_profile_id)) {
+    return c.json({ error: 'Invalid voice_profile_id format' }, 400);
+  }
+
+  if (body.speaker_id !== undefined && !UUID_RE.test(body.speaker_id)) {
+    return c.json({ error: 'Invalid speaker_id format' }, 400);
   }
 
   if (!/^\d{2}:\d{2}$/.test(body.time)) {
@@ -168,9 +281,12 @@ alarm.post('/', async (c) => {
   }
 
   const alarmId = crypto.randomUUID();
+  const mode: AlarmMode = (body.mode as AlarmMode | undefined) ?? 'tts';
   await db.execute({
-    sql: `INSERT INTO alarms (id, user_id, target_user_id, message_id, time, repeat_days, snooze_minutes)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO alarms
+            (id, user_id, target_user_id, message_id, time, repeat_days, snooze_minutes,
+             mode, voice_profile_id, speaker_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       alarmId,
       userId,
@@ -179,10 +295,24 @@ alarm.post('/', async (c) => {
       body.time,
       JSON.stringify(body.repeat_days ?? []),
       body.snooze_minutes ?? 5,
+      mode,
+      body.voice_profile_id ?? null,
+      body.speaker_id ?? null,
     ],
   });
 
-  return c.json({ alarm: { id: alarmId, ...body } }, 201);
+  return c.json(
+    {
+      alarm: {
+        id: alarmId,
+        ...body,
+        mode,
+        voice_profile_id: body.voice_profile_id ?? null,
+        speaker_id: body.speaker_id ?? null,
+      },
+    },
+    201,
+  );
 });
 
 /** 알람 수정 */
@@ -201,10 +331,33 @@ alarm.patch('/:id', async (c) => {
     is_active?: boolean;
     snooze_minutes?: number;
     message_id?: string;
+    mode?: string;
+    voice_profile_id?: string | null;
+    speaker_id?: string | null;
   }>();
 
   if (body.message_id !== undefined && !UUID_RE.test(body.message_id)) {
     return c.json({ error: 'Invalid message_id format' }, 400);
+  }
+
+  if (body.mode !== undefined && !ALARM_MODES.includes(body.mode as AlarmMode)) {
+    return c.json({ error: `mode must be one of: ${ALARM_MODES.join(', ')}` }, 400);
+  }
+
+  if (
+    body.voice_profile_id !== undefined &&
+    body.voice_profile_id !== null &&
+    !UUID_RE.test(body.voice_profile_id)
+  ) {
+    return c.json({ error: 'Invalid voice_profile_id format' }, 400);
+  }
+
+  if (
+    body.speaker_id !== undefined &&
+    body.speaker_id !== null &&
+    !UUID_RE.test(body.speaker_id)
+  ) {
+    return c.json({ error: 'Invalid speaker_id format' }, 400);
   }
 
   // 알람 소유 확인
@@ -246,7 +399,7 @@ alarm.patch('/:id', async (c) => {
   }
 
   const updates: string[] = [];
-  const args: (string | number)[] = [];
+  const args: (string | number | null)[] = [];
 
   if (body.time !== undefined) {
     updates.push('time = ?');
@@ -268,6 +421,18 @@ alarm.patch('/:id', async (c) => {
     updates.push('message_id = ?');
     args.push(body.message_id);
   }
+  if (body.mode !== undefined) {
+    updates.push('mode = ?');
+    args.push(body.mode);
+  }
+  if (body.voice_profile_id !== undefined) {
+    updates.push('voice_profile_id = ?');
+    args.push(body.voice_profile_id);
+  }
+  if (body.speaker_id !== undefined) {
+    updates.push('speaker_id = ?');
+    args.push(body.speaker_id);
+  }
 
   if (updates.length === 0) {
     return c.json({ error: 'No fields to update' }, 400);
@@ -283,19 +448,15 @@ alarm.patch('/:id', async (c) => {
 
   const updated = await db.execute({
     sql: `SELECT id, user_id, target_user_id, message_id, time, repeat_days,
-                 is_active, snooze_minutes, created_at, updated_at
+                 is_active, snooze_minutes, mode, voice_profile_id, speaker_id,
+                 created_at, updated_at
           FROM alarms WHERE id = ?`,
     args: [id],
   });
 
-  const row = updated.rows[0];
   return c.json({
     success: true,
-    alarm: {
-      ...row,
-      repeat_days: row.repeat_days ? JSON.parse(row.repeat_days as string) : [],
-      is_active: row.is_active === 1,
-    },
+    alarm: normalizeAlarmRow(updated.rows[0] as AlarmRow, userId),
   });
 });
 

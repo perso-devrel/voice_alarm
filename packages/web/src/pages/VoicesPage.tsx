@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, generateTTS, getMessagesByVoice, getAlarms } from '../services/api';
+import { getVoiceProfiles, createVoiceClone, deleteVoiceProfile, updateVoiceProfile, generateTTS, getMessagesByVoice, getAlarms } from '../services/api';
 import type { VoiceProfile, Message, Alarm } from '../types';
 import { getApiErrorMessage } from '../types';
 import { VoiceCardSkeleton } from '../components/Skeleton';
+import SpeakerPicker from '../components/SpeakerPicker';
+import { sanitizeVoiceName } from '../lib/voiceName';
 
 export default function VoicesPage() {
   const queryClient = useQueryClient();
@@ -16,6 +18,7 @@ export default function VoicesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [detailProfile, setDetailProfile] = useState<VoiceProfile | null>(null);
+  const [showSpeakerPicker, setShowSpeakerPicker] = useState(false);
 
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -31,6 +34,28 @@ export default function VoicesPage() {
       setUploadFile(null);
     },
   });
+
+  const renameMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => updateVoiceProfile(id, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
+    },
+    onError: (err) => {
+      alert(`이름 변경 실패: ${getApiErrorMessage(err, '네트워크 오류')}`);
+    },
+  });
+
+  const handleRename = (profile: VoiceProfile) => {
+    const raw = window.prompt('새 이름을 입력하세요 (1~50자)', profile.name);
+    if (raw === null) return;
+    const sanitized = sanitizeVoiceName(raw);
+    if (!sanitized.ok) {
+      alert(sanitized.error ?? '이름이 올바르지 않습니다.');
+      return;
+    }
+    if (sanitized.value === profile.name) return;
+    renameMutation.mutate({ id: profile.id, name: sanitized.value });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: deleteVoiceProfile,
@@ -107,14 +132,26 @@ export default function VoicesPage() {
           <h2 className="text-3xl font-bold text-[var(--color-text)]">음성 프로필</h2>
           <p className="text-[var(--color-text-secondary)] mt-1">소중한 사람의 목소리를 관리하세요</p>
         </div>
-        <button
-          onClick={() => setShowUpload(!showUpload)}
-          aria-expanded={showUpload}
-          className="bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-colors"
-        >
-          + 음성 등록
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSpeakerPicker(true)}
+            className="bg-[var(--color-surface)] border border-[var(--color-primary)] text-[var(--color-primary)] px-5 py-3 rounded-xl font-semibold hover:bg-[var(--color-primary-light)]/20 transition-colors"
+          >
+            화자 감지
+          </button>
+          <button
+            onClick={() => setShowUpload(!showUpload)}
+            aria-expanded={showUpload}
+            className="bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-colors"
+          >
+            + 음성 등록
+          </button>
+        </div>
       </div>
+
+      {showSpeakerPicker && (
+        <SpeakerPicker onClose={() => setShowSpeakerPicker(false)} />
+      )}
 
       {showUpload && (
         <div className="bg-[var(--color-surface)] rounded-2xl p-6 mb-6 border border-[var(--color-border)] shadow-sm transition-colors">
@@ -264,6 +301,16 @@ export default function VoicesPage() {
                   onClick={(e) => { e.stopPropagation(); handleTest(profile.id); }}
                 >
                   {testingId === profile.id ? '생성 중...' : '테스트'}
+                </button>
+                <button
+                  aria-label={`${profile.name} 이름 변경`}
+                  className="text-sm text-[var(--color-text-secondary)] font-medium hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRename(profile);
+                  }}
+                >
+                  이름 변경
                 </button>
                 <button
                   aria-label={`${profile.name} 프로필 삭제`}

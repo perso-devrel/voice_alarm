@@ -2,10 +2,239 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
+import { getSharedInMemoryVoiceStorage, MockVoiceProvider } from '@voice-alarm/voice';
+
+import { UUID_RE } from '../lib/validate';
 
 const voice = new Hono<AppEnv>();
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MiB
+const MAX_SPEAKERS = 3;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** 원본 오디오 업로드 — 화자 분리/클론 전 단계 저장소. */
+// TODO: real object storage integration (R2 / S3) — currently in-memory only.
+voice.post('/upload', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  let formData: FormData;
+  try {
+    formData = await c.req.formData();
+  } catch {
+    return c.json({ error: 'multipart/form-data body required' }, 400);
+  }
+
+  const audioFile = formData.get('audio') as unknown as File | null;
+  if (!audioFile || typeof audioFile === 'string') {
+    return c.json({ error: 'audio file is required' }, 400);
+  }
+
+  const mimeType = audioFile.type || 'application/octet-stream';
+  if (!mimeType.startsWith('audio/')) {
+    return c.json({ error: 'audio/* MIME type required' }, 415);
+  }
+
+  const buffer = await audioFile.arrayBuffer();
+  if (buffer.byteLength === 0) {
+    return c.json({ error: 'audio file is empty' }, 400);
+  }
+  if (buffer.byteLength > MAX_UPLOAD_BYTES) {
+    return c.json(
+      { error: `audio file exceeds ${MAX_UPLOAD_BYTES} bytes (got ${buffer.byteLength})` },
+      413,
+    );
+  }
+
+  const durationRaw = formData.get('durationMs');
+  let durationMs: number | undefined;
+  if (typeof durationRaw === 'string' && durationRaw.length > 0) {
+    const n = Number.parseInt(durationRaw, 10);
+    if (!Number.isFinite(n) || n <= 0) {
+      return c.json({ error: 'durationMs must be a positive integer' }, 400);
+    }
+    durationMs = n;
+  }
+
+  const originalNameRaw = formData.get('originalName');
+  const originalName =
+    typeof originalNameRaw === 'string' && originalNameRaw.length > 0
+      ? originalNameRaw.slice(0, 200)
+      : audioFile.name || undefined;
+
+  const storage = getSharedInMemoryVoiceStorage();
+  const meta = await storage.store({
+    userId,
+    bytes: new Uint8Array(buffer),
+    mimeType,
+    durationMs,
+    originalName,
+  });
+
+  const uploadId = crypto.randomUUID();
+  await db.execute({
+    sql: `INSERT INTO voice_uploads
+          (id, user_id, object_key, mime_type, size_bytes, duration_ms, original_name)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      uploadId,
+      userId,
+      meta.objectKey,
+      meta.mimeType,
+      meta.sizeBytes,
+      meta.durationMs ?? null,
+      meta.originalName ?? null,
+    ],
+  });
+
+  return c.json(
+    {
+      upload: {
+        id: uploadId,
+        objectKey: meta.objectKey,
+        mimeType: meta.mimeType,
+        sizeBytes: meta.sizeBytes,
+        durationMs: meta.durationMs ?? null,
+        originalName: meta.originalName ?? null,
+        createdAt: meta.createdAt,
+      },
+    },
+    201,
+  );
+});
+
+/**
+ * 업로드된 오디오의 화자 분리 (mock).
+ * NEEDS_VERIFICATION: real diarization algorithm — 실제 알고리즘은 perso.ai/ElevenLabs 영역.
+ */
+voice.post('/uploads/:uploadId/separate', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const uploadId = c.req.param('uploadId');
+
+  if (!UUID_RE.test(uploadId)) {
+    return c.json({ error: 'Invalid upload ID format' }, 400);
+  }
+
+  const uploadRes = await db.execute({
+    sql: 'SELECT id, user_id, object_key FROM voice_uploads WHERE id = ?',
+    args: [uploadId],
+  });
+  if (uploadRes.rows.length === 0) {
+    return c.json({ error: 'Voice upload not found' }, 404);
+  }
+  const upload = uploadRes.rows[0] as unknown as { id: string; user_id: string; object_key: string };
+  if (upload.user_id !== userId) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const provider = new MockVoiceProvider();
+  const result = await provider.separate({
+    audioUri: upload.object_key,
+    maxSpeakers: MAX_SPEAKERS,
+  });
+
+  await db.execute({
+    sql: 'DELETE FROM voice_speakers WHERE upload_id = ?',
+    args: [uploadId],
+  });
+
+  const speakers = result.speakers.map((s, idx) => ({
+    id: crypto.randomUUID(),
+    uploadId,
+    label: `화자 ${idx + 1}`,
+    startMs: s.startMs,
+    endMs: s.endMs,
+    confidence: s.confidence,
+  }));
+
+  for (const sp of speakers) {
+    await db.execute({
+      sql: `INSERT INTO voice_speakers (id, upload_id, label, start_ms, end_ms, confidence)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [sp.id, sp.uploadId, sp.label, sp.startMs, sp.endMs, sp.confidence],
+    });
+  }
+
+  return c.json({ speakers, provider: result.provider }, 201);
+});
+
+/** 업로드된 오디오의 분리된 화자 목록 조회 */
+voice.get('/uploads/:uploadId/speakers', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const uploadId = c.req.param('uploadId');
+
+  if (!UUID_RE.test(uploadId)) {
+    return c.json({ error: 'Invalid upload ID format' }, 400);
+  }
+
+  const uploadRes = await db.execute({
+    sql: 'SELECT id, user_id FROM voice_uploads WHERE id = ?',
+    args: [uploadId],
+  });
+  if (uploadRes.rows.length === 0) {
+    return c.json({ error: 'Voice upload not found' }, 404);
+  }
+  if ((uploadRes.rows[0] as unknown as { user_id: string }).user_id !== userId) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const speakersRes = await db.execute({
+    sql: `SELECT id, upload_id, label, start_ms, end_ms, confidence, created_at
+          FROM voice_speakers WHERE upload_id = ? ORDER BY start_ms ASC`,
+    args: [uploadId],
+  });
+
+  return c.json({ speakers: speakersRes.rows });
+});
+
+/** 분리된 화자 라벨 수정 */
+voice.patch('/uploads/:uploadId/speakers/:speakerId', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const uploadId = c.req.param('uploadId');
+  const speakerId = c.req.param('speakerId');
+
+  if (!UUID_RE.test(uploadId) || !UUID_RE.test(speakerId)) {
+    return c.json({ error: 'Invalid ID format' }, 400);
+  }
+
+  let body: { label?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'JSON body required' }, 400);
+  }
+  const label = typeof body.label === 'string' ? body.label.trim() : '';
+  if (label.length === 0 || label.length > 50) {
+    return c.json({ error: 'label must be 1-50 characters' }, 400);
+  }
+
+  const uploadRes = await db.execute({
+    sql: 'SELECT id, user_id FROM voice_uploads WHERE id = ?',
+    args: [uploadId],
+  });
+  if (uploadRes.rows.length === 0) {
+    return c.json({ error: 'Voice upload not found' }, 404);
+  }
+  if ((uploadRes.rows[0] as unknown as { user_id: string }).user_id !== userId) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const speakerRes = await db.execute({
+    sql: 'SELECT id FROM voice_speakers WHERE id = ? AND upload_id = ?',
+    args: [speakerId, uploadId],
+  });
+  if (speakerRes.rows.length === 0) {
+    return c.json({ error: 'Speaker not found' }, 404);
+  }
+
+  await db.execute({
+    sql: 'UPDATE voice_speakers SET label = ? WHERE id = ?',
+    args: [label, speakerId],
+  });
+
+  return c.json({ speaker: { id: speakerId, uploadId, label } });
+});
 
 /** 음성 프로필 목록 조회 */
 voice.get('/', async (c) => {
@@ -58,6 +287,44 @@ voice.get('/:id', async (c) => {
   }
 
   return c.json({ profile: result.rows[0] });
+});
+
+/** 음성 프로필 이름 변경 */
+voice.patch('/:id', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+  const id = c.req.param('id');
+
+  if (!UUID_RE.test(id)) {
+    return c.json({ error: 'Invalid voice profile ID format' }, 400);
+  }
+
+  let body: { name?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'JSON body required' }, 400);
+  }
+
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  if (name.length === 0 || name.length > 50) {
+    return c.json({ error: 'name must be 1-50 characters' }, 400);
+  }
+
+  const existing = await db.execute({
+    sql: 'SELECT id FROM voice_profiles WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
+  if (existing.rows.length === 0) {
+    return c.json({ error: 'Voice profile not found' }, 404);
+  }
+
+  await db.execute({
+    sql: "UPDATE voice_profiles SET name = ?, updated_at = datetime('now') WHERE id = ?",
+    args: [name, id],
+  });
+
+  return c.json({ profile: { id, name } });
 });
 
 /** 음성 클론 생성 (오디오 업로드) */
@@ -246,11 +513,14 @@ voice.delete('/:id', async (c) => {
   const msgCount = Number((msgCheck.rows[0] as Record<string, unknown>)?.cnt ?? 0);
 
   if (msgCount > 0 && c.req.query('force') !== 'true') {
-    return c.json({
-      warning: true,
-      message_count: msgCount,
-      message: `This voice profile has ${msgCount} message(s). Add ?force=true to delete anyway.`,
-    }, 409);
+    return c.json(
+      {
+        warning: true,
+        message_count: msgCount,
+        message: `This voice profile has ${msgCount} message(s). Add ?force=true to delete anyway.`,
+      },
+      409,
+    );
   }
 
   // ElevenLabs에서도 삭제

@@ -7,15 +7,20 @@ import { rateLimitMiddleware } from './middleware/rateLimit';
 import { bodyLimitMiddleware } from './middleware/bodyLimit';
 import { publicCache, privateCache, noStore } from './middleware/cache';
 import { getDB, initDB } from './lib/db';
+import { selectFiringAlarms, type ScheduledAlarm } from './lib/scheduler';
 import voiceRoutes from './routes/voice';
 import ttsRoutes from './routes/tts';
 import alarmRoutes from './routes/alarm';
 import userRoutes from './routes/user';
+import authRoutes from './routes/auth';
 import libraryRoutes from './routes/library';
 import friendRoutes from './routes/friend';
 import giftRoutes from './routes/gift';
 import statsRoutes from './routes/stats';
 import dubRoutes from './routes/dub';
+import billingRoutes from './routes/billing';
+import familyRoutes from './routes/family';
+import characterRoutes from './routes/character';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -89,6 +94,9 @@ app.get('/api/tts/presets', publicCache, async (c) => {
   return c.json({ presets: PRESETS });
 });
 
+// 이메일+비밀번호 가입/로그인 (인증 미들웨어 미적용)
+app.route('/api/auth', authRoutes);
+
 // 인증이 필요한 라우트들
 const api = new Hono<AppEnv>();
 api.use('*', authMiddleware);
@@ -106,6 +114,9 @@ api.route('/friend', friendRoutes);
 api.route('/gift', giftRoutes);
 api.route('/stats', statsRoutes);
 api.route('/dub', dubRoutes);
+api.route('/billing', billingRoutes);
+api.route('/family', familyRoutes);
+api.route('/characters', characterRoutes);
 
 app.route('/api', api);
 
@@ -124,4 +135,53 @@ app.onError((err, c) => {
   return c.json({ error: 'Internal server error', requestId }, 500);
 });
 
-export default app;
+// Cloudflare Workers Cron Trigger 진입점 — wrangler.toml 에 `[triggers] crons = ["* * * * *"]` 등록 시 1분 주기로 호출됨
+async function scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+  const db = getDB(env);
+  const now = new Date(event.scheduledTime);
+
+  const result = await db.execute(
+    `SELECT id, user_id, target_user_id, time, repeat_days, is_active,
+            mode, voice_profile_id, speaker_id
+     FROM alarms WHERE is_active = 1`,
+  );
+
+  const alarms: ScheduledAlarm[] = result.rows.map((r) => ({
+    id: String(r.id),
+    user_id: String(r.user_id),
+    target_user_id: (r.target_user_id as string | null) ?? null,
+    time: String(r.time),
+    repeat_days: (() => {
+      try {
+        const parsed: unknown = JSON.parse(String(r.repeat_days ?? '[]'));
+        return Array.isArray(parsed) ? parsed.filter((n): n is number => Number.isInteger(n)) : [];
+      } catch {
+        return [];
+      }
+    })(),
+    is_active: r.is_active === 1,
+    mode: r.mode === 'sound-only' ? 'sound-only' : 'tts',
+    voice_profile_id: (r.voice_profile_id as string | null) ?? null,
+    speaker_id: (r.speaker_id as string | null) ?? null,
+  }));
+
+  const firing = selectFiringAlarms(alarms, now);
+
+  console.warn(
+    JSON.stringify({
+      level: 'info',
+      at: 'scheduled',
+      now: now.toISOString(),
+      checked: alarms.length,
+      firing_count: firing.length,
+      firing_ids: firing.map((a) => a.id),
+    }),
+  );
+
+  // TODO: FCM delivery — firing[].user_id/target_user_id 로 푸시 전송
+}
+
+export default {
+  fetch: app.fetch,
+  scheduled,
+};

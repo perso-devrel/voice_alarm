@@ -1,0 +1,398 @@
+import type { Client } from '@libsql/client/web';
+
+export interface Migration {
+  id: number;
+  name: string;
+  statements: string[];
+}
+
+export const migrations: Migration[] = [
+  {
+    id: 1,
+    name: 'initial-schema',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        google_id TEXT UNIQUE NOT NULL,
+        email TEXT NOT NULL,
+        name TEXT,
+        picture TEXT,
+        plan TEXT DEFAULT 'free' CHECK(plan IN ('free','plus','family')),
+        daily_tts_count INTEGER DEFAULT 0,
+        daily_tts_reset_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS voice_profiles (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        name TEXT NOT NULL,
+        perso_voice_id TEXT,
+        elevenlabs_voice_id TEXT,
+        avatar_url TEXT,
+        status TEXT DEFAULT 'processing' CHECK(status IN ('processing','ready','failed')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS messages (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        voice_profile_id TEXT NOT NULL REFERENCES voice_profiles(id),
+        text TEXT NOT NULL,
+        audio_url TEXT,
+        category TEXT DEFAULT 'custom',
+        is_preset INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS alarms (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        target_user_id TEXT,
+        message_id TEXT NOT NULL REFERENCES messages(id),
+        time TEXT NOT NULL,
+        repeat_days TEXT DEFAULT '[]',
+        is_active INTEGER DEFAULT 1,
+        snooze_minutes INTEGER DEFAULT 5,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS message_library (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        message_id TEXT NOT NULL REFERENCES messages(id),
+        is_favorite INTEGER DEFAULT 0,
+        received_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS friendships (
+        id TEXT PRIMARY KEY,
+        user_a TEXT NOT NULL,
+        user_b TEXT NOT NULL,
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','accepted','blocked')),
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS gifts (
+        id TEXT PRIMARY KEY,
+        sender_id TEXT NOT NULL,
+        recipient_id TEXT NOT NULL,
+        message_id TEXT NOT NULL REFERENCES messages(id),
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','accepted','rejected')),
+        note TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS dub_jobs (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        source_message_id TEXT,
+        source_language TEXT NOT NULL,
+        target_language TEXT NOT NULL,
+        status TEXT DEFAULT 'uploading' CHECK(status IN ('uploading','processing','ready','failed')),
+        perso_space_seq INTEGER,
+        perso_project_seq INTEGER,
+        perso_media_seq INTEGER,
+        result_message_id TEXT,
+        progress INTEGER DEFAULT 0,
+        error_message TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      // Indexes
+      'CREATE INDEX IF NOT EXISTS idx_voice_profiles_user ON voice_profiles(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_messages_voice ON messages(voice_profile_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_user ON alarms(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_target ON alarms(target_user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_message ON alarms(message_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_active ON alarms(is_active)',
+      'CREATE INDEX IF NOT EXISTS idx_library_user ON message_library(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_library_message ON message_library(message_id)',
+      'CREATE INDEX IF NOT EXISTS idx_friendships_user_a ON friendships(user_a)',
+      'CREATE INDEX IF NOT EXISTS idx_friendships_user_b ON friendships(user_b)',
+      'CREATE INDEX IF NOT EXISTS idx_friendships_status ON friendships(status)',
+      'CREATE INDEX IF NOT EXISTS idx_gifts_sender ON gifts(sender_id)',
+      'CREATE INDEX IF NOT EXISTS idx_gifts_recipient ON gifts(recipient_id)',
+      'CREATE INDEX IF NOT EXISTS idx_gifts_status ON gifts(status)',
+      'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+      'CREATE INDEX IF NOT EXISTS idx_dub_jobs_user ON dub_jobs(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_dub_jobs_status ON dub_jobs(status)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)',
+    ],
+  },
+  {
+    id: 2,
+    name: 'email-password-auth',
+    statements: [
+      // 기존 스키마는 google_id NOT NULL — 이메일/비밀번호 사용자를 위해 nullable 로 재정의.
+      // SQLite 의 ALTER TABLE 한계로 users 테이블 재생성 패턴 사용.
+      `CREATE TABLE users_new (
+        id TEXT PRIMARY KEY,
+        google_id TEXT UNIQUE,
+        email TEXT NOT NULL,
+        password_hash TEXT,
+        name TEXT,
+        picture TEXT,
+        plan TEXT DEFAULT 'free' CHECK(plan IN ('free','plus','family')),
+        daily_tts_count INTEGER DEFAULT 0,
+        daily_tts_reset_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `INSERT INTO users_new (id, google_id, email, name, picture, plan,
+        daily_tts_count, daily_tts_reset_at, created_at, updated_at)
+        SELECT id, google_id, email, name, picture, plan,
+        daily_tts_count, daily_tts_reset_at, created_at, updated_at FROM users`,
+      'DROP TABLE users',
+      'ALTER TABLE users_new RENAME TO users',
+      'CREATE UNIQUE INDEX idx_users_email_unique ON users(email)',
+      'CREATE INDEX idx_users_email ON users(email)',
+      'CREATE UNIQUE INDEX idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL',
+    ],
+  },
+  {
+    id: 3,
+    name: 'voice-uploads',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS voice_uploads (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        object_key TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        duration_ms INTEGER,
+        original_name TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_voice_uploads_user ON voice_uploads(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_voice_uploads_created ON voice_uploads(created_at)',
+    ],
+  },
+  {
+    id: 4,
+    name: 'voice-speakers',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS voice_speakers (
+        id TEXT PRIMARY KEY,
+        upload_id TEXT NOT NULL REFERENCES voice_uploads(id),
+        label TEXT NOT NULL,
+        start_ms INTEGER NOT NULL,
+        end_ms INTEGER NOT NULL,
+        confidence REAL NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_voice_speakers_upload ON voice_speakers(upload_id)',
+    ],
+  },
+  {
+    id: 5,
+    name: 'alarm-mode-voice-speaker',
+    statements: [
+      // mode: 'sound-only' 는 원본 오디오 재생, 'tts' 는 합성 메시지 재생 (기본)
+      `ALTER TABLE alarms ADD COLUMN mode TEXT NOT NULL DEFAULT 'tts'
+        CHECK(mode IN ('sound-only','tts'))`,
+      // 메시지 경유 없이 알람이 특정 음성 프로필·화자 세그먼트에 직접 바인딩될 수 있음
+      'ALTER TABLE alarms ADD COLUMN voice_profile_id TEXT',
+      'ALTER TABLE alarms ADD COLUMN speaker_id TEXT',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_voice_profile ON alarms(voice_profile_id)',
+      'CREATE INDEX IF NOT EXISTS idx_alarms_speaker ON alarms(speaker_id)',
+    ],
+  },
+  {
+    id: 6,
+    name: 'plans-and-subscriptions',
+    statements: [
+      // plan_type: 'free'=무료, 'personal'=개인 1인, 'family'=가족 최대 6인
+      `CREATE TABLE IF NOT EXISTS plans (
+        id TEXT PRIMARY KEY,
+        key TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        plan_type TEXT NOT NULL CHECK(plan_type IN ('free','personal','family')),
+        period_days INTEGER NOT NULL DEFAULT 30,
+        max_members INTEGER NOT NULL DEFAULT 1,
+        price_krw INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      // plan_group_id 는 #31 (가족 플랜 그룹) 에서 채움. 현재는 nullable.
+      `CREATE TABLE IF NOT EXISTS subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        plan_id TEXT NOT NULL REFERENCES plans(id),
+        plan_group_id TEXT,
+        status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','expired','cancelled')),
+        starts_at TEXT NOT NULL DEFAULT (datetime('now')),
+        expires_at TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_key ON plans(key)',
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status)',
+      'CREATE INDEX IF NOT EXISTS idx_subscriptions_expires ON subscriptions(expires_at)',
+      // 기본 플랜 3개 시드 — 고정 UUID 로 재마이그레이션 시 중복 방지
+      `INSERT OR IGNORE INTO plans (id, key, name, plan_type, period_days, max_members, price_krw, is_active)
+        VALUES ('70000000-0000-4000-8000-000000000001', 'free', '무료', 'free', 36500, 1, 0, 1)`,
+      `INSERT OR IGNORE INTO plans (id, key, name, plan_type, period_days, max_members, price_krw, is_active)
+        VALUES ('70000000-0000-4000-8000-000000000002', 'plus_personal', '플러스 개인', 'personal', 30, 1, 4900, 1)`,
+      `INSERT OR IGNORE INTO plans (id, key, name, plan_type, period_days, max_members, price_krw, is_active)
+        VALUES ('70000000-0000-4000-8000-000000000003', 'family', '가족', 'family', 30, 6, 9900, 1)`,
+    ],
+  },
+  {
+    id: 7,
+    name: 'voucher-codes',
+    statements: [
+      // code: plaintext 'VA-XXXX-XXXX-XXXX' (발급자 본인에게만 노출)
+      // code_hash: SHA-256(code) hex — 등록 시 lookup 용 (#29)
+      `CREATE TABLE IF NOT EXISTS voucher_codes (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE,
+        code_hash TEXT NOT NULL UNIQUE,
+        plan_id TEXT NOT NULL REFERENCES plans(id),
+        issuer_user_id TEXT NOT NULL REFERENCES users(id),
+        issuer_subscription_id TEXT REFERENCES subscriptions(id),
+        redeemed_by_user_id TEXT REFERENCES users(id),
+        status TEXT NOT NULL DEFAULT 'issued' CHECK(status IN ('issued','used','expired')),
+        issued_at TEXT NOT NULL DEFAULT (datetime('now')),
+        used_at TEXT,
+        expires_at TEXT NOT NULL
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_voucher_codes_hash ON voucher_codes(code_hash)',
+      'CREATE INDEX IF NOT EXISTS idx_voucher_codes_issuer ON voucher_codes(issuer_user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_voucher_codes_status ON voucher_codes(status)',
+    ],
+  },
+  {
+    id: 8,
+    name: 'plan-groups',
+    statements: [
+      // 가족 플랜 그룹: 소유자 1인 + 멤버 N인 (최대 max_members = 6).
+      // 1 그룹 = 1 가족 구독 (subscriptions.plan_group_id 로 역참조).
+      `CREATE TABLE IF NOT EXISTS plan_groups (
+        id TEXT PRIMARY KEY,
+        owner_user_id TEXT NOT NULL REFERENCES users(id),
+        plan_id TEXT NOT NULL REFERENCES plans(id),
+        max_members INTEGER NOT NULL DEFAULT 6,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      // 그룹 멤버: (plan_group_id, user_id) 조합 유일.
+      // role='owner' 는 그룹당 1명만 허용 (애플리케이션 레벨에서 보장).
+      `CREATE TABLE IF NOT EXISTS plan_group_members (
+        id TEXT PRIMARY KEY,
+        plan_group_id TEXT NOT NULL REFERENCES plan_groups(id),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        role TEXT NOT NULL DEFAULT 'member' CHECK(role IN ('owner','member')),
+        joined_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_plan_groups_owner ON plan_groups(owner_user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_members_group ON plan_group_members(plan_group_id)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_members_user ON plan_group_members(user_id)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_group_members_unique ON plan_group_members(plan_group_id, user_id)',
+    ],
+  },
+  {
+    id: 9,
+    name: 'plan-group-invites',
+    statements: [
+      // 가족 플랜 초대 코드 — 6자리 숫자 문자열, 10분 만료, 일회용.
+      // status 전이: pending → used | revoked | expired.
+      `CREATE TABLE IF NOT EXISTS plan_group_invites (
+        id TEXT PRIMARY KEY,
+        plan_group_id TEXT NOT NULL REFERENCES plan_groups(id),
+        inviter_user_id TEXT NOT NULL REFERENCES users(id),
+        code TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','used','revoked','expired')),
+        created_at TEXT DEFAULT (datetime('now')),
+        expires_at TEXT NOT NULL,
+        used_by_user_id TEXT REFERENCES users(id),
+        used_at TEXT
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_group_invites_code ON plan_group_invites(code)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_invites_group ON plan_group_invites(plan_group_id)',
+      'CREATE INDEX IF NOT EXISTS idx_plan_group_invites_status ON plan_group_invites(status)',
+    ],
+  },
+  {
+    id: 10,
+    name: 'user-allow-family-alarms',
+    statements: [
+      // 가족이 내게 알람을 추가할 수 있는지 여부 — 기본 false(0) 로 opt-in 설계
+      `ALTER TABLE users ADD COLUMN allow_family_alarms INTEGER NOT NULL DEFAULT 0`,
+    ],
+  },
+  {
+    id: 11,
+    name: 'characters',
+    statements: [
+      // 1 사용자 = 1 캐릭터. 알람을 정상 종료하면 XP 획득 → level/stage 성장.
+      // stage: 'seed'(씨앗) → 'sprout'(새싹) → 'tree'(나무) → 'bloom'(꽃)
+      `CREATE TABLE IF NOT EXISTS characters (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL UNIQUE REFERENCES users(id),
+        name TEXT NOT NULL DEFAULT '내 캐릭터',
+        level INTEGER NOT NULL DEFAULT 1,
+        xp INTEGER NOT NULL DEFAULT 0,
+        affection INTEGER NOT NULL DEFAULT 0,
+        stage TEXT NOT NULL DEFAULT 'seed' CHECK(stage IN ('seed','sprout','tree','bloom')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_user ON characters(user_id)',
+    ],
+  },
+  {
+    id: 12,
+    name: 'character-xp-logs',
+    statements: [
+      // 일일 XP 캡 관리: 지급 시점 날짜(YYYY-MM-DD) 와 달라지면 daily_xp 리셋.
+      `ALTER TABLE characters ADD COLUMN daily_xp INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE characters ADD COLUMN daily_xp_reset_at TEXT`,
+      // 지급 이력 + 멱등성 로그. client_nonce 가 있으면 (character_id, client_nonce) 유니크.
+      `CREATE TABLE IF NOT EXISTS character_xp_logs (
+        id TEXT PRIMARY KEY,
+        character_id TEXT NOT NULL REFERENCES characters(id),
+        event TEXT NOT NULL,
+        client_nonce TEXT,
+        granted_xp INTEGER NOT NULL DEFAULT 0,
+        affection_delta INTEGER NOT NULL DEFAULT 0,
+        capped INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_character_xp_logs_character ON character_xp_logs(character_id)',
+      'CREATE INDEX IF NOT EXISTS idx_character_xp_logs_created ON character_xp_logs(created_at)',
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_character_xp_logs_nonce
+        ON character_xp_logs(character_id, client_nonce)
+        WHERE client_nonce IS NOT NULL`,
+    ],
+  },
+];
+
+export async function runMigrations(db: Client): Promise<string[]> {
+  await db.execute(
+    `CREATE TABLE IF NOT EXISTS _migrations (
+      id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      applied_at TEXT DEFAULT (datetime('now'))
+    )`,
+  );
+
+  const applied = await db.execute('SELECT id FROM _migrations ORDER BY id');
+  const appliedIds = new Set(applied.rows.map((r) => Number(r.id)));
+
+  const ran: string[] = [];
+
+  for (const migration of migrations) {
+    if (appliedIds.has(migration.id)) continue;
+
+    for (const stmt of migration.statements) {
+      await db.execute(stmt);
+    }
+
+    await db.execute({
+      sql: 'INSERT INTO _migrations (id, name) VALUES (?, ?)',
+      args: [migration.id, migration.name],
+    });
+
+    ran.push(`${migration.id}_${migration.name}`);
+  }
+
+  return ran;
+}

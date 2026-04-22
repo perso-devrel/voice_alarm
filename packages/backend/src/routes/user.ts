@@ -44,7 +44,10 @@ user.get('/me', async (c) => {
     ]);
 
     return c.json({
-      user: u,
+      user: {
+        ...u,
+        allow_family_alarms: Number(u.allow_family_alarms ?? 0) === 1,
+      },
       stats: {
         voice_profiles: Number(profileCount.rows[0]?.count ?? 0),
         alarms: Number(alarmCount.rows[0]?.count ?? 0),
@@ -55,6 +58,44 @@ user.get('/me', async (c) => {
     console.error(`GET /user/me failed: ${detail}`);
     return c.json({ error: 'Failed to fetch user info', detail }, 500);
   }
+});
+
+function toBoolFlag(raw: unknown): 0 | 1 | null {
+  if (raw === true || raw === 1 || raw === '1' || raw === 'true') return 1;
+  if (raw === false || raw === 0 || raw === '0' || raw === 'false') return 0;
+  return null;
+}
+
+/**
+ * PATCH /user/me { allow_family_alarms }
+ * 본인 프로필 토글 필드 업데이트. 현재는 allow_family_alarms 만 지원.
+ */
+user.patch('/me', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const body = await c.req
+    .json<{ allow_family_alarms?: unknown }>()
+    .catch(() => ({ allow_family_alarms: undefined }));
+
+  if (!('allow_family_alarms' in body) || body.allow_family_alarms === undefined) {
+    return c.json({ error: '변경할 필드가 없습니다' }, 400);
+  }
+  const flag = toBoolFlag(body.allow_family_alarms);
+  if (flag === null) {
+    return c.json({ error: 'allow_family_alarms 는 boolean 이어야 합니다' }, 400);
+  }
+
+  const result = await db.execute({
+    sql: `UPDATE users SET allow_family_alarms = ?, updated_at = datetime('now')
+          WHERE google_id = ?`,
+    args: [flag, userId],
+  });
+  if (result.rowsAffected === 0) {
+    return c.json({ error: '사용자를 찾을 수 없습니다' }, 404);
+  }
+
+  return c.json({ success: true, allow_family_alarms: flag === 1 });
 });
 
 user.patch('/plan', async (c) => {

@@ -2,8 +2,7 @@ import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { PersoClient } from '../lib/perso';
 import { getDB } from '../lib/db';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_RE } from '../lib/validate';
 
 const dub = new Hono<AppEnv>();
 
@@ -88,6 +87,19 @@ dub.post('/', async (c) => {
       500,
     );
   }
+});
+
+dub.get('/jobs', async (c) => {
+  const userId = c.get('userId');
+  const db = getDB(c.env);
+
+  const result = await db.execute({
+    sql: `SELECT id, source_message_id, source_language, target_language, status, progress, result_message_id, error_message, created_at
+          FROM dub_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
+    args: [userId],
+  });
+
+  return c.json({ jobs: result.rows });
 });
 
 dub.get('/:id', async (c) => {
@@ -234,19 +246,6 @@ dub.get('/:id', async (c) => {
       500,
     );
   }
-});
-
-dub.get('/jobs', async (c) => {
-  const userId = c.get('userId');
-  const db = getDB(c.env);
-
-  const result = await db.execute({
-    sql: `SELECT id, source_message_id, source_language, target_language, status, progress, result_message_id, error_message, created_at
-          FROM dub_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
-    args: [userId],
-  });
-
-  return c.json({ jobs: result.rows });
 });
 
 export default dub;

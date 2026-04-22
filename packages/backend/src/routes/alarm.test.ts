@@ -31,6 +31,80 @@ describe('alarm routes', () => {
       const body = await res.json();
       expect(body.alarms).toHaveLength(1);
     });
+
+    it('normalizes sender/family alarm fields for family category rows', async () => {
+      mockDB.execute.mockResolvedValueOnce({ rows: [{ total: 1 }] }).mockResolvedValueOnce({
+        rows: [
+          {
+            id: U1,
+            user_id: 'google-sender-1',
+            target_user_id: 'google-recipient-1',
+            time: '07:00',
+            message_text: 'hi',
+            category: 'family',
+            creator_email: 'mom@example.com',
+            creator_name: '엄마',
+          },
+        ],
+      });
+      const res = await app.request('/alarm', { method: 'GET' });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.alarms[0]).toMatchObject({
+        sender_user_id: 'google-sender-1',
+        sender_name: '엄마',
+        sender_email: 'mom@example.com',
+        is_family_alarm: true,
+        is_received_family_alarm: true,
+      });
+    });
+
+    it('defaults sender fields for self-created, non-family alarms', async () => {
+      mockDB.execute.mockResolvedValueOnce({ rows: [{ total: 1 }] }).mockResolvedValueOnce({
+        rows: [
+          {
+            id: U2,
+            user_id: 'google-self',
+            target_user_id: null,
+            time: '08:00',
+            message_text: 'bye',
+            category: 'custom',
+          },
+        ],
+      });
+      const res = await app.request('/alarm', { method: 'GET' });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.alarms[0]).toMatchObject({
+        sender_user_id: 'google-self',
+        sender_name: null,
+        sender_email: null,
+        is_family_alarm: false,
+        is_received_family_alarm: false,
+      });
+    });
+
+    it('classifies family-voice category as family alarm', async () => {
+      mockDB.execute.mockResolvedValueOnce({ rows: [{ total: 1 }] }).mockResolvedValueOnce({
+        rows: [
+          {
+            id: U1,
+            user_id: 'google-sender-2',
+            time: '09:00',
+            message_text: 'voice hi',
+            category: 'family-voice',
+            creator_email: null,
+            creator_name: '아빠',
+          },
+        ],
+      });
+      const res = await app.request('/alarm', { method: 'GET' });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.alarms[0].is_family_alarm).toBe(true);
+      expect(body.alarms[0].sender_name).toBe('아빠');
+      expect(body.alarms[0].sender_email).toBe(null);
+    });
   });
 
   describe('POST /alarm — create alarm', () => {

@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { Alarm } from '../types';
+import { parseRepeatDays } from '../lib/alarmForm';
 
 const ALARM_CATEGORY = 'alarm';
 const SNOOZE_ACTION = 'snooze';
@@ -54,7 +55,7 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
 
   for (const alarm of activeAlarms) {
     const [hour, minute] = alarm.time.split(':').map(Number);
-    const repeatDays: number[] = JSON.parse(alarm.repeat_days || '[]');
+    const repeatDays = parseRepeatDays(alarm.repeat_days);
     const title = alarm.voice_name ? `🗣️ ${alarm.voice_name}` : '⏰ VoiceAlarm';
     const body = alarm.message_text || 'Alarm';
     const notificationData = {

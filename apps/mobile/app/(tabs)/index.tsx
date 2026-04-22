@@ -17,6 +17,7 @@ import { getAlarms, getMessages, getStats } from '../../src/services/api';
 import type { Stats, WeekTrend } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
 import LoginButtons from '../../src/components/LoginButtons';
+import EmailPasswordForm from '../../src/components/EmailPasswordForm';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import {
@@ -193,9 +194,16 @@ export default function HomeScreen() {
               {stats.trends && <TrendBadge trend={stats.trends.friends} />}
             </View>
             {stats.gifts.receivedPending > 0 && (
-              <TouchableOpacity style={styles.statItem} onPress={() => router.push('/gift/received')}>
-                <Text style={[styles.statCount, { color: Colors.light.accent }]}>{stats.gifts.receivedPending}</Text>
-                <Text style={[styles.statLabel, { color: Colors.light.accent }]}>{t('home.pendingGifts', '대기 선물')}</Text>
+              <TouchableOpacity
+                style={styles.statItem}
+                onPress={() => router.push('/gift/received')}
+              >
+                <Text style={[styles.statCount, { color: Colors.light.accent }]}>
+                  {stats.gifts.receivedPending}
+                </Text>
+                <Text style={[styles.statLabel, { color: Colors.light.accent }]}>
+                  {t('home.pendingGifts', '대기 선물')}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -307,6 +315,12 @@ export default function HomeScreen() {
             <Text style={styles.loginEmoji}>🔐</Text>
             <Text style={styles.loginTitle}>{t('home.loginTitle')}</Text>
             <Text style={styles.loginDesc}>{t('home.loginDesc')}</Text>
+            <EmailPasswordForm />
+            <View style={styles.loginDivider}>
+              <View style={styles.loginDividerLine} />
+              <Text style={styles.loginDividerText}>또는</Text>
+              <View style={styles.loginDividerLine} />
+            </View>
             <LoginButtons />
           </View>
         )}
@@ -492,6 +506,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.lg,
+  },
+  loginDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginVertical: Spacing.md,
+    width: '100%',
+  },
+  loginDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.light.border,
+  },
+  loginDividerText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textTertiary,
   },
   statsErrorCard: {
     backgroundColor: Colors.light.surface,
