@@ -1,7 +1,9 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import LoginPage from './components/LoginPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import OnboardingOverlay from './components/OnboardingOverlay';
 import { useDarkMode } from './hooks/useDarkMode';
+import { useAuth } from './hooks/useAuth';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
@@ -10,14 +12,27 @@ const AlarmsPage = lazy(() => import('./pages/AlarmsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const FriendsPage = lazy(() => import('./pages/FriendsPage'));
 const GiftsPage = lazy(() => import('./pages/GiftsPage'));
+const FamilyAlarmsPage = lazy(() => import('./pages/FamilyAlarmsPage'));
+const CharacterPage = lazy(() => import('./pages/CharacterPage'));
 
-type Page = 'dashboard' | 'voices' | 'messages' | 'alarms' | 'friends' | 'gifts' | 'settings';
+type Page =
+  | 'dashboard'
+  | 'voices'
+  | 'messages'
+  | 'alarms'
+  | 'family'
+  | 'character'
+  | 'friends'
+  | 'gifts'
+  | 'settings';
 
 const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
   { key: 'dashboard', label: '대시보드', emoji: '📊' },
   { key: 'voices', label: '음성 관리', emoji: '🎙️' },
   { key: 'messages', label: '메시지', emoji: '💌' },
   { key: 'alarms', label: '알람 설정', emoji: '⏰' },
+  { key: 'family', label: '가족 알람', emoji: '🏠' },
+  { key: 'character', label: '내 캐릭터', emoji: '🌱' },
   { key: 'friends', label: '친구', emoji: '👥' },
   { key: 'gifts', label: '선물', emoji: '🎁' },
   { key: 'settings', label: '설정', emoji: '⚙️' },
@@ -25,27 +40,28 @@ const NAV_ITEMS: { key: Page; label: string; emoji: string }[] = [
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const darkMode = useDarkMode();
+  const { isAuthenticated, isLoading, logout } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    setIsLoggedIn(!!token);
-  }, []);
+  if (isLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]"
+        role="status"
+        aria-label="인증 확인 중"
+      >
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]" />
+      </div>
+    );
+  }
 
-  const handleLogin = (idToken: string) => {
-    localStorage.setItem('auth_token', idToken);
-    setIsLoggedIn(true);
-  };
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    setIsLoggedIn(false);
+    logout();
   };
-
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
 
   const renderPage = () => {
     switch (page) {
@@ -57,6 +73,10 @@ export default function App() {
         return <MessagesPage />;
       case 'alarms':
         return <AlarmsPage />;
+      case 'family':
+        return <FamilyAlarmsPage />;
+      case 'character':
+        return <CharacterPage />;
       case 'friends':
         return <FriendsPage />;
       case 'gifts':
@@ -70,6 +90,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[var(--color-bg)]">
+      <OnboardingOverlay />
       {/* Sidebar — desktop only */}
       <nav
         aria-label="메인 메뉴"

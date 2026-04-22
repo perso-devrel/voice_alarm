@@ -22,20 +22,31 @@ export interface Message {
   voice_name?: string;
 }
 
+export type AlarmMode = 'tts' | 'sound-only';
+
 export interface Alarm {
   id: string;
   user_id: string;
   target_user_id: string | null;
   message_id: string;
   time: string;
-  repeat_days: string;
+  // 백엔드 정규화로 배열이 오지만 과거 응답 호환을 위해 string 도 허용
+  repeat_days: number[] | string;
   is_active: boolean;
   snooze_minutes: number;
   created_at: string;
   updated_at: string;
+  mode?: AlarmMode;
+  voice_profile_id?: string | null;
+  speaker_id?: string | null;
   message_text?: string;
   voice_name?: string;
   category?: string;
+  sender_user_id?: string | null;
+  sender_name?: string | null;
+  sender_email?: string | null;
+  is_family_alarm?: boolean;
+  is_received_family_alarm?: boolean;
 }
 
 export interface Friend {

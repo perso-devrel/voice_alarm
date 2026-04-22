@@ -12,12 +12,16 @@
   "type": "module",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260409.1",
+    "@types/bcryptjs": "^2.4.6",
     "typescript": "^5.9.3",
     "vitest": "^4.1.4",
     "wrangler": "^4.81.0"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
+    "@voice-alarm/shared": "*",
+    "@voice-alarm/voice": "*",
+    "bcryptjs": "^3.0.3",
     "hono": "^4.12.12"
   }
 }

@@ -56,6 +56,11 @@ export async function deleteVoiceProfile(id: string) {
   await api.delete(`/voice/${id}`);
 }
 
+export async function updateVoiceProfile(id: string, name: string) {
+  const { data } = await api.patch(`/voice/${id}`, { name });
+  return data.profile as { id: string; name: string };
+}
+
 export async function generateTTS(params: {
   voice_profile_id: string;
   text: string;
@@ -93,6 +98,10 @@ export async function createAlarm(params: {
   message_id: string;
   time: string;
   repeat_days?: number[];
+  mode?: 'tts' | 'sound-only';
+  voice_profile_id?: string;
+  speaker_id?: string;
+  snooze_minutes?: number;
 }) {
   const { data } = await api.post('/alarm', params);
   return data.alarm;
@@ -104,6 +113,28 @@ export async function updateAlarm(id: string, params: Record<string, unknown>) {
 
 export async function deleteAlarm(id: string) {
   await api.delete(`/alarm/${id}`);
+}
+
+// ===== Billing / Voucher API =====
+
+export interface VoucherItem {
+  id: string;
+  code: string;
+  plan_id: string;
+  plan_key: string;
+  plan_name: string;
+  plan_type: string;
+  subscription_id: string | null;
+  redeemed_by_user_id: string | null;
+  status: 'issued' | 'used' | 'expired';
+  issued_at: string;
+  used_at: string | null;
+  expires_at: string;
+}
+
+export async function getVouchers(): Promise<VoucherItem[]> {
+  const { data } = await api.get('/billing/vouchers');
+  return data.vouchers as VoucherItem[];
 }
 
 // ===== Friend API =====
@@ -281,6 +312,185 @@ export async function getDubStatus(dubId: string) {
 export async function getDubJobs() {
   const { data } = await api.get('/dub/jobs');
   return data.jobs as DubJob[];
+}
+
+// ===== Voice upload & speaker picker =====
+
+export interface VoiceUploadMeta {
+  id: string;
+  objectKey: string;
+  mimeType: string;
+  sizeBytes: number;
+  durationMs: number | null;
+  originalName: string | null;
+  createdAt: string;
+}
+
+export interface Speaker {
+  id: string;
+  upload_id: string;
+  label: string;
+  start_ms: number;
+  end_ms: number;
+  confidence: number;
+  created_at?: string;
+}
+
+export async function uploadVoiceAudio(file: File, durationMs?: number): Promise<VoiceUploadMeta> {
+  const form = new FormData();
+  form.append('audio', file);
+  if (durationMs !== undefined) form.append('durationMs', String(durationMs));
+  if (file.name) form.append('originalName', file.name);
+  const { data } = await api.post('/voice/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.upload as VoiceUploadMeta;
+}
+
+export async function separateUpload(uploadId: string): Promise<Speaker[]> {
+  const { data } = await api.post(`/voice/uploads/${uploadId}/separate`);
+  return (data.speakers as Array<Record<string, unknown>>).map(normalizeSpeaker);
+}
+
+export async function listSpeakers(uploadId: string): Promise<Speaker[]> {
+  const { data } = await api.get(`/voice/uploads/${uploadId}/speakers`);
+  return (data.speakers as Array<Record<string, unknown>>).map(normalizeSpeaker);
+}
+
+export async function renameSpeaker(
+  uploadId: string,
+  speakerId: string,
+  label: string,
+): Promise<{ id: string; label: string }> {
+  const { data } = await api.patch(`/voice/uploads/${uploadId}/speakers/${speakerId}`, { label });
+  return data.speaker as { id: string; label: string };
+}
+
+function normalizeSpeaker(raw: Record<string, unknown>): Speaker {
+  return {
+    id: String(raw.id ?? raw['speaker_id'] ?? ''),
+    upload_id: String(raw.upload_id ?? raw.uploadId ?? ''),
+    label: String(raw.label ?? ''),
+    start_ms: Number(raw.start_ms ?? raw.startMs ?? 0),
+    end_ms: Number(raw.end_ms ?? raw.endMs ?? 0),
+    confidence: Number(raw.confidence ?? 0),
+    created_at: raw.created_at as string | undefined,
+  };
+}
+
+export interface FamilyGroupMember {
+  id: string;
+  user_id: string;
+  role: 'owner' | 'member';
+  joined_at: string;
+  email: string | null;
+  name: string | null;
+  picture: string | null;
+  allow_family_alarms: boolean;
+}
+
+export interface FamilyGroupCurrent {
+  group: {
+    id: string;
+    owner_user_id: string;
+    plan_id: string;
+    max_members: number;
+    created_at: string;
+  } | null;
+  role: 'owner' | 'member' | null;
+  members: FamilyGroupMember[];
+}
+
+export async function getFamilyGroupCurrent(): Promise<FamilyGroupCurrent> {
+  const { data } = await api.get<FamilyGroupCurrent>('/family/groups/current');
+  return data;
+}
+
+export interface FamilyAlarmCreatePayload {
+  recipient_user_id: string;
+  wake_at: string;
+  message_text: string;
+  repeat_days?: number[];
+  voice_profile_id?: string;
+}
+
+export interface FamilyAlarmCreateResponse {
+  alarm: {
+    id: string;
+    sender_user_id: string;
+    recipient_user_id: string;
+    wake_at: string;
+    repeat_days: number[];
+    mode: 'tts';
+    voice_profile_id: string;
+  };
+  message: { id: string; text: string; category: string };
+}
+
+export async function createFamilyAlarmText(
+  payload: FamilyAlarmCreatePayload,
+): Promise<FamilyAlarmCreateResponse> {
+  const { data } = await api.post<FamilyAlarmCreateResponse>('/family/alarms', payload);
+  return data;
+}
+
+export type CharacterStage = 'seed' | 'sprout' | 'tree' | 'bloom';
+
+export type XpEvent =
+  | 'alarm_completed'
+  | 'alarm_snoozed'
+  | 'alarm_dismissed'
+  | 'family_alarm_received'
+  | 'friend_invited';
+
+export interface CharacterPayload {
+  id: string;
+  user_id: string;
+  name: string;
+  level: number;
+  xp: number;
+  affection: number;
+  stage: CharacterStage;
+  daily_xp: number;
+  daily_xp_reset_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CharacterProgress {
+  xp_into_level: number;
+  xp_to_next_level: number;
+  level_span: number;
+  progress_ratio: number;
+}
+
+export interface CharacterResponse {
+  character: CharacterPayload;
+  progress: CharacterProgress;
+}
+
+export interface CharacterGrantResponse extends CharacterResponse {
+  grant: {
+    event: XpEvent;
+    granted_xp: number;
+    affection: number;
+    capped: boolean;
+    remaining_cap: number;
+    duplicated: boolean;
+  };
+}
+
+export async function getCharacterMe(): Promise<CharacterResponse> {
+  const { data } = await api.get<CharacterResponse>('/characters/me');
+  return data;
+}
+
+export async function grantCharacterXp(payload: {
+  event: XpEvent;
+  client_nonce?: string;
+}): Promise<CharacterGrantResponse> {
+  const { data } = await api.post<CharacterGrantResponse>('/characters/xp', payload);
+  return data;
 }
 
 export default api;

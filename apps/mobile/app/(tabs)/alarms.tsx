@@ -18,7 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { getAlarms, updateAlarm, deleteAlarm } from '../../src/services/api';
+import { getAlarms, updateAlarm, deleteAlarm, getMessages, getVoiceProfiles } from '../../src/services/api';
+import { playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import { ErrorView } from '../../src/components/QueryStateView';
@@ -27,13 +28,21 @@ import { cacheAlarms, getCachedAlarms } from '../../src/services/offlineCache';
 import { syncAlarmNotifications } from '../../src/services/notifications';
 import type { Alarm } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
+import { parseRepeatDays } from '../../src/lib/alarmForm';
+import {
+  buildAlarmPreviewAction,
+  getAlarmModeBadge,
+  resolveAlarmPlayback,
+} from '../../src/lib/alarmPlayback';
+import { buildFamilyAlarmLabel } from '../../src/lib/familyAlarmLabel';
+import type { Message, VoiceProfile } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 
 function getNextFireMs(alarm: Alarm): number | null {
   if (!alarm.is_active) return null;
   const [h, m] = alarm.time.split(':').map(Number);
-  const days: number[] = JSON.parse(alarm.repeat_days || '[]');
+  const days = parseRepeatDays(alarm.repeat_days);
   const now = new Date();
   const todayMinutes = now.getHours() * 60 + now.getMinutes();
   const alarmMinutes = h * 60 + m;
@@ -98,6 +107,42 @@ export default function AlarmsScreen() {
     queryFn: getAlarms,
     enabled: isAuthenticated && isConnected,
   });
+
+  const { data: messages } = useQuery({
+    queryKey: ['messages'],
+    queryFn: () => getMessages(),
+    enabled: isAuthenticated && isConnected,
+  });
+
+  const { data: voices } = useQuery({
+    queryKey: ['voiceProfiles'],
+    queryFn: getVoiceProfiles,
+    enabled: isAuthenticated && isConnected,
+  });
+
+  const handlePreview = useCallback(
+    async (alarm: Alarm) => {
+      const plan = resolveAlarmPlayback(
+        alarm,
+        (messages ?? []) as Message[],
+        (voices ?? []) as VoiceProfile[],
+      );
+      const action = buildAlarmPreviewAction(plan);
+      if (action.type === 'navigate') {
+        router.push({ pathname: action.path, params: action.params });
+      } else if (action.type === 'preview-audio') {
+        toast.show(action.caption || '미리듣기 재생');
+        try {
+          await playAudio(action.uri);
+        } catch {
+          toast.show('재생에 실패했어요. mock 파일이 아직 번들되지 않았을 수 있어요.');
+        }
+      } else {
+        toast.show(action.message);
+      }
+    },
+    [messages, voices, router, toast],
+  );
 
   const computeCountdown = useCallback(() => {
     const all = alarms ?? cachedAlarms;
@@ -208,7 +253,7 @@ export default function AlarmsScreen() {
   };
 
   const renderAlarm = ({ item }: { item: Alarm }) => {
-    const repeatDays = JSON.parse(item.repeat_days || '[]');
+    const repeatDays = parseRepeatDays(item.repeat_days);
     void tick;
     const nextFireMs = getNextFireMs(item);
     const perAlarmCountdown = nextFireMs !== null ? formatCountdown(nextFireMs) : null;
@@ -238,20 +283,47 @@ export default function AlarmsScreen() {
             </View>
             <View style={styles.alarmMeta}>
               <Text style={[styles.alarmVoice, !item.is_active && styles.textInactive]}>🗣️ {item.voice_name}</Text>
+              <View style={styles.modeBadge}>
+                <Text style={styles.modeBadgeText}>
+                  {getAlarmModeBadge(item.mode).emoji} {getAlarmModeBadge(item.mode).label}
+                </Text>
+              </View>
+              {(() => {
+                const familyLabel = buildFamilyAlarmLabel(item);
+                return familyLabel.visible ? (
+                  <View style={styles.familyBadge}>
+                    <Text style={styles.familyBadgeText} accessibilityLabel={familyLabel.text}>
+                      {familyLabel.text}
+                    </Text>
+                  </View>
+                ) : null;
+              })()}
               <Text style={[styles.alarmMessage, !item.is_active && styles.textInactive]} numberOfLines={1}>
                 "{item.message_text}"
               </Text>
             </View>
           </View>
-          <Switch
-            value={!!item.is_active}
-            onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
-            trackColor={{
-              false: Colors.light.border,
-              true: Colors.light.primaryLight,
-            }}
-            thumbColor={item.is_active ? Colors.light.primary : '#f4f3f4'}
-          />
+          <View style={styles.alarmActions}>
+            <TouchableOpacity
+              style={styles.previewButton}
+              accessibilityLabel="미리듣기"
+              onPress={(e) => {
+                e.stopPropagation();
+                handlePreview(item);
+              }}
+            >
+              <Text style={styles.previewIcon}>🔈</Text>
+            </TouchableOpacity>
+            <Switch
+              value={!!item.is_active}
+              onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
+              trackColor={{
+                false: Colors.light.border,
+                true: Colors.light.primaryLight,
+              }}
+              thumbColor={item.is_active ? Colors.light.primary : '#f4f3f4'}
+            />
+          </View>
         </TouchableOpacity>
       </Swipeable>
     );
@@ -456,6 +528,48 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
     marginTop: 2,
+  },
+  modeBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.surfaceVariant,
+  },
+  modeBadgeText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  familyBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.light.primaryLight,
+  },
+  familyBadgeText: {
+    fontSize: FontSize.xs,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  alarmActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  previewButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.surfaceVariant,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewIcon: {
+    fontSize: 18,
   },
   emptyState: {
     flex: 1,

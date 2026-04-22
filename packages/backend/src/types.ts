@@ -4,6 +4,8 @@ export interface Env {
   TURSO_DATABASE_URL: string;
   TURSO_AUTH_TOKEN: string;
   GOOGLE_CLIENT_ID: string;
+  JWT_SECRET: string;
+  PASSWORD_PEPPER: string;
   ENVIRONMENT: string;
 }
 
@@ -54,8 +56,11 @@ export interface Alarm {
 
 export interface UserProfile {
   id: string;
-  google_id: string;
+  google_id: string | null;
   email: string;
+  password_hash: string | null;
+  name: string | null;
+  picture: string | null;
   plan: 'free' | 'plus' | 'family';
   daily_tts_count: number;
   daily_tts_reset_at: string;

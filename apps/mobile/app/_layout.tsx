@@ -15,6 +15,8 @@ import {
   SNOOZE_ACTION,
 } from '../src/services/notifications';
 import { OfflineBanner } from '../src/components/OfflineBanner';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { AuthProvider } from '../src/hooks/useAuth';
 import '../src/i18n';
 
 const queryClient = new QueryClient({
@@ -82,65 +84,85 @@ export default function RootLayout() {
   }, []);
 
   return (
+    <ErrorBoundary>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <StatusBar style="dark" />
-        <OfflineBanner />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: '#FFF5F3' },
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-          <Stack.Screen
-            name="voice/[id]"
-            options={{ headerShown: true, title: t('screen.voiceDetail') }}
-          />
-          <Stack.Screen
-            name="voice/record"
-            options={{ headerShown: true, title: t('screen.voiceRecord'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="voice/upload"
-            options={{ headerShown: true, title: t('screen.fileUpload'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="voice/diarize"
-            options={{ headerShown: true, title: t('screen.diarize'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="alarm/create"
-            options={{ headerShown: true, title: t('screen.alarmSetting'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="alarm/edit"
-            options={{ headerShown: true, title: t('alarmEdit.title'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="message/[id]"
-            options={{ headerShown: true, title: t('messageDetail.title'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="message/create"
-            options={{ headerShown: true, title: t('screen.writeMessage'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="gift/received"
-            options={{ headerShown: true, title: t('screen.receivedGifts'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="dub/translate"
-            options={{ headerShown: true, title: t('dub.title'), presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="player"
-            options={{ presentation: 'transparentModal', animation: 'fade' }}
-          />
-        </Stack>
+        <AuthProvider>
+          <StatusBar style="dark" />
+          <OfflineBanner />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: '#FFF5F3' },
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+            <Stack.Screen
+              name="voice/[id]"
+              options={{ headerShown: true, title: t('screen.voiceDetail') }}
+            />
+            <Stack.Screen
+              name="voice/record"
+              options={{ headerShown: true, title: t('screen.voiceRecord'), presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="voice/upload"
+              options={{ headerShown: true, title: t('screen.fileUpload'), presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="voice/diarize"
+              options={{ headerShown: true, title: t('screen.diarize'), presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="alarm/create"
+              options={{
+                headerShown: true,
+                title: t('screen.alarmSetting'),
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="alarm/edit"
+              options={{ headerShown: true, title: t('alarmEdit.title'), presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="message/[id]"
+              options={{
+                headerShown: true,
+                title: t('messageDetail.title'),
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="message/create"
+              options={{
+                headerShown: true,
+                title: t('screen.writeMessage'),
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="gift/received"
+              options={{
+                headerShown: true,
+                title: t('screen.receivedGifts'),
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="dub/translate"
+              options={{ headerShown: true, title: t('dub.title'), presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="player"
+              options={{ presentation: 'transparentModal', animation: 'fade' }}
+            />
+          </Stack>
+        </AuthProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

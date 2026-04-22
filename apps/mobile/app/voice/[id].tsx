@@ -1,16 +1,28 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import {
+  Alert,
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
-import { getVoiceProfiles, getMessages, getAlarms } from '../../src/services/api';
+import { getVoiceProfiles, getMessages, getAlarms, updateVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { sanitizeVoiceName } from '../../src/lib/voiceName';
 import type { Message, Alarm, VoiceProfile } from '../../src/types';
 
 export default function VoiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
 
@@ -19,6 +31,40 @@ export default function VoiceDetailScreen() {
     queryFn: getVoiceProfiles,
     enabled: isAuthenticated,
   });
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [draftName, setDraftName] = useState('');
+
+  const renameMutation = useMutation({
+    mutationFn: (name: string) => updateVoiceProfile(id!, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voiceProfiles'] });
+      setIsEditingName(false);
+      setDraftName('');
+    },
+    onError: (err) => {
+      Alert.alert('이름 변경 실패', err instanceof Error ? err.message : '네트워크 오류');
+    },
+  });
+
+  const beginEdit = (currentName: string) => {
+    setDraftName(currentName);
+    setIsEditingName(true);
+  };
+
+  const commitEdit = (currentName: string) => {
+    const sanitized = sanitizeVoiceName(draftName);
+    if (!sanitized.ok) {
+      Alert.alert('입력 오류', sanitized.error ?? '이름이 올바르지 않습니다.');
+      return;
+    }
+    if (sanitized.value === currentName) {
+      setIsEditingName(false);
+      setDraftName('');
+      return;
+    }
+    renameMutation.mutate(sanitized.value);
+  };
 
   const { data: messages, isLoading: loadingMessages } = useQuery({
     queryKey: ['messages'],
@@ -45,7 +91,50 @@ export default function VoiceDetailScreen() {
           <View style={styles.avatarLarge}>
             <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
           </View>
-          <Text style={styles.profileName}>{profile.name}</Text>
+          {isEditingName ? (
+            <View style={styles.renameRow}>
+              <TextInput
+                autoFocus
+                value={draftName}
+                onChangeText={setDraftName}
+                onSubmitEditing={() => commitEdit(profile.name)}
+                maxLength={60}
+                style={styles.renameInput}
+                accessibilityLabel="음성 이름 입력"
+              />
+              <TouchableOpacity
+                accessibilityLabel="이름 변경 저장"
+                onPress={() => commitEdit(profile.name)}
+                disabled={renameMutation.isPending}
+                style={styles.renameSaveBtn}
+              >
+                <Text style={styles.renameSaveText}>
+                  {renameMutation.isPending ? '저장…' : '저장'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityLabel="이름 변경 취소"
+                onPress={() => {
+                  setIsEditingName(false);
+                  setDraftName('');
+                }}
+                style={styles.renameCancelBtn}
+              >
+                <Text style={styles.renameCancelText}>취소</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.profileName}>{profile.name}</Text>
+              <TouchableOpacity
+                accessibilityLabel="음성 이름 변경"
+                onPress={() => beginEdit(profile.name)}
+                style={styles.renameBtn}
+              >
+                <Text style={styles.renameText}>이름 변경</Text>
+              </TouchableOpacity>
+            </>
+          )}
           <Text style={styles.profileDate}>
             {new Date(profile.created_at).toLocaleDateString('ko-KR')}
           </Text>
@@ -164,6 +253,52 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.light.textTertiary,
     marginTop: Spacing.xs,
+  },
+  renameBtn: {
+    marginTop: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+  },
+  renameText: {
+    fontSize: FontSize.sm,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  renameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  renameInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+  },
+  renameSaveBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    backgroundColor: Colors.light.primary,
+    borderRadius: BorderRadius.sm,
+  },
+  renameSaveText: {
+    color: '#fff',
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+  },
+  renameCancelBtn: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+  },
+  renameCancelText: {
+    color: Colors.light.textSecondary,
+    fontSize: FontSize.sm,
   },
   statsRow: {
     flexDirection: 'row',
