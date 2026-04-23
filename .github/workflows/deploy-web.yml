@@ -2,7 +2,7 @@ name: Deploy Web Dashboard (Cloudflare Pages)
 
 on:
   push:
-    branches: [stag, main]
+    branches: [main]
     paths:
       - 'packages/web/**'
       - '.github/workflows/deploy-web.yml'

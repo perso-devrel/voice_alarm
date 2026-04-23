@@ -13,9 +13,8 @@
 - [ ] test: 테스트
 
 ## Branch
-- [ ] `feature/*` → `develop`
-- [ ] `develop` → `stag` (리뷰 1명 필요)
-- [ ] `stag` → `main` (approve 2명 필요: @Jin1370 @alpaka206)
+- [ ] `feature/*` / `fix/*` → `develop` (CI 통과 시 셀프 머지 가능)
+- [ ] `develop` → `main` (1명 approve 필요: @Jin1370 @alpaka206)
 
 ## Checklist
 - [ ] `npm run lint` 통과
