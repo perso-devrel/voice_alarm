@@ -11,7 +11,7 @@ JOURNAL_DIR="$RALPH_DIR/JOURNAL"
 MAX_ITERATIONS="${MAX_ITERATIONS:-300}"
 STALL_TIMEOUT="${STALL_TIMEOUT:-1800}"     # 30분 (음성/TTS 통신 시간 고려)
 COOLDOWN="${COOLDOWN:-10}"
-BRANCH="${RALPH_BRANCH:-develop}"          # develop 브랜치에서 작업 (자동 배포 트리거)
+BRANCH="${RALPH_BRANCH:-develop_loop}"     # develop_loop 브랜치에서 작업 (리뷰 후 develop으로 PR 머지)
 PUSH_ENABLED="${RALPH_PUSH:-1}"            # 1=push 후 자동배포, 0=로컬만
 
 mkdir -p "$LOG_DIR" "$JOURNAL_DIR"

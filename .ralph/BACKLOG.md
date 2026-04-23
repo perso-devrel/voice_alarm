@@ -1,326 +1,172 @@
 # BACKLOG
 
-## P0 (지금 바로) - 선물하기 / 친구 / 상호 알람 (사용자 핵심 목표)
-
-### 백엔드: Friends 시스템
-- [x] DB 스키마 추가: `friendships` 테이블 (`id`, `user_a`, `user_b`, `status[pending|accepted|blocked]`, `created_at`)
-- [x] `lib/db.ts`의 initDB에 friendships 테이블 생성 추가
-- [x] `routes/friend.ts` 신규: POST /api/friend (이메일로 요청), GET /api/friend/list, GET /api/friend/pending, PATCH /api/friend/:id/accept, DELETE /api/friend/:id
-- [x] index.ts 에 friend 라우트 등록
-
-### 백엔드: Gift 시스템
-- [x] DB 스키마 추가: `gifts` 테이블 (`id`, `sender_id`, `recipient_id`, `message_id`, `status[pending|accepted|rejected]`, `note`, `created_at`)
-- [x] `routes/gift.ts` 신규: POST /api/gift (보내기), GET /api/gift/received, GET /api/gift/sent, PATCH /api/gift/:id/accept, PATCH /api/gift/:id/reject
-- [x] 친구 관계가 아니면 선물 불가 (validation)
-
-### 백엔드: 상호 알람 (Cross-User Alarm)
-- [x] `alarms` 테이블에 `target_user_id` 컬럼 추가 (NULL이면 본인 알람)
-- [x] POST /api/alarm 에 target_user_id 파라미터 지원
-- [x] GET /api/alarm 에서 본인 알람 + 타인이 본인에게 만든 알람 둘 다 반환
-- [x] 친구 관계 검증 후에만 타인 알람 생성 허용
-
-### 모바일 앱 UI
-- [x] 친구 화면 신규: app/(tabs)/friends.tsx (목록, 추가, 요청 수락)
-- [x] 메시지 작성 후 "선물하기" 버튼 추가 (message/create.tsx)
-- [x] 받은 선물 화면 신규: app/gift/received.tsx
-- [x] 친구의 알람 설정: alarm/create.tsx 에 "누구에게?" 선택 추가
-- [x] 홈 화면에 "받은 선물", "친구 관리" 바로가기 추가
-
-### 웹 대시보드 UI
-- [x] FriendsPage 신규
-- [x] GiftsPage 신규 (받은/보낸)
-- [x] MessagesPage 에 "선물하기" 액션 추가
-
-## P1 (그 다음) - 테스트 / 안정화
-
-- [ ] test/ 폴더의 음성 파일로 ElevenLabs 음성 클론 통합 테스트 작성
-- [ ] test/ 폴더의 음성 파일로 ElevenLabs TTS 생성 테스트
-- [ ] Perso API 실제 엔드포인트 확인 후 perso.ts URL 수정 (현재 404 이슈)
-- [x] 백엔드: 모든 라우트의 입력 validation 강화 (인라인 검증)
-- [x] 모바일: 빈 상태 / 에러 / 로딩 UI 일관성 점검 (ErrorView 컴포넌트 + 전 탭 적용)
-- [x] 모바일 앱 ↔ 백엔드 E2E 시나리오 1개 (로그인 → 음성 등록 → 메시지 → 알람) 수동 가이드 작성
-
-## P2 - 배포 / 운영
-
-- [x] 웹 대시보드 Cloudflare Pages 배포 검증 (자동배포 워크플로우 동작 확인)
-- [x] 백엔드 자동배포 워크플로우 동작 확인
-- [x] README 갱신 (현재 배포 상태, 환경변수, 실행 방법)
-- [x] CHANGELOG.md 신규
-- [x] ARCHITECTURE.md 신규 (다이어그램 + 데이터 흐름)
-
-## P3 - 품질 / 성능 / 정리
-
-- [x] TypeScript strict 모드 위반 (any) 점검 — 백엔드 완료 (0 any), 모바일/웹은 별도
-- [x] 모바일 앱 `any` 타입 제거 (apps/mobile)
-- [x] 웹 대시보드 `any` 타입 제거 (packages/web)
-- [x] 불필요한 의존성 점검 — web에 누락된 axios/@tanstack/react-query 추가, mobile에서 미사용 expo-image-picker/expo-sqlite 제거
-- [x] 코드 중복 제거 (api.ts 모바일/웹 공통 추출 검토) — 플랫폼별 차이로 공통 추출 불필요 판정
-- [x] 모바일 앱 번들 크기 줄이기 — axios 제거 (native fetch 교체), 나머지 dep은 필수
-- [x] 모바일 앱 API 타입 안전성 복구 (api.ts unknown → 구체 타입, app.json 정리)
-- [x] 웹 로그아웃 버그 수정 (firebase_token → auth_token 키 불일치)
-
-## P4 - 자가 생성 항목
-
-- [x] i18n Phase 1: 번역 파일 확장 + 탭 화면 6개 + 공용 컴포넌트 2개 i18n 적용
-- [x] i18n Phase 2: sub-screen 8개에 t() 적용 (onboarding, alarm/create, message/create, gift/received, voice/record, voice/upload, voice/diarize, player) — ko.json/en.json 키 이미 정의됨
-- [x] 백엔드 유닛 테스트: friend/gift/alarm 라우트 핵심 로직 테스트 (vitest)
-- [x] 웹 접근성: 키보드 네비게이션 + aria-label 보강
-- [x] 모바일 오프라인 지원 강화: 캐시된 오디오 + 알람 목록 오프라인 표시
-- [x] ESLint + Prettier 설정 통일 (모노레포 루트 + 패키지별)
-
-## P5 - 자가 생성 항목 (2차)
-
-- [x] 관측성: 백엔드 구조화된 로깅 미들웨어 + 글로벌 에러 핸들러
-- [x] 성능: 웹 대시보드 코드 스플리팅 (React.lazy + Suspense)
-- [x] 보안: API rate limiting 미들웨어 (Cloudflare Workers 환경)
-- [x] 모바일: 푸시 알림 기반 알람 트리거 (expo-notifications 통합)
-
-## P6 - 자가 생성 항목 (3차)
-
-- [x] 모바일: 알람 알림 탭 시 플레이어 화면으로 이동 (deep link 처리)
-- [x] 백엔드: 헬스체크에 DB 연결 상태 포함
-- [x] 모바일: 알람 생성/수정/삭제 시 즉시 알림 재동기화
-- [x] 웹: 다크모드 지원 (prefers-color-scheme + 수동 토글)
-
-## P7 - 자가 생성 항목 (4차)
-
-- [x] 모바일: 알람 스누즈 동작 구현 (알림에서 스누즈 액션 → N분 후 재알림)
-- [x] 백엔드: API 응답 캐싱 (Cache-Control 헤더)
-- [x] 웹: 반응형 모바일 레이아웃 (사이드바 → 하단 탭바 전환)
-- [x] 모바일: 음성 메시지 파형(waveform) 시각화 플레이어
-
-## P8 - 자가 생성 항목 (5차)
-
-- [x] 모바일: 라이브러리 탭에서 메시지 재생 시 인라인 미니 파형 플레이어
-- [x] 백엔드: API 엔드포인트별 요청 시간 메트릭 로깅 (구조화 로그에 duration_ms 추가)
-- [x] 웹: 메시지 목록에서 오디오 미리듣기 인라인 플레이어
-- [x] 모바일: 알람 목록에서 다음 알람까지 남은 시간 카운트다운 표시
-
-## P9 - 자가 생성 항목 (6차)
-
-- [x] 모바일: 음성 녹음 화면에서 실시간 오디오 레벨 시각화 (마이크 입력 amplitude 표시)
-- [x] 백엔드: 친구/선물 API에 페이지네이션 추가 (limit/offset 파라미터)
-- [x] 웹: VoicesPage에서 음성 테스트 재생 기능 (테스트 버튼 → TTS 생성 → 즉시 재생) — 이미 구현됨
-- [x] 모바일: 설정 화면에서 알람 기본 스누즈 시간 설정 (글로벌 프리퍼런스)
-
-## P10 - 자가 생성 항목 (7차)
-
-- [x] 백엔드: voice/:id GET/DELETE에 UUID 형식 검증 추가 (잘못된 ID → 400 응답)
-- [x] 모바일: alarms/voices/library 탭에 pull-to-refresh (RefreshControl) 추가
-- [x] 백엔드: library 엔드포인트에 페이지네이션 추가 (limit/offset, 친구/선물과 동일 패턴)
-- [x] 모바일: 친구 화면 새로고침 중 스켈레톤/딤 로딩 UX 개선
-- [x] 웹: FriendsPage에서 친구 요청 수락/거절 시 낙관적 업데이트 (optimistic update)
-
-## P11 - 자가 생성 항목 (8차)
-
-- [x] 웹: GiftsPage에서 수락/거절 시 낙관적 업데이트 (optimistic update)
-- [x] 모바일: 선물 받은 화면(gift/received.tsx) 스켈레톤 로딩 UX 개선
-- [x] 백엔드: alarm 라우트에 입력 검증 강화 (UUID 형식, time 형식, repeat_days 범위 등)
-- [x] 모바일: 알람 목록에서 스와이프 삭제 제스처 지원
-
-## P12 - 자가 생성 항목 (9차)
-
-- [x] 모바일: 음성 목록(voices 탭)에서 스와이프 삭제 제스처 지원 (alarms와 동일 패턴)
-- [x] 백엔드: friend/gift/library 라우트에 UUID 형식 검증 추가 (alarm/voice와 동일 패턴)
-- [x] 웹: 알람 목록에서 삭제/토글 시 낙관적 업데이트 (optimistic update)
-- [x] 모바일: 선물 받은 화면에서 수락한 메시지를 즉시 알람으로 설정하는 바로가기
-
-## P13 - 자가 생성 항목 (10차)
-
-- [x] 모바일: 선물 수락/거절 시 낙관적 업데이트 + 수락 Alert에 "알람 설정" 바로가기
-- [x] 모바일: 메시지 라이브러리 탭에서 스와이프 삭제 제스처 지원
-- [x] 백엔드: GET /api/alarm에 페이지네이션 추가 (friend/gift와 동일 패턴)
-- [x] 웹: 메시지 목록에서 삭제 시 낙관적 업데이트 (optimistic update)
-- [x] 모바일: 알람 생성 화면에서 프리셋 메시지 선택 지원 (빈 메시지 → 프리셋 텍스트 선택 → TTS 생성 → 알람 설정)
-
-## P14 - 자가 생성 항목 (11차)
-
-- [x] 모바일: 알람 생성 화면에서 메시지가 없고 프리셋 미사용 시 빈 상태 안내 개선
-- [x] 웹: 음성 목록에서 삭제 시 낙관적 업데이트 (optimistic update)
-- [x] 백엔드: message 라우트에 페이지네이션 추가 (alarm/friend/gift와 동일 패턴)
-- [x] 모바일: 메시지 생성 후 "바로 알람 설정하기" 원클릭 플로우 (message/create → alarm/create 자동 전환)
-- [x] 웹: 알람 생성 화면에서 프리셋 메시지 선택 지원 (모바일과 동일 기능)
-
-## P15 - 자가 생성 항목 (12차)
-
-- [x] 웹: 전체 페이지 스켈레톤 로딩 UI (AlarmsPage, VoicesPage, MessagesPage, FriendsPage, GiftsPage)
-- [x] 모바일: 알람 상세 편집 화면 (시간/반복/메시지 변경)
-- [x] 웹: 알람 편집 인라인 UI (시간/반복 수정)
-- [x] 백엔드: voice 라우트에 페이지네이션 추가 (message/alarm과 동일 패턴)
-- [x] 모바일: 친구 프로필 상세 화면 (친구의 선물/알람 현황) — 이미 구현, TS 에러 수정
-- [x] 웹: 대시보드 홈에 요약 통계 (알람 수, 메시지 수, 친구 수, 음성 프로필 수, 받은 선물 수)
-
-## P16 - 자가 생성 항목 (13차)
-
-- [x] 모바일: 알람 목록에서 비활성 알람 시각적 구분 강화 (흐리게 + 스트라이크스루)
-- [x] 웹: 대시보드에 최근 활동 타임라인 (최근 생성된 알람/메시지/선물)
-- [x] 백엔드: GET /api/stats 엔드포인트 (알람/메시지/음성/친구/선물 수 한 번에 반환)
-- [x] 모바일: 설정 화면에 앱 버전, 계정 정보 표시 — 이미 구현 확인 (appVersion + profile.name/email)
-- [x] 웹: 설정 페이지에 프로필 정보 표시 (이름, 이메일, 플랜) — 이미 구현, 이름 표시 추가
-
-## P17 - 자가 생성 항목 (14차)
-
-- [x] 백엔드: GET /api/stats/activity 에 voice_profiles 활동 추가 (클론 생성/삭제 이벤트)
-- [x] 웹: 대시보드 StatCard에 전주 대비 변화 표시 (↑↓ 트렌드)
-- [x] 모바일: 홈탭에 대시보드 요약 카드 (stats API 활용)
-- [x] 백엔드: 사용자 검색 API GET /api/user/search?q= (친구 추가 시 이메일 자동완성용)
-- [x] 웹: FriendsPage 친구 추가 시 이메일 자동완성 (검색 API 연동)
-
-## P18 - 자가 생성 항목 (15차)
-
-- [x] 백엔드: DB 인덱스 추가 (FK 컬럼, 자주 조회되는 컬럼에 CREATE INDEX IF NOT EXISTS)
-- [x] 웹: React ErrorBoundary 컴포넌트 추가 (앱 크래시 시 graceful fallback)
-- [x] 웹: renderPage() default case 추가 (잘못된 페이지 상태 → 대시보드 리다이렉트)
-- [x] 모바일: 홈탭 통계 카드에 전주 대비 트렌드 표시 (웹과 동일, trends API 활용)
-
-## P19 - 빌드 복구 + IIFE 리팩터링
-
-- [x] MessagesPage.tsx 인라인 IIFE → filteredMessages const 추출 (빌드 에러 수정)
-- [x] VoicesPage.tsx 인라인 IIFE → filteredProfiles const 추출 + 검색/필터 UI 추가
-- [x] AlarmsPage.tsx 인라인 IIFE → filteredAlarms const 추출 (이전 루프 미커밋분 포함)
-
-## P20 - 자가 생성 항목 (16차)
-
-- [x] 웹: GiftsPage에 검색 + 필터 UI 추가 (보낸/받은 필터, 상태 필터)
-- [x] 웹: FriendsPage에 검색 UI 추가 (이름/이메일 검색)
-- [x] 백엔드: GET /api/message에 category 필터 쿼리 파라미터 — 이미 구현 확인
-- [x] 모바일: 친구 추가 시 이메일 자동완성 (검색 API 연동, 웹과 동일)
-
-## P21 - 자가 생성 항목 (17차)
-
-- [x] 웹: 대시보드에 퀵 액션 카드 (음성 등록, 메시지 생성, 친구 추가 바로가기)
-- [x] 웹: 선물 보내기 시 친구 선택 모달 (현재 prompt → 드롭다운 모달로 개선)
-- [x] 백엔드: GET /api/alarm에 is_active 필터 쿼리 파라미터 추가 — 이미 구현 확인
-- [x] 모바일: 메시지 라이브러리에서 카테고리별 필터 UI 추가
-
-## P22 - 자가 생성 항목 (18차)
-
-- [x] 모바일: 알람/음성 탭에 검색 바 추가 (웹과 동일한 검색 기능)
-- [x] 웹: 선물 보내기 시 노트(메모) 입력 필드 추가 (gift API에 note 필드 이미 지원)
-- [x] 모바일: 선물 보내기 시 노트 입력 필드 추가
-- [x] 백엔드: DELETE /api/message/:id 에서 연관 알람 존재 시 경고 응답 추가 (409 + force=true)
-
-## P23 - 자가 생성 항목 (19차)
-
-- [x] 모바일: 선물 받은 화면에서 보낸 사람의 노트 표시 — 이미 구현 확인
-- [x] 웹: GiftsPage에서 보낸 선물에 노트 표시 추가 (받은 선물은 이미 표시)
-- [x] 백엔드: GET /api/alarm/:id 단일 알람 조회 엔드포인트 추가 (편집 화면용)
-- [x] 모바일: 음성 프로필 상세 화면 (voice/detail.tsx — 메시지/알람 목록, 통계)
-
-## P24 - 자가 생성 항목 (20차)
-
-- [x] 웹: 메시지 삭제 시 409 응답 처리 (연관 알람 경고 confirm dialog → force 삭제)
-- [x] 웹: 음성 프로필 상세 모달 (이미 구현됨)
-- [x] 모바일: 알람 편집 화면에서 GET /api/alarm/:id 활용 (이미 구현됨)
-- [x] 백엔드: GET /api/voice/:id/stats 엔드포인트 (이미 구현됨)
-
-## P25 - 자가 생성 항목 (21차)
-
-- [x] 모바일: 메시지 라이브러리 삭제는 library 항목 삭제 (알람 무관, 409 불필요 확인)
-- [x] 웹: 대시보드 최근 활동에 음성 프로필 클릭 시 상세 모달 연동
-- [x] 모바일: 홈 탭 "다음 알람" 카드 탭 시 알람 편집 화면으로 이동 (없으면 생성 화면)
-- [x] 백엔드: GET /api/gift/received, /sent에 q= 검색 쿼리 파라미터 추가 (이름/이메일/메시지)
-
-## P26 - 자가 생성 항목 (22차)
-
-- [x] 웹: 알람 목록에서 음성 프로필 이름 클릭 시 상세 모달 열기 (DashboardPage와 동일 패턴)
-- [x] 모바일: 알람 편집 화면에서 반복 요일 선택 UI 개선 — 이미 구현 확인 (quickSetDays 프리셋 버튼)
-- [x] 백엔드: GET /api/voice에 status 필터 쿼리 파라미터 추가 (ready/processing/failed)
-- [x] 모바일: 설정 화면에서 알림 권한 상태 표시 및 설정 바로가기
-
-## P27 - 자가 생성 항목 (23차)
-
-- [x] 백엔드: PATCH 엔드포인트 응답 개선 — alarm/friend/gift 업데이트 시 변경된 객체 반환
-- [x] 웹: MessagesPage에서 음성 프로필 이름 클릭 시 상세 모달 열기
-- [x] 백엔드: GET /api/message에 voice_profile_id 필터 추가 (특정 음성의 메시지만 조회) — 이미 구현 확인
-- [x] 모바일: 음성 프로필 상세에서 "이 음성으로 메시지 만들기" 바로가기 버튼
-- [x] 웹: 설정 페이지에 테마 선택 (라이트/다크/시스템) 영구 저장 — 이미 구현 확인 (useDarkMode hook + localStorage)
-
-## P28 - 자가 생성 항목 (24차)
-
-- [x] 웹: VoiceDetailModal에 "이 음성으로 메시지 만들기" 액션 버튼 추가 (모바일과 동일 기능)
-- [x] 모바일: 선물 보내기 완료 후 성공 토스트 (Alert → Animated 토스트 배너, 3초 자동 소멸)
-- [x] 백엔드: GET /api/friend/list에 q= 검색 쿼리 파라미터 추가 (이름/이메일 검색)
-- [x] 모바일: 홈 탭에 받은 선물 미수락 배지 표시 (pending gifts count) — 이미 구현 확인 (stats.gifts.receivedPending)
-
-## P29 - 자가 생성 항목 (25차)
-
-- [x] 모바일: 선물 받은 화면(gift/received) 에러 핸들러 Alert → 토스트 교체 + 거절 성공 토스트 추가
-- [x] 웹: GiftsPage 선물 보내기 성공 시 토스트/배너 알림 — 이미 구현 확인 (showToast)
-- [x] 백엔드: GET /api/alarm에 voice_profile_id 필터 추가 — 이미 구현 확인 (count 쿼리 JOIN 포함)
-- [x] 모바일: 메시지 라이브러리에서 메시지 탭 시 상세 화면 (message/[id].tsx, _layout 등록, library 탭 연동)
-
-## P30 - 자가 생성 항목 (26차)
-
-- [x] 웹: 메시지 상세 모달 (MessagesPage에서 메시지 클릭 시 텍스트 전문 + 재생 + 선물하기)
-- [x] 모바일: 알람 목록에서 알람 탭 시 편집 화면으로 이동 — 이미 구현 확인
-- [x] 백엔드: GET /api/gift/received, /sent에 페이지네이션 total 정확도 — 이미 JOIN 포함 확인
-- [x] 모바일: 홈 탭 "다음 알람" 카드에 메시지 미리보기 텍스트 표시 — 이미 구현 확인
-
-## P31 - 테스트 커버리지 + 버그 수정 (27차)
-
-- [x] 백엔드: user.ts PATCH /plan rowsAffected 미체크 버그 수정 (→ 404 반환)
-- [x] 백엔드: user.test.ts 신규 (9개 테스트)
-- [x] 백엔드: library.test.ts 신규 (9개 테스트)
-
-## P32 - 자가 생성 항목 (28차)
-
-- [x] 모바일: 메시지 상세(message/[id])에서 알람 설정 바로가기 — 이미 구현 확인
-- [x] 웹: 알람 생성/편집 화면에서 메시지 목록 검색/필터 추가
-- [x] 백엔드: DELETE /api/voice/:id에서 연관 메시지 존재 시 409 + force=true 경고 응답
-- [x] 모바일: 친구 상세 화면에서 선물 보내기 바로가기 버튼 추가
-- [x] 백엔드: stats.test.ts 신규 (stats 라우트 테스트)
-- [x] 백엔드: 기존 테스트 실패 수정 (gift.test.ts 등 mock 불일치) — UUID/페이지네이션/PATCH응답 mock 업데이트, 118 tests all pass
-
-## P33 - 자가 생성 항목 (테스트 커버리지 확장)
-
-- [x] 백엔드: voice.test.ts 신규 (14개 테스트 — 목록/상세/통계/삭제 + UUID검증/409경고/force삭제)
-- [x] 백엔드: tts.test.ts 신규 (17개 테스트 — generate 검증/제한/404, messages 목록/삭제/409, presets)
-- [x] 백엔드: library.test.ts 신규 (14개 테스트 — 목록/필터/페이지네이션/즐겨찾기/삭제)
-
-## P34 - 자가 생성 항목 (보안 + 데이터 무결성)
-
-- [x] 백엔드: CORS 설정 강화 (origin 화이트리스트 함수 + 프로덕션 도메인 + maxAge 추가)
-- [x] 백엔드: bodyLimitMiddleware 신규 (512KB 제한, Content-Length 기반 413 응답)
-- [x] 백엔드: voice DELETE cascade — force 삭제 시 연관 alarms → message_library → messages 순서로 정리
-- [x] 백엔드: GET /api/user/me — 이미 구현 확인 (프로필 + stats + plan 반환)
-
-## P35 - 미들웨어 테스트 커버리지
-
-- [x] 백엔드: rateLimit.test.ts 신규 (6개 테스트 — 기본 허용/헤더/카운트 감소/429/userId 키/IP 폴백)
-- [x] 백엔드: logger.test.ts 신규 (6개 테스트 — 구조화 로그/requestId/4xx warn/5xx error/userId 포함/미포함)
-- [x] 백엔드: cache.test.ts 신규 (7개 테스트 — Cache-Control 설정/에러 스킵/Vary/publicCache/privateCache/noStore)
-
-## P36 - 자가 생성 항목 (API 견고성 + UX 개선)
-
-- [x] 백엔드: bodyLimit.test.ts 신규 (4개 테스트 — 허용/초과/경계값)
-- [x] 백엔드: POST /api/voice name 최대 길이 제한 추가 (50자 초과 시 400)
-- [x] 웹: 401 인터셉터 — 이미 구현 확인 (api.ts interceptors.response에 401 → localStorage 클리어 + /login 리다이렉트)
-- [x] 모바일: ErrorView + retry — friends 탭 누락분 추가 (friends/pending 에러 상태에 ErrorView + refetch 연결)
-
-## P37 - 자가 생성 항목 (에러 핸들링 + UX 일관성)
-
-- [x] 웹: DashboardPage 통계/활동 쿼리 에러 상태 UI 추가 (에러 메시지 + 재시도 버튼)
-- [x] 백엔드: CORS 미들웨어 테스트 (cors.test.ts 신규 — 6개 테스트)
-- [x] 웹: SettingsPage에 계정 삭제 확인 다이얼로그 추가 (위험 동작 보호)
-- [x] 모바일: 홈 탭 통계 카드 에러 상태 처리 (현재 에러 시 빈 화면)
-
-## P38 - 자가 생성 항목 (계정/보안 + 테스트)
-
-- [x] 백엔드: user.test.ts에 DELETE /api/user/me 테스트 추가 (전체 데이터 삭제 검증)
-- [x] 모바일: 설정 화면에 계정 삭제 기능 추가 (웹과 동일, Alert 확인 다이얼로그)
-- [x] 웹: SettingsPage 계정 삭제 후 토스트 대신 로그아웃 처리 확인 + 에러 토스트 개선
-- [x] 백엔드: auth 미들웨어에 토큰 만료/무효 시 명확한 에러 메시지 반환
-
-## P39 - 자가 생성 항목 (Toast 추출 + 에러 UX 개선)
-
-- [x] 모바일: useToast hook + Toast 컴포넌트 추출 (gift/received, message/create 중복 제거)
-- [x] 모바일: friends 탭 에러 Alert → toast 변환 (성공/에러 알림)
-- [x] 모바일: alarms 탭 에러 Alert → toast 변환 (토글/삭제 에러)
-- [x] 모바일: voices 탭 에러 Alert → toast 변환 (삭제 에러)
-- [x] 모바일: library 탭 에러 Alert → toast 변환 (즐겨찾기/삭제 에러)
-- [x] 모바일: alarm/create, alarm/edit 에러 Alert → toast 변환
-- [x] 모바일: voice/record, voice/upload, voice/diarize 에러 Alert → toast 변환
-
-## 자가 생성 가능 풀 (위 목록 고갈 시)
-- 추가 리팩터, 성능 프로파일링, Sentry 연동
+## P0 (지금 바로) — 프로젝트 정리 + 탭 구조 개편
+
+### Phase 1-A: packages/web 삭제
+- [ ] `packages/web/` 디렉토리 전체 삭제
+- [ ] `.github/workflows/deploy-web.yml` 삭제
+- [ ] 루트 `package.json`에서 `"web"` 스크립트 제거
+- [ ] `eslint.config.js`에서 `packages/web/src/**` 패턴 제거
+- [ ] `.github/workflows/ci.yml` — typecheck/test matrix에서 `packages/web` 제거
+- [ ] `.github/dependabot.yml`에서 `/packages/web` 섹션 삭제
+- [ ] `CLAUDE.md` — `Web: React + TypeScript + Vite + Tailwind CSS` 줄, `packages/web` 줄 삭제
+- [ ] `ARCHITECTURE.md` — web 관련 섹션 삭제
+- [ ] `README.md` — web 대시보드 관련 언급 삭제
+- [ ] `.ralph/PROMPT.md` — web 참조 삭제 (디렉토리, 빌드, 배포)
+- [ ] `packages/backend/src/index.ts` — CORS ALLOWED_ORIGINS에서 web origin 3개 삭제 (`voice-alarm.pages.dev`, `voicealarm.pages.dev`, `voice-alarm-web.pages.dev`)
+- [ ] `npm install` 실행하여 lock 파일 재생성
+- [ ] `npm run lint && npm run typecheck` 통과 확인
+
+### Phase 1-B: 모바일 탭 축소 (8개 → 5개)
+- [ ] `app/(tabs)/character.tsx` → `app/character/index.tsx` 스택 화면으로 이동
+- [ ] `app/(tabs)/library.tsx` → `app/library/index.tsx` 스택 화면으로 이동
+- [ ] `app/(tabs)/_layout.tsx` — friends/family/character/library Screen 제거, people Screen 추가 (아이콘: 👤, 라벨: `tab.people`)
+- [ ] `app/(tabs)/index.tsx` — 홈 화면에 캐릭터 미니 위젯 삽입 (이모지 + 레벨 + 프로그레스바, 탭 시 `/character`로 이동)
+- [ ] `app/(tabs)/index.tsx` — 홈 화면에 "최근 메시지" 섹션 추가 (2-3개 표시 + "전체 보기" → `/library` 이동)
+- [ ] `src/i18n/ko.json` — `tab.friends`, `tab.family`, `tab.character`, `tab.library` 삭제, `tab.people: "내 사람들"` 추가
+- [ ] `src/i18n/en.json` — 동일 키 변경
+- [ ] `app/(tabs)/friends.tsx` 삭제 (Phase 2에서 people.tsx로 대체)
+- [ ] `app/(tabs)/family.tsx` 삭제 (Phase 2에서 people.tsx로 대체)
+- [ ] typecheck 통과 확인
+
+## P1 — Friends + Family 탭 통합 (People)
+
+### People 탭 신규 생성
+- [ ] `app/(tabs)/people.tsx` 신규 — 세그먼트 컨트롤 (멤버/친구/요청)
+- [ ] 플랜별 UI 분기: free/personal → "멤버" 세그먼트 숨김 (기본탭 "친구"), family → "멤버" 세그먼트 표시 (기본탭 "멤버")
+- [ ] 친구 세그먼트: friends.tsx에서 이메일 검색 + 자동완성 + 친구 추가/삭제/목록 로직 이동
+- [ ] 요청 세그먼트: friends.tsx에서 대기중 요청 수락/거절 로직 이동
+- [ ] 멤버 세그먼트: family.tsx에서 가족 멤버 표시 + 초대코드 발급 UI 이동
+- [ ] 커플 뷰(family 2인 그룹): 서로가 보이는 간결한 카드 레이아웃
+
+### 컴포넌트 추출
+- [ ] `src/components/FamilyMemberRow.tsx` 신규 — family.tsx의 MemberRow 컴포넌트 추출
+- [ ] `src/components/PeopleSkeletonCard.tsx` 신규 — friends.tsx의 SkeletonCard 추출
+
+### 가족 알람 분리
+- [ ] `app/family-alarm/create.tsx` 신규 — family.tsx의 알람 예약 폼 분리 (수신자 선택, 시간, 메시지, 반복요일)
+- [ ] People 탭 멤버 세그먼트에 "가족 알람 보내기" 버튼 → `/family-alarm/create` 이동
+
+### i18n 추가
+- [ ] `src/i18n/ko.json`에 `people.*` 키 추가 (멤버, 친구, 요청, 초대코드, 가족알람 등)
+- [ ] `src/i18n/en.json` 동일
+- [ ] typecheck 통과 확인
+
+## P2 — 캐릭터 시스템 정비 (나무 테마 + 스트릭)
+
+### 백엔드: DB 스키마 (마이그레이션 13)
+- [ ] `packages/backend/src/lib/migrations.ts` — 마이그레이션 13 추가:
+  - characters 테이블에 `current_streak`, `longest_streak`, `last_wakeup_date` 컬럼 추가
+  - `character_stats` 테이블 신규 (diligence, health, consistency)
+  - `streak_achievements` 테이블 신규 (milestone: 7/30/90, achieved_at)
+
+### 백엔드: 스트릭 로직
+- [ ] `packages/backend/src/lib/streak.ts` 신규 — 연속 기상 판정 로직:
+  - `computeStreak(lastWakeupDate, todayDate, currentStreak)` → `{ newStreak, milestoneReached }`
+  - 어제=streak+1, 오늘=변경없음, 2일+=리셋(1)
+  - 7/30/90일 마일스톤 도달 시 streak_achievements 기록
+- [ ] `packages/backend/src/lib/xpRules.ts` — streak_bonus_7(100XP), streak_bonus_30(500XP), streak_bonus_90(2000XP) 이벤트 추가 (일일캡 면제)
+- [ ] `packages/backend/src/lib/character.ts` — 능력치 계산 함수 추가 (diligence=알람완료횟수, health=루틴완료, consistency=활동일수)
+
+### 백엔드: API 확장
+- [ ] `packages/backend/src/routes/character.ts` — GET /characters/me 응답에 streak, stats, achievements 필드 추가
+- [ ] `packages/backend/src/routes/character.ts` — POST /characters/xp에 스트릭 계산 + 능력치 업데이트 통합
+- [ ] 클라이언트에서 `local_date` (YYYY-MM-DD) 전송하도록 API 설계 (타임존 대응)
+- [ ] typecheck 통과 확인
+
+### 프론트엔드: 캐릭터 화면 강화
+- [ ] `apps/mobile/app/character/index.tsx` — 스트릭 뱃지 UI (🔥 N일 연속 기상)
+- [ ] `apps/mobile/app/character/index.tsx` — 능력치 바 표시 (뿌리깊이/줄기튼튼함/잎무성함)
+- [ ] `apps/mobile/app/character/index.tsx` — 마일스톤 달성 기록 섹션 (7일/30일/90일 배지)
+- [ ] `apps/mobile/app/(tabs)/index.tsx` — 홈 캐릭터 위젯에 스트릭 카운트 표시
+- [ ] `apps/mobile/src/services/api.ts` — CharacterResponse 타입에 streak/stats/achievements 필드 추가
+- [ ] `apps/mobile/src/i18n/ko.json` — 스트릭/능력치 관련 번역 키 추가
+- [ ] typecheck 통과 확인
+
+### 나무 테마 강화
+- [ ] `apps/mobile/src/lib/character.ts` — 나무 메타포 대사 업데이트 (스트릭 관련: "뿌리가 깊어지고 있어요")
+- [ ] 능력치 이름 나무 테마 적용: diligence→뿌리 깊이, health→줄기 튼튼함, consistency→잎 무성함
+
+## P3 — 배포 + 서비스화
+
+### R2 스토리지 연동 (음성 파일)
+- [ ] `packages/backend/wrangler.toml` — R2 bucket 바인딩 추가 (`VOICE_BUCKET`, bucket: `voice-alarm-voices`)
+- [ ] `packages/backend/src/types.ts` — Env에 `VOICE_BUCKET: R2Bucket` 추가
+- [ ] `packages/backend/src/routes/voice.ts` — 업로드 시 R2에 저장, 다운로드 시 R2에서 읽기 (메모리 저장 교체)
+- [ ] typecheck 통과 확인
+
+### FCM 푸시 구조 세팅
+- [ ] `packages/backend/src/lib/migrations.ts` — 마이그레이션 14: `push_tokens` 테이블 (user_id, token, platform)
+- [ ] `packages/backend/src/lib/fcm.ts` 신규 — FCM HTTP v1 API 클라이언트 (구조만, 실 전송은 console.warn 로그)
+- [ ] `packages/backend/src/index.ts` — scheduled()에서 firing 알람 → FCM 전송 호출 (182행 TODO 해결)
+- [ ] `apps/mobile/src/services/push.ts` 신규 — expo-notifications로 FCM 토큰 발급 + 서버 등록
+- [ ] `apps/mobile/src/services/api.ts` — `registerPushToken(token, platform)` 함수 추가
+- [ ] `apps/mobile/app/_layout.tsx` — 앱 시작 시 push 토큰 등록 호출
+- [ ] typecheck 통과 확인
+
+### 배포 설정 정비
+- [ ] `packages/backend/wrangler.toml` — cron 트리거 `*/5 * * * *` (5분 간격) 추가
+- [ ] Cloudflare Workers 무료 티어 제한 검증 (100k req/day, 10ms CPU)
+- [ ] Turso 무료 티어 제한 검증 (9GB, 25M reads/month)
+- [ ] `wrangler deploy` 테스트 (백엔드 배포 성공 확인)
+
+## P4 — 기획서(Notion) 동기화 + 추가 정비
+
+### Notion 기획서 업데이트
+- [ ] 기획서 섹션 7 "기술 스택" — 실제 스택으로 수정 (RN/Expo, Hono+CF Workers, Turso, JWT 자체인증)
+- [ ] 기획서 섹션 6 "개발 로드맵" — 현재 구현 상태 반영 (Phase 1 MVP 대부분 완료)
+- [ ] 기획서 "현재 이슈" — 실제 이슈 목록으로 갱신
+
+### 온보딩 플로우 기획서 정렬
+- [ ] `apps/mobile/app/onboarding.tsx` — 기획서 시나리오에 맞게 흐름 점검 (음성 녹음 → 클론 → 알람 설정)
+- [ ] 온보딩 완료 후 캐릭터 자동 생성 연동 확인
+
+### 알람 정확도 강화
+- [ ] `apps/mobile/src/lib/alarmPlayback.ts` — 음성 URL 로딩 로직 정비 (perso.ai 실호출 금지, stub URL 유지)
+- [ ] expo-notifications 알람 트리거 정확도 검증 (OS별 제약 확인)
+- [ ] 스누즈 후 재알림 타이밍 정확도 검증
+
+### 오프라인 캐싱
+- [ ] 음성 파일 로컬 캐싱 로직 검증 (기획서: 오프라인 재생 가능 필수)
+- [ ] 알람 목록 오프라인 표시 검증
+
+---
+
+## 완료 항목 (이전 루프)
+
+<details>
+<summary>P0~P39 완료 항목 (39 phases, 모두 완료)</summary>
+
+### P0 (이전) — 선물/친구/상호알람
+- [x] 백엔드 Friends 시스템 (DB+API+라우트)
+- [x] 백엔드 Gift 시스템 (DB+API+라우트)
+- [x] 백엔드 상호 알람 (target_user_id)
+- [x] 모바일 앱 UI (friends, gift, alarm 화면)
+- [x] 웹 대시보드 UI (FriendsPage, GiftsPage)
+
+### P1~P39 — 테스트/안정화/배포/품질/자가생성
+- [x] 입력 validation 강화
+- [x] i18n Phase 1-2
+- [x] 백엔드 유닛 테스트 (friend/gift/alarm/user/library/voice/tts/stats/middleware)
+- [x] ESLint + Prettier 설정 통일
+- [x] 관측성 (구조화 로깅, 에러 핸들러)
+- [x] 보안 (rate limiting, CORS, bodyLimit)
+- [x] 모바일 UX 개선 (스와이프 삭제, 토스트, 검색, pull-to-refresh 등)
+- [x] 웹 UX 개선 (스켈레톤, 낙관적 업데이트, 다크모드, 반응형 등)
+- [x] 캐릭터 시스템 기본 구현 (seed→sprout→tree→bloom, XP)
+- [x] 가족 플랜 (초대코드, 그룹, 가족알람)
+- [x] 결제 스텁 (플랜, 구독, 이용권)
+- [x] 음성 더빙 (perso.ai 연동)
+- [x] 계정 삭제, auth 에러 코드
+
+</details>
+
+## 자가 생성 가능 풀 (BACKLOG 고갈 시)
+
+- 백엔드 테스트 커버리지 확장 (character, family, billing, dub 라우트)
+- 모바일 E2E 테스트 (Detox 또는 Maestro)
+- 앱 접근성 강화 (스크린 리더, 고대비)
+- 성능 프로파일링 + 최적화
+- Sentry 에러 모니터링 연동
+- 앱 아이콘 + 스플래시 스크린 디자인
+- App Store / Google Play 스토어 등록 준비 (메타데이터, 스크린샷)
