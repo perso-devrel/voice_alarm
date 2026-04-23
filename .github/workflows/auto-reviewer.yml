@@ -1,0 +1,25 @@
+name: Auto Assign Reviewers
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened]
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign reviewers for main PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const author = context.payload.pull_request.user.login;
+            const reviewers = ['Jin1370', 'alpaka206'].filter(r => r !== author);
+            if (reviewers.length > 0) {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                reviewers
+              });
+            }
