@@ -17,7 +17,17 @@
 - [ ] `npm install` 실행하여 lock 파일 재생성
 - [ ] `npm run lint && npm run typecheck` 통과 확인
 
-### Phase 1-B: 모바일 탭 축소 (8개 → 5개)
+### Phase 1-B: Pretendard 폰트 적용
+- [ ] `expo-font` 의존성 확인 (이미 Expo에 포함)
+- [ ] Pretendard 폰트 파일(Regular/Medium/SemiBold/Bold) 다운로드 → `apps/mobile/assets/fonts/` 에 배치
+- [ ] `apps/mobile/app/_layout.tsx`에서 `useFonts()`로 Pretendard 로드 + 로딩 중 스플래시 유지
+- [ ] `packages/ui/src/tokens.ts`의 `FontFamily` 업데이트 (`system` → `'Pretendard-Regular'` 등)
+- [ ] 전체 앱에서 `fontFamily` 스타일을 Pretendard 토큰으로 통일
+- [ ] 폰트 로드 실패 시 시스템 폰트 폴백 처리
+- [ ] iOS/Android 모두 한국어+영어 렌더링 확인
+- [ ] typecheck 통과 확인
+
+### Phase 1-C: 모바일 탭 축소 (8개 → 5개)
 - [ ] `app/(tabs)/character.tsx` → `app/character/index.tsx` 스택 화면으로 이동
 - [ ] `app/(tabs)/library.tsx` → `app/library/index.tsx` 스택 화면으로 이동
 - [ ] `app/(tabs)/_layout.tsx` — friends/family/character/library Screen 제거, people Screen 추가 (아이콘: 👤, 라벨: `tab.people`)

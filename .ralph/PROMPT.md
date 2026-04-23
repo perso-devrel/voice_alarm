@@ -59,10 +59,12 @@
 - 새 컬러 추가 금지. 기존 토큰만 사용하라.
 
 ### 타이포그래피
-- **시스템 폰트만 사용** (커스텀 웹폰트 금지 — 번들 크기, 로딩 속도)
-- iOS: SF Pro, Android: Roboto — `FontFamily.system`으로 자동 적용
+- **Pretendard 폰트 사용** — 한국어/영어/일본어 모두 깔끔하게 지원하는 범용 서체
+- `expo-font`로 로드: Pretendard-Regular(400), Pretendard-Medium(500), Pretendard-SemiBold(600), Pretendard-Bold(700)
+- `packages/ui/src/tokens.ts`의 `FontFamily`를 Pretendard로 업데이트
 - 본문: `FontSize.md` (15px), 제목: `FontSize.xl` (20px), 영웅 텍스트: `FontSize.hero` (34px)
 - 한국어/영어 모두 가독성 확보 (line-height 1.5 이상)
+- 폰트 로드 실패 시 시스템 폰트로 자동 폴백 (`fontFamily: 'Pretendard-Regular', fallback: system`)
 
 ### 레이아웃 규칙
 - **하단 탭바 높이**: 85px (paddingBottom 28px 포함) — 콘텐츠가 탭바에 가려지지 않도록 `SafeAreaView` + 하단 패딩 필수
