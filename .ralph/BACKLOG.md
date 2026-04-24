@@ -74,8 +74,8 @@
 
 ## P2 — 캐릭터 시스템 정비 (나무 테마 + 스트릭)
 
-### 백엔드: DB 스키마 (마이그레이션 13)
-- [ ] `packages/backend/src/lib/migrations.ts` — 마이그레이션 13 추가:
+### 백엔드: DB 스키마 (마이그레이션 13) ✅ (2026-04-24)
+- [x] `packages/backend/src/lib/migrations.ts` — 마이그레이션 13 추가:
   - characters 테이블에 `current_streak`, `longest_streak`, `last_wakeup_date` 컬럼 추가
   - `character_stats` 테이블 신규 (diligence, health, consistency)
   - `streak_achievements` 테이블 신규 (milestone: 7/30/90, achieved_at)
