@@ -19,6 +19,10 @@
     "addAlarm": "알람 추가",
     "receivedGifts": "받은 선물",
     "manageFriends": "친구 관리",
+    "viewCharacter": "캐릭터 보기",
+    "recentMessages": "최근 메시지",
+    "noMessages": "아직 받은 메시지가 없어요",
+    "viewAll": "전체 보기 ›",
     "loginTitle": "로그인하고 시작하세요",
     "loginDesc": "소중한 사람의 목소리를 등록하고\n매일 따뜻한 메시지를 받아보세요"
   },
@@ -29,16 +33,15 @@
     "alarmSetting": "알람 설정",
     "writeMessage": "메시지 작성",
     "receivedGifts": "받은 선물",
-    "voiceDetail": "음성 상세"
+    "voiceDetail": "음성 상세",
+    "character": "내 캐릭터",
+    "library": "보관함"
   },
   "tab": {
     "home": "홈",
     "voices": "음성",
     "alarms": "알람",
-    "friends": "친구",
-    "family": "가족",
-    "character": "내 캐릭터",
-    "library": "보관함",
+    "people": "내 사람들",
     "settings": "설정"
   },
   "common": {
@@ -71,7 +74,10 @@
     "weekday": "평일",
     "weekend": "주말",
     "nextIn": "다음 알람까지",
-    "searchPlaceholder": "시간, 음성, 메시지로 검색"
+    "searchPlaceholder": "시간, 음성, 메시지로 검색",
+    "countdownDaysHours": "{{days}}일 {{hours}}시간",
+    "countdownHoursMinutes": "{{hours}}시간 {{minutes}}분",
+    "countdownMinutes": "{{minutes}}분"
   },
   "voices": {
     "title": "음성 프로필",
@@ -118,7 +124,39 @@
     "pending": "대기중",
     "accepted": "수락됨",
     "rejected": "거절됨",
-    "setAlarm": "이 친구에게 알람 보내기"
+    "setAlarm": "이 친구에게 알람 보내기",
+    "sendGift": "이 친구에게 선물하기",
+    "a11yBack": "돌아가기",
+    "a11yAvatar": "{{name}} 프로필",
+    "a11yStat": "{{label}} {{count}}개",
+    "a11ySetAlarm": "이 친구에게 알람 보내기 버튼",
+    "a11ySendGift": "이 친구에게 선물하기 버튼",
+    "a11yGiftItem": "{{text}}, 상태: {{status}}"
+  },
+  "people": {
+    "members": "멤버",
+    "friends": "친구",
+    "requests": "요청",
+    "owner": "소유자",
+    "member": "멤버",
+    "alarmAllowed": "알람 수신 허용",
+    "noGroup": "아직 가족 그룹이 없어요",
+    "noGroupHint": "설정에서 가족 플랜으로 업그레이드하세요",
+    "sendFamilyAlarm": "가족 알람 보내기",
+    "inviteCode": "초대코드",
+    "generateInvite": "초대코드 발급",
+    "generating": "발급 중...",
+    "codeCopied": "초대코드가 복사되었습니다",
+    "shareInvite": "초대코드를 공유하세요",
+    "shareMessage": "VoiceAlarm에 가족으로 참여하세요! 초대코드: {{code}}",
+    "expiresAt": "{{time}} 만료",
+    "revokeInvite": "코드 취소",
+    "revoked": "취소됨",
+    "noInvites": "발급된 초대코드가 없어요",
+    "pendingInvites": "대기 중 초대",
+    "coupleConnected": "연결됨",
+    "bothAlarmAllowed": "서로 알람을 보낼 수 있어요",
+    "coupleAlarmHint": "설정에서 알람 수신을 허용해주세요"
   },
   "library": {
     "title": "보관함",
@@ -130,7 +168,20 @@
     "favoriteError": "즐겨찾기 변경에 실패했어요.",
     "deleteTitle": "메시지 삭제",
     "deleteConfirm": "이 메시지를 보관함에서 삭제하시겠어요?",
-    "deleteError": "메시지 삭제에 실패했어요."
+    "deleteError": "메시지 삭제에 실패했어요.",
+    "createMessage": "메시지 만들기",
+    "addFavorite": "즐겨찾기 추가",
+    "removeFavorite": "즐겨찾기 해제",
+    "categoryMorning": "아침",
+    "categoryLunch": "점심",
+    "categoryAfternoon": "오후",
+    "categoryEvening": "저녁",
+    "categoryNight": "밤",
+    "categoryCheer": "응원",
+    "categoryLove": "사랑",
+    "categoryHealth": "건강",
+    "categoryCustom": "직접 작성",
+    "a11yCategoryBadge": "카테고리: {{category}}"
   },
   "settings": {
     "title": "설정",
@@ -159,6 +210,9 @@
     "terms": "이용약관",
     "privacy": "개인정보처리방침",
     "openSource": "오픈소스 라이선스",
+    "contactSupport": "문의하기",
+    "appDescription": "소중한 사람의 목소리로 하루를 시작하세요",
+    "buildNumber": "빌드",
     "logoutConfirm": "정말 로그아웃하시겠어요?",
     "deleteAccount": "계정 삭제",
     "deleteAccountWarning": "계정을 삭제하면 모든 음성 프로필, 메시지, 알람, 친구 관계가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
@@ -182,7 +236,9 @@
     "page2Title": "매일 따뜻한\n메시지가 찾아와요",
     "page2Desc": "\"점심 잘 챙겨 먹어\"\n\"오늘도 고생 많았어\"\n그 사람의 목소리로 응원을 받아보세요.",
     "page3Title": "소중한 목소리로\n하루를 시작하세요",
-    "page3Desc": "알람부터 퇴근 알림까지,\n하루 종일 소중한 사람의 목소리와 함께.\n지금 바로 시작해볼까요?"
+    "page3Desc": "알람부터 퇴근 알림까지,\n하루 종일 소중한 사람의 목소리와 함께.",
+    "page4Title": "매일 아침,\n나만의 나무가 자라요",
+    "page4Desc": "알람에 일어날 때마다 경험치를 얻고\n씨앗에서 꽃피는 나무로 성장해요.\n연속 기상 스트릭도 쌓아보세요!"
   },
   "alarmCreate": {
     "forWho": "누구에게?",
@@ -208,7 +264,32 @@
     "ttsError": "음성 생성에 실패했습니다.",
     "noMessages": "아직 음성 메시지가 없어요",
     "noMessagesDesc": "직접 만들거나, 아래 프리셋으로 빠르게 생성해보세요!",
-    "goCreate": "메시지 만들기"
+    "goCreate": "메시지 만들기",
+    "playMode": "재생 모드",
+    "ttsMode": "TTS",
+    "soundOnlyMode": "원본",
+    "voiceProfile": "음성 프로필",
+    "voiceProfileRequired": "원본 재생 모드는 등록된 음성 프로필이 필요해요.",
+    "voiceProfileHint": "원본 재생 모드에서는 음성 프로필을 지정해야 합니다.",
+    "am": "오전",
+    "pm": "오후",
+    "alarmIn": "{{hours}}시간 {{minutes}}분 후에 울려요",
+    "alarmInMinutes": "{{minutes}}분 후에 울려요",
+    "alarmInHours": "{{hours}}시간 후에 울려요",
+    "hourUp": "시간 올리기",
+    "hourDown": "시간 내리기",
+    "minuteUp": "분 올리기",
+    "minuteDown": "분 내리기",
+    "vibration": "진동",
+    "vibrationDefault": "기본",
+    "vibrationStrong": "강하게",
+    "vibrationNone": "없음"
+  },
+  "alarmValidation": {
+    "messageRequired": "메시지를 선택해주세요.",
+    "invalidTime": "시간 형식이 올바르지 않습니다.",
+    "invalidMode": "재생 모드가 올바르지 않습니다.",
+    "voiceProfileRequired": "원본 재생 모드에서는 음성 프로필을 지정해야 합니다."
   },
   "alarmEdit": {
     "title": "알람 편집",
@@ -248,7 +329,10 @@
     "giftSent": "{{name}}님에게 선물을 보냈습니다!",
     "giftSentTitle": "전송 완료",
     "giftError": "선물 전송에 실패했습니다.",
-    "friendListError": "친구 목록을 불러올 수 없습니다."
+    "friendListError": "친구 목록을 불러올 수 없습니다.",
+    "a11yVoiceProfile": "음성 프로필: {{name}}",
+    "a11yCategory": "카테고리: {{label}}",
+    "a11ySendGiftTo": "{{name}}에게 선물 보내기"
   },
   "giftReceived": {
     "emptyText": "받은 선물이 없습니다",
@@ -281,6 +365,10 @@
     "tooShort": "최소 10초 이상 녹음해주세요.",
     "tooShortTitle": "녹음 너무 짧음",
     "permissionRequired": "마이크 권한이 필요합니다.\n설정에서 마이크 접근을 허용해주세요.",
+    "a11yStartRecording": "녹음 시작",
+    "a11yStopRecording": "녹음 중지",
+    "a11yDuration": "녹음 시간 {{time}}",
+    "a11yAudioLevel": "음성 입력 레벨",
     "sentences": [
       "안녕하세요, 오늘 하루도 좋은 하루 되세요.",
       "점심 잘 챙겨 먹고, 오후도 힘내세요.",
@@ -298,7 +386,11 @@
     "successDesc": "음성 클론이 생성되고 있어요.",
     "uploadError": "업로드에 실패했습니다.",
     "inputRequired": "파일을 선택하고 이름을 입력해주세요.",
-    "inputRequiredTitle": "입력 필요"
+    "inputRequiredTitle": "입력 필요",
+    "a11yPickFile": "오디오 파일 선택 버튼",
+    "a11yFileInfo": "선택된 파일: {{name}}",
+    "a11yNameInput": "음성 프로필 이름",
+    "a11ySubmit": "음성 등록 버튼"
   },
   "voiceDiarize": {
     "step1Title": "통화 녹음 업로드",
@@ -325,7 +417,13 @@
     "successDesc": "선택한 화자의 음성 클론이 생성되고 있어요.",
     "cloneError": "음성 클론 생성에 실패했습니다.",
     "backToSelect": "← 다른 화자 선택",
-    "minSec": "{{min}}분 {{sec}}초"
+    "minSec": "{{min}}분 {{sec}}초",
+    "a11yPickFile": "녹음 파일 선택 버튼",
+    "a11yAnalyze": "화자 분리 시작 버튼",
+    "a11ySpeaker": "화자 {{index}}, {{duration}}, {{segments}}개 구간",
+    "a11yNameInput": "음성 프로필 이름 입력",
+    "a11ySubmit": "음성 등록 버튼",
+    "a11yBack": "이전 단계로 돌아가기"
   },
   "voiceDetail": {
     "messages": "메시지",
@@ -335,7 +433,21 @@
     "active": "활성",
     "inactive": "비활성",
     "empty": "이 음성으로 만든 메시지나 알람이 없습니다",
-    "createMessage": "이 음성으로 메시지 만들기"
+    "createMessage": "이 음성으로 메시지 만들기",
+    "a11yAvatar": "{{name}} 음성 프로필",
+    "a11yRename": "음성 이름 변경",
+    "a11yRenameInput": "음성 이름 입력",
+    "a11yRenameSave": "이름 변경 저장",
+    "a11yRenameCancel": "이름 변경 취소",
+    "a11yStat": "{{label}} {{count}}개",
+    "a11yCreateMessage": "이 음성으로 메시지 만들기 버튼",
+    "renameFailed": "이름 변경 실패",
+    "renameNetworkError": "네트워크 오류",
+    "renameInputError": "이름이 올바르지 않습니다",
+    "renameSaving": "저장 중…",
+    "renameSave": "저장",
+    "renameCancel": "취소",
+    "rename": "이름 변경"
   },
   "messageDetail": {
     "title": "메시지 상세",
@@ -352,7 +464,13 @@
   },
   "player": {
     "thanks": "💝 고마워",
-    "thanked": "💝 고마움을 전했어요"
+    "thanked": "💝 고마움을 전했어요",
+    "a11yClose": "닫기",
+    "a11yPlay": "재생",
+    "a11yPause": "일시정지",
+    "a11yWaveform": "오디오 재생 진행률",
+    "a11yReaction": "감사 반응 보내기",
+    "a11yVoice": "{{name}}의 음성 메시지"
   },
   "offline": {
     "banner": "오프라인 상태입니다",
@@ -361,6 +479,57 @@
   "login": {
     "google": "Google로 계속하기",
     "apple": "Apple로 계속하기"
+  },
+  "familyAlarm": {
+    "title": "가족 알람 보내기",
+    "recipient": "누구에게 보낼까요?",
+    "wakeTime": "기상 시간",
+    "message": "알람 메시지",
+    "messagePlaceholder": "따뜻한 메시지를 남겨보세요 (최대 500자)",
+    "repeat": "반복 요일",
+    "onceHint": "선택하지 않으면 한 번만 울려요",
+    "submit": "⏰ 알람 보내기",
+    "sending": "보내는 중...",
+    "successTitle": "알람 전송 완료!",
+    "successDesc": "가족에게 따뜻한 알람이 전달되었어요.",
+    "createError": "알람 전송에 실패했어요.",
+    "noRecipients": "가족 알람을 허용한 멤버가 없습니다",
+    "a11yRecipient": "수신자: {{name}}",
+    "a11yDay": "{{day}}요일"
+  },
+  "character": {
+    "loadError": "캐릭터를 불러오지 못했어요",
+    "tapHint": "캐릭터를 탭하면 새 대사가 나와요",
+    "streakDays": "일 연속 기상",
+    "longestStreak": "최장 기록",
+    "dayUnit": "일",
+    "growthProgress": "성장 진행도",
+    "xpProgress": "경험치 진행도",
+    "totalXp": "총 XP",
+    "affection": "애정도",
+    "todayXp": "오늘 획득",
+    "statsTitle": "나무 능력치",
+    "statDiligence": "뿌리 깊이",
+    "statHealth": "줄기 튼튼함",
+    "statConsistency": "잎 무성함",
+    "capReached": "일일 캡 도달",
+    "xpFailed": "XP 지급 실패",
+    "devXpTitle": "테스트용 XP 지급",
+    "devXpHint": "실제 앱에서는 알람 종료/가족 알람 수신 시 자동으로 호출돼요.",
+    "a11yStreak": "연속 기상 {{count}}일, 최장 기록 {{longest}}일",
+    "a11yMilestone": "{{days}}일 마일스톤, {{status}}",
+    "a11yMilestoneAchieved": "달성",
+    "a11yMilestoneNotYet": "미달성",
+    "a11yStat": "{{name}}: {{value}}",
+    "a11yXpStat": "{{label}}: {{value}}"
+  },
+  "lastSeen": {
+    "justNow": "방금 전",
+    "minutesAgo": "{{count}}분 전",
+    "hoursAgo": "{{count}}시간 전",
+    "daysAgo": "{{count}}일 전",
+    "longAgo": "오래 전",
+    "unknown": "접속 기록 없음"
   },
   "dub": {
     "title": "음성 번역",
@@ -380,6 +549,9 @@
     "noAudio": "재생할 오디오 파일이 없습니다",
     "sameLanguage": "원본과 다른 언어를 선택하세요",
     "jobs": "번역 내역",
-    "noJobs": "아직 번역 내역이 없습니다"
+    "noJobs": "아직 번역 내역이 없습니다",
+    "a11ySourceLang": "원본 언어: {{name}}",
+    "a11yTargetLang": "번역 언어: {{name}}",
+    "a11yProgress": "번역 진행 중, {{progress}}% 완료"
   }
 }

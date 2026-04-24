@@ -41,6 +41,10 @@ user.get('/me', async (c) => {
         sql: 'SELECT COUNT(*) as count FROM alarms WHERE user_id = ?',
         args: [userId],
       }),
+      db.execute({
+        sql: "UPDATE users SET last_active_at = datetime('now') WHERE google_id = ?",
+        args: [userId],
+      }),
     ]);
 
     return c.json({

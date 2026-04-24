@@ -110,7 +110,13 @@ export const FontWeight = {
 
 export type FontWeightKey = keyof typeof FontWeight;
 
+export type FontFamilyKey = keyof typeof FontFamily;
+
 export const FontFamily = {
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
   system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
   mono: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
 } as const;

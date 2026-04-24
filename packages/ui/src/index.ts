@@ -17,6 +17,7 @@ export type {
   BorderRadiusKey,
   FontSizeKey,
   FontWeightKey,
+  FontFamilyKey,
 } from './tokens';
 
 export { resolveStateView } from './stateView';
