@@ -1,32 +1,29 @@
 ---
-name: Bug Report
-about: Report a bug to help us improve
-title: '[Bug] '
+name: "Bug Report"
+about: "버그를 제보합니다"
+title: "[bug] "
 labels: bug
-assignees: ''
+assignees: ""
 ---
 
-## Description
-A clear description of the bug.
+## 설명
+버그에 대한 간단한 설명
 
-## Steps to Reproduce
-1. Go to '...'
-2. Click on '...'
-3. See error
+## 재현 방법
+1. '...'로 이동
+2. '...'를 클릭
+3. 에러 발생
 
-## Expected Behavior
-What you expected to happen.
+## 기대 동작
+정상적으로 동작해야 하는 방식
 
-## Actual Behavior
-What actually happened.
+## 실제 동작
+실제로 발생한 결과
 
-## Screenshots
-If applicable, add screenshots.
+## 스크린샷
+해당되는 경우 스크린샷 첨부
 
-## Environment
-- Platform: [e.g. Android 14, iOS 17, Web Chrome 120]
-- App Version: [e.g. 1.0.0]
-- Device: [e.g. Pixel 8, iPhone 15]
-
-## Additional Context
-Any other context about the problem.
+## 환경
+- 플랫폼: [예: Android 14, iOS 17, Web Chrome 120]
+- 앱 버전: [예: 1.0.0]
+- 디바이스: [예: Pixel 8, iPhone 15]

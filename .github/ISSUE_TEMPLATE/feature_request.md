@@ -1,19 +1,19 @@
 ---
-name: Feature Request
-about: Suggest a new feature
-title: '[Feature] '
+name: "Feature Request"
+about: "새로운 기능을 제안합니다"
+title: "[feat] "
 labels: enhancement
-assignees: ''
+assignees: ""
 ---
 
-## Problem
-A clear description of the problem this feature would solve.
+## 문제
+이 기능이 해결할 문제에 대한 설명
 
-## Proposed Solution
-How you'd like this to work.
+## 제안하는 해결책
+원하는 동작 방식
 
-## Alternatives Considered
-Any alternative solutions or features you've considered.
+## 대안
+고려한 다른 해결책이나 기능
 
-## Additional Context
-Any other context, mockups, or screenshots.
+## 추가 컨텍스트
+목업, 스크린샷 등 추가 정보
