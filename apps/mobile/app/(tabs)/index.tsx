@@ -13,9 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
-import { getAlarms, getMessages, getStats } from '../../src/services/api';
+import { getAlarms, getMessages, getStats, getCharacterMe, getLibrary } from '../../src/services/api';
 import type { Stats, WeekTrend } from '../../src/services/api';
+import { stageToEmoji, progressBarWidthPct } from '../../src/lib/character';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
+import type { LibraryItem } from '../../src/types';
 import LoginButtons from '../../src/components/LoginButtons';
 import EmailPasswordForm from '../../src/components/EmailPasswordForm';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -78,6 +80,18 @@ export default function HomeScreen() {
   } = useQuery<Stats>({
     queryKey: ['stats'],
     queryFn: getStats,
+    enabled: isAuthenticated && isConnected,
+  });
+
+  const { data: characterData } = useQuery({
+    queryKey: ['character-me'],
+    queryFn: getCharacterMe,
+    enabled: isAuthenticated && isConnected,
+  });
+
+  const { data: libraryItems } = useQuery({
+    queryKey: ['library', 'all'],
+    queryFn: () => getLibrary(),
     enabled: isAuthenticated && isConnected,
   });
 
@@ -209,6 +223,36 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* 캐릭터 미니 위젯 */}
+        {isAuthenticated && characterData && (
+          <TouchableOpacity
+            style={styles.characterWidget}
+            onPress={() => router.push('/character')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.viewCharacter')}
+          >
+            <Text style={styles.widgetEmoji}>
+              {stageToEmoji(characterData.character.stage)}
+            </Text>
+            <View style={styles.widgetInfo}>
+              <View style={styles.widgetNameRow}>
+                <Text style={styles.widgetName}>{characterData.character.name}</Text>
+                <Text style={styles.widgetLevel}>Lv.{characterData.character.level}</Text>
+              </View>
+              <View style={styles.widgetProgressBg}>
+                <View
+                  style={[
+                    styles.widgetProgressFill,
+                    { width: `${progressBarWidthPct(characterData.progress)}%` },
+                  ]}
+                />
+              </View>
+            </View>
+            <Text style={styles.widgetArrow}>›</Text>
+          </TouchableOpacity>
+        )}
+
         {/* 다음 알람 카드 */}
         <TouchableOpacity
           style={styles.nextAlarmCard}
@@ -260,6 +304,44 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
+        {/* 최근 메시지 */}
+        {isAuthenticated && libraryItems && libraryItems.length > 0 && (
+          <View style={styles.recentSection}>
+            <View style={styles.recentHeader}>
+              <Text style={styles.sectionTitle}>{t('home.recentMessages')}</Text>
+              <TouchableOpacity onPress={() => router.push('/library')}>
+                <Text style={styles.viewAllLink}>{t('home.viewAll')}</Text>
+              </TouchableOpacity>
+            </View>
+            {libraryItems.slice(0, 3).map((item: LibraryItem) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.recentItem}
+                onPress={() => router.push(`/message/${item.message_id}`)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.recentAvatar}>
+                  <Text style={styles.recentAvatarText}>
+                    {(item.voice_name || '?').charAt(0)}
+                  </Text>
+                </View>
+                <View style={styles.recentContent}>
+                  <Text style={styles.recentVoiceName}>{item.voice_name}</Text>
+                  <Text style={styles.recentText} numberOfLines={1}>
+                    &quot;{item.text}&quot;
+                  </Text>
+                </View>
+                <Text style={styles.recentDate}>
+                  {new Date(item.received_at).toLocaleDateString('ko-KR', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* 빠른 액션 */}
         <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>{t('home.quickStart')}</Text>
@@ -301,7 +383,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => router.push('/(tabs)/friends')}
+              onPress={() => router.push('/(tabs)/people')}
             >
               <Text style={styles.actionEmoji}>👥</Text>
               <Text style={styles.actionLabel}>{t('home.manageFriends')}</Text>
@@ -542,6 +624,112 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.light.primary,
     marginTop: 4,
+  },
+  characterWidget: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    shadowColor: Colors.light.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  widgetEmoji: {
+    fontSize: 36,
+    marginRight: Spacing.md,
+  },
+  widgetInfo: {
+    flex: 1,
+  },
+  widgetNameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  widgetName: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.semibold,
+    color: Colors.light.text,
+  },
+  widgetLevel: {
+    fontSize: FontSize.xs,
+    color: Colors.light.primary,
+    fontFamily: FontFamily.semibold,
+  },
+  widgetProgressBg: {
+    height: 6,
+    backgroundColor: Colors.light.surfaceVariant,
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
+  },
+  widgetProgressFill: {
+    height: '100%',
+    backgroundColor: Colors.light.primary,
+    borderRadius: BorderRadius.full,
+  },
+  widgetArrow: {
+    fontSize: FontSize.xl,
+    color: Colors.light.textTertiary,
+    marginLeft: Spacing.sm,
+  },
+  recentSection: {
+    marginBottom: Spacing.lg,
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  viewAllLink: {
+    fontSize: FontSize.sm,
+    color: Colors.light.primary,
+    fontFamily: FontFamily.semibold,
+  },
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  recentAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  recentAvatarText: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.light.primaryDark,
+  },
+  recentContent: {
+    flex: 1,
+  },
+  recentVoiceName: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.semibold,
+    color: Colors.light.text,
+  },
+  recentText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  recentDate: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textTertiary,
+    marginLeft: Spacing.sm,
   },
   loginButton: {
     backgroundColor: Colors.light.primary,

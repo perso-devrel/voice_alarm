@@ -19,6 +19,9 @@
     "addAlarm": "Add alarm",
     "receivedGifts": "Received gifts",
     "manageFriends": "Friends",
+    "viewCharacter": "View character",
+    "recentMessages": "Recent messages",
+    "viewAll": "View all ›",
     "loginTitle": "Sign in to get started",
     "loginDesc": "Register a loved one's voice and\nreceive warm messages every day"
   },
@@ -29,16 +32,15 @@
     "alarmSetting": "Alarm Settings",
     "writeMessage": "Create Message",
     "receivedGifts": "Received Gifts",
-    "voiceDetail": "Voice Detail"
+    "voiceDetail": "Voice Detail",
+    "character": "Character",
+    "library": "Library"
   },
   "tab": {
     "home": "Home",
     "voices": "Voices",
     "alarms": "Alarms",
-    "friends": "Friends",
-    "family": "Family",
-    "character": "Character",
-    "library": "Library",
+    "people": "People",
     "settings": "Settings"
   },
   "common": {
@@ -119,6 +121,17 @@
     "accepted": "Accepted",
     "rejected": "Rejected",
     "setAlarm": "Send alarm to this friend"
+  },
+  "people": {
+    "members": "Members",
+    "friends": "Friends",
+    "requests": "Requests",
+    "owner": "Owner",
+    "member": "Member",
+    "alarmAllowed": "Alarm allowed",
+    "noGroup": "No family group yet",
+    "noGroupHint": "Upgrade to a family plan in Settings",
+    "sendFamilyAlarm": "Send family alarm"
   },
   "library": {
     "title": "Library",
@@ -356,6 +369,21 @@
     "useForAlarm": "Set as alarm",
     "createAnother": "Create new message with same voice",
     "translate": "Translate to another language"
+  },
+  "familyAlarm": {
+    "title": "Send Family Alarm",
+    "recipient": "Who to send to?",
+    "wakeTime": "Wake time",
+    "message": "Alarm message",
+    "messagePlaceholder": "Leave a warm message (max 500 chars)",
+    "repeat": "Repeat days",
+    "onceHint": "If none selected, it rings once",
+    "submit": "⏰ Send alarm",
+    "sending": "Sending...",
+    "successTitle": "Alarm sent!",
+    "successDesc": "A warm alarm has been delivered to your family.",
+    "createError": "Failed to send alarm.",
+    "noRecipients": "No family members have allowed alarms"
   },
   "dub": {
     "title": "Voice Translation",

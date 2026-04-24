@@ -121,6 +121,14 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
             <Stack.Screen
+              name="character/index"
+              options={{ headerShown: true, title: t('screen.character') }}
+            />
+            <Stack.Screen
+              name="library/index"
+              options={{ headerShown: true, title: t('screen.library') }}
+            />
+            <Stack.Screen
               name="voice/[id]"
               options={{ headerShown: true, title: t('screen.voiceDetail') }}
             />
@@ -169,6 +177,14 @@ export default function RootLayout() {
               options={{
                 headerShown: true,
                 title: t('screen.receivedGifts'),
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="family-alarm/create"
+              options={{
+                headerShown: true,
+                title: t('familyAlarm.title'),
                 presentation: 'modal',
               }}
             />

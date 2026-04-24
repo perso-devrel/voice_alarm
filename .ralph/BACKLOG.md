@@ -33,40 +33,45 @@
 - [ ] 나머지 28개 파일 fontWeight → fontFamily(FontFamily 토큰) 변환
 - [ ] iOS/Android 모두 한국어+영어 렌더링 확인
 
-### Phase 1-C: 모바일 탭 축소 (8개 → 5개)
-- [ ] `app/(tabs)/character.tsx` → `app/character/index.tsx` 스택 화면으로 이동
-- [ ] `app/(tabs)/library.tsx` → `app/library/index.tsx` 스택 화면으로 이동
-- [ ] `app/(tabs)/_layout.tsx` — friends/family/character/library Screen 제거, people Screen 추가 (아이콘: 👤, 라벨: `tab.people`)
-- [ ] `app/(tabs)/index.tsx` — 홈 화면에 캐릭터 미니 위젯 삽입 (이모지 + 레벨 + 프로그레스바, 탭 시 `/character`로 이동)
-- [ ] `app/(tabs)/index.tsx` — 홈 화면에 "최근 메시지" 섹션 추가 (2-3개 표시 + "전체 보기" → `/library` 이동)
-- [ ] `src/i18n/ko.json` — `tab.friends`, `tab.family`, `tab.character`, `tab.library` 삭제, `tab.people: "내 사람들"` 추가
-- [ ] `src/i18n/en.json` — 동일 키 변경
-- [ ] `app/(tabs)/friends.tsx` 삭제 (Phase 2에서 people.tsx로 대체)
-- [ ] `app/(tabs)/family.tsx` 삭제 (Phase 2에서 people.tsx로 대체)
-- [ ] typecheck 통과 확인
+### Phase 1-C: 모바일 탭 축소 (8개 → 5개) ✅ (2026-04-24)
+- [x] `app/(tabs)/character.tsx` → `app/character/index.tsx` 스택 화면으로 이동
+- [x] `app/(tabs)/library.tsx` → `app/library/index.tsx` 스택 화면으로 이동
+- [x] `app/(tabs)/_layout.tsx` — friends/family/character/library Screen 제거, people Screen 추가 (아이콘: 👤, 라벨: `tab.people`)
+- [x] `app/(tabs)/index.tsx` — 홈 화면에 캐릭터 미니 위젯 삽입 (이모지 + 레벨 + 프로그레스바, 탭 시 `/character`로 이동)
+- [x] `app/(tabs)/index.tsx` — 홈 화면에 "최근 메시지" 섹션 추가 (2-3개 표시 + "전체 보기" → `/library` 이동)
+- [x] `src/i18n/ko.json` — `tab.friends`, `tab.family`, `tab.character`, `tab.library` 삭제, `tab.people: "내 사람들"` 추가
+- [x] `src/i18n/en.json` — 동일 키 변경
+- [x] `app/(tabs)/friends.tsx` 삭제 (people.tsx로 대체)
+- [x] `app/(tabs)/family.tsx` 삭제 (people.tsx로 대체)
+- [x] typecheck 통과 확인
 
 ## P1 — Friends + Family 탭 통합 (People)
 
-### People 탭 신규 생성
-- [ ] `app/(tabs)/people.tsx` 신규 — 세그먼트 컨트롤 (멤버/친구/요청)
-- [ ] 플랜별 UI 분기: free/personal → "멤버" 세그먼트 숨김 (기본탭 "친구"), family → "멤버" 세그먼트 표시 (기본탭 "멤버")
-- [ ] 친구 세그먼트: friends.tsx에서 이메일 검색 + 자동완성 + 친구 추가/삭제/목록 로직 이동
-- [ ] 요청 세그먼트: friends.tsx에서 대기중 요청 수락/거절 로직 이동
-- [ ] 멤버 세그먼트: family.tsx에서 가족 멤버 표시 + 초대코드 발급 UI 이동
-- [ ] 커플 뷰(family 2인 그룹): 서로가 보이는 간결한 카드 레이아웃
+### People 탭 신규 생성 (부분 완료 2026-04-24)
+- [x] `app/(tabs)/people.tsx` 신규 — 세그먼트 컨트롤 (멤버/친구/요청)
+- [x] 플랜별 UI 분기: free/personal → "멤버" 세그먼트 숨김 (기본탭 "친구"), family → "멤버" 세그먼트 표시 (기본탭 "멤버")
+- [x] 친구 세그먼트: 이메일 추가 + 친구 목록/삭제
+- [x] 요청 세그먼트: 대기중 요청 수락
+- [x] 멤버 세그먼트: 가족 멤버 표시 + 역할 뱃지 + 알람 허용 상태
+- [ ] 멤버 세그먼트: 초대코드 발급 UI 이동
+- [ ] 커플 뷰(family 2인 그룹): 서로가 보이는 간결한 카드 레이아웃 (현재 border 강조만)
 
 ### 컴포넌트 추출
 - [ ] `src/components/FamilyMemberRow.tsx` 신규 — family.tsx의 MemberRow 컴포넌트 추출
 - [ ] `src/components/PeopleSkeletonCard.tsx` 신규 — friends.tsx의 SkeletonCard 추출
 
-### 가족 알람 분리
-- [ ] `app/family-alarm/create.tsx` 신규 — family.tsx의 알람 예약 폼 분리 (수신자 선택, 시간, 메시지, 반복요일)
-- [ ] People 탭 멤버 세그먼트에 "가족 알람 보내기" 버튼 → `/family-alarm/create` 이동
+### 가족 알람 분리 ✅ (2026-04-24)
+- [x] `app/family-alarm/create.tsx` 신규 — 알람 예약 폼 (수신자 선택, 시간, 메시지, 반복요일)
+- [x] People 탭 멤버 세그먼트에 "가족 알람 보내기" 버튼 → `/family-alarm/create` 이동
+- [x] root _layout.tsx에 Stack.Screen 추가
+- [x] familyAlarm.* i18n 키 추가 (ko/en)
 
-### i18n 추가
-- [ ] `src/i18n/ko.json`에 `people.*` 키 추가 (멤버, 친구, 요청, 초대코드, 가족알람 등)
-- [ ] `src/i18n/en.json` 동일
-- [ ] typecheck 통과 확인
+### i18n 추가 (부분 완료 2026-04-24)
+- [x] `src/i18n/ko.json`에 `people.*` 키 추가 (멤버, 친구, 요청 등)
+- [x] `src/i18n/en.json` 동일
+- [x] `familyAlarm.*` 키 추가 (ko/en)
+- [ ] 초대코드 관련 i18n 키 추가
+- [x] typecheck 통과 확인
 
 ## P2 — 캐릭터 시스템 정비 (나무 테마 + 스트릭)
 

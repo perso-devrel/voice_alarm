@@ -84,7 +84,7 @@ export default function CharacterScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.light.primary} />
         </View>
@@ -94,7 +94,7 @@ export default function CharacterScreen() {
 
   if (error || !data) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>캐릭터를 불러오지 못했어요.</Text>
         </View>
@@ -106,11 +106,8 @@ export default function CharacterScreen() {
   const barWidth = progressBarWidthPct(progress);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.headerTitle}>내 캐릭터</Text>
-        <Text style={styles.headerSubtitle}>알람을 잘 들을수록 캐릭터가 자라요.</Text>
-
         <Pressable
           onPress={handleTap}
           style={styles.characterCard}
@@ -220,17 +217,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
     textAlign: 'center',
-  },
-  headerTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: '700',
-    color: Colors.light.primary,
-    marginBottom: Spacing.xs,
-  },
-  headerSubtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
-    marginBottom: Spacing.lg,
   },
   characterCard: {
     backgroundColor: Colors.light.surface,

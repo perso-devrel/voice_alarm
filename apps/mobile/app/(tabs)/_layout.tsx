@@ -9,10 +9,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     home: '🏠',
     voices: '🎙️',
     alarms: '⏰',
-    friends: '👥',
-    family: '👨‍👩‍👧',
-    character: '🌱',
-    library: '📚',
+    people: '👤',
     settings: '⚙️',
   };
   return <Text style={[styles.icon, focused && styles.iconFocused]}>{icons[name] || '📱'}</Text>;
@@ -55,31 +52,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="friends"
+        name="people"
         options={{
-          title: t('tab.friends'),
-          tabBarIcon: ({ focused }) => <TabIcon name="friends" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="family"
-        options={{
-          title: t('tab.family'),
-          tabBarIcon: ({ focused }) => <TabIcon name="family" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="character"
-        options={{
-          title: t('tab.character'),
-          tabBarIcon: ({ focused }) => <TabIcon name="character" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="library"
-        options={{
-          title: t('tab.library'),
-          tabBarIcon: ({ focused }) => <TabIcon name="library" focused={focused} />,
+          title: t('tab.people'),
+          tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} />,
         }}
       />
       <Tabs.Screen

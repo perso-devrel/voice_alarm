@@ -19,6 +19,9 @@
     "addAlarm": "알람 추가",
     "receivedGifts": "받은 선물",
     "manageFriends": "친구 관리",
+    "viewCharacter": "캐릭터 보기",
+    "recentMessages": "최근 메시지",
+    "viewAll": "전체 보기 ›",
     "loginTitle": "로그인하고 시작하세요",
     "loginDesc": "소중한 사람의 목소리를 등록하고\n매일 따뜻한 메시지를 받아보세요"
   },
@@ -29,16 +32,15 @@
     "alarmSetting": "알람 설정",
     "writeMessage": "메시지 작성",
     "receivedGifts": "받은 선물",
-    "voiceDetail": "음성 상세"
+    "voiceDetail": "음성 상세",
+    "character": "내 캐릭터",
+    "library": "보관함"
   },
   "tab": {
     "home": "홈",
     "voices": "음성",
     "alarms": "알람",
-    "friends": "친구",
-    "family": "가족",
-    "character": "내 캐릭터",
-    "library": "보관함",
+    "people": "내 사람들",
     "settings": "설정"
   },
   "common": {
@@ -119,6 +121,17 @@
     "accepted": "수락됨",
     "rejected": "거절됨",
     "setAlarm": "이 친구에게 알람 보내기"
+  },
+  "people": {
+    "members": "멤버",
+    "friends": "친구",
+    "requests": "요청",
+    "owner": "소유자",
+    "member": "멤버",
+    "alarmAllowed": "알람 수신 허용",
+    "noGroup": "아직 가족 그룹이 없어요",
+    "noGroupHint": "설정에서 가족 플랜으로 업그레이드하세요",
+    "sendFamilyAlarm": "가족 알람 보내기"
   },
   "library": {
     "title": "보관함",
@@ -361,6 +374,21 @@
   "login": {
     "google": "Google로 계속하기",
     "apple": "Apple로 계속하기"
+  },
+  "familyAlarm": {
+    "title": "가족 알람 보내기",
+    "recipient": "누구에게 보낼까요?",
+    "wakeTime": "기상 시간",
+    "message": "알람 메시지",
+    "messagePlaceholder": "따뜻한 메시지를 남겨보세요 (최대 500자)",
+    "repeat": "반복 요일",
+    "onceHint": "선택하지 않으면 한 번만 울려요",
+    "submit": "⏰ 알람 보내기",
+    "sending": "보내는 중...",
+    "successTitle": "알람 전송 완료!",
+    "successDesc": "가족에게 따뜻한 알람이 전달되었어요.",
+    "createError": "알람 전송에 실패했어요.",
+    "noRecipients": "가족 알람을 허용한 멤버가 없습니다"
   },
   "dub": {
     "title": "음성 번역",

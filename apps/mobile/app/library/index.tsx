@@ -185,7 +185,7 @@ export default function LibraryScreen() {
                 <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
               </View>
               <Text style={styles.messageText} numberOfLines={2}>
-                "{item.text}"
+                &quot;{item.text}&quot;
               </Text>
               <View style={styles.miniPlayerRow}>
                 <MiniWaveformPlayer
@@ -220,12 +220,7 @@ export default function LibraryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{t('library.title')}</Text>
-        <Text style={styles.subtitle}>{t('library.subtitle')}</Text>
-      </View>
-
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.filterRow}>
         <TouchableOpacity
           style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
@@ -299,20 +294,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
-  },
-  header: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.hero,
-    fontWeight: '700',
-    color: Colors.light.text,
-  },
-  subtitle: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    marginTop: Spacing.xs,
   },
   filterRow: {
     flexDirection: 'row',
