@@ -71,6 +71,7 @@ export default function EditAlarmScreen() {
   const readyVoices: VoiceProfile[] =
     voices?.filter((v: VoiceProfile) => v.status === 'ready') ?? [];
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (alarm && !loaded) {
       const [h, m] = alarm.time.split(':').map(Number);
@@ -85,6 +86,7 @@ export default function EditAlarmScreen() {
       setLoaded(true);
     }
   }, [alarm, loaded]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const editMutation = useMutation({
     mutationFn: (params: {

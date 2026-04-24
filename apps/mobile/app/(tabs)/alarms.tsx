@@ -171,6 +171,7 @@ export default function AlarmsScreen() {
     setCountdownText(nearest < Infinity ? formatCountdown(nearest, t) : null);
   }, [alarms, cachedAlarms, t]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     computeCountdown();
     const id = setInterval(() => {
@@ -187,6 +188,7 @@ export default function AlarmsScreen() {
       syncAlarmNotifications(alarms);
     }
   }, [alarms]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const displayAlarms = alarms ?? cachedAlarms;
   const showingCached = !alarms && !!cachedAlarms && !isConnected;
@@ -202,6 +204,7 @@ export default function AlarmsScreen() {
         )
       : [...displayAlarms];
     return filtered.sort(compareAlarms);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayAlarms, searchQuery, tick]);
 
   const resyncNotifications = async () => {

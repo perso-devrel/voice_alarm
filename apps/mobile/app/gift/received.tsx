@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 
 function SkeletonGiftCard({ dynStyles }: { dynStyles: ReturnType<typeof createStyles> }) {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+  const opacity = useMemo(() => new Animated.Value(0.3), []);
 
   useEffect(() => {
     const pulse = Animated.loop(

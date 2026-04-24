@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -47,7 +47,7 @@ export default function RecordScreen() {
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useMemo(() => new Animated.Value(1), []);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const meteringRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

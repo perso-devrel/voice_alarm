@@ -36,7 +36,7 @@ function WaveformBar({
   isPlaying: boolean;
 }) {
   const { colors } = useTheme();
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useMemo(() => new Animated.Value(1), []);
 
   useEffect(() => {
     if (isPlaying && isNearPlayhead) {
@@ -98,7 +98,7 @@ export default function PlayerScreen() {
   const waveformWidth = useRef(WAVEFORM_TOTAL_WIDTH);
   const progressRef = useRef(0);
   const durationRef = useRef(0);
-  const playheadAnim = useRef(new Animated.Value(0)).current;
+  const playheadAnim = useMemo(() => new Animated.Value(0), []);
 
   const waveformBars = useMemo(
     () => generateWaveform(params.messageId || 'default', WAVEFORM_BAR_COUNT),
@@ -137,6 +137,7 @@ export default function PlayerScreen() {
     [playheadAnim],
   );
 
+  /* eslint-disable react-hooks/refs */
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -155,6 +156,7 @@ export default function PlayerScreen() {
       }),
     [seekToPosition],
   );
+  /* eslint-enable react-hooks/refs */
 
   const onPlaybackStatus = useCallback(
     (status: AVPlaybackStatus) => {
@@ -197,14 +199,7 @@ export default function PlayerScreen() {
     return map[params.category] || '💌';
   };
 
-  useEffect(() => {
-    handlePlay();
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
-  }, []);
-
-  const handlePlay = async () => {
+  const handlePlay = useCallback(async () => {
     if (sound) {
       if (isPlaying) {
         await sound.pauseAsync();
@@ -227,7 +222,16 @@ export default function PlayerScreen() {
     setIsPlaying(true);
     setPlaying(params.messageId);
     newSound.setOnPlaybackStatusUpdate(onPlaybackStatus);
-  };
+  }, [sound, isPlaying, progress, params.messageId, setPlaying, onPlaybackStatus]);
+
+  /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
+  useEffect(() => {
+    handlePlay();
+    return () => {
+      soundRef.current?.unloadAsync();
+    };
+  }, []);
+  /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 
   const handleClose = async () => {
     if (sound) {

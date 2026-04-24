@@ -98,6 +98,7 @@ export default function HomeScreen() {
     enabled: isAuthenticated && isConnected,
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (alarms && alarms.length > 0) {
       cacheAlarms(alarms);
@@ -111,6 +112,7 @@ export default function HomeScreen() {
       setCachedMessagesList(messages);
     }
   }, [messages]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const displayAlarms = alarms ?? cachedAlarmsList;
   const displayMessages = messages ?? cachedMessagesList;

@@ -60,9 +60,10 @@ export default function FamilyAlarmCreateScreen() {
   });
 
   const selfUserId = profile?.id ?? '';
+  const members = familyData?.members;
   const allowedRecipients = useMemo(
-    () => (familyData?.members ? filterFamilyAlarmRecipients(familyData.members, selfUserId) : []),
-    [familyData?.members, selfUserId],
+    () => (members ? filterFamilyAlarmRecipients(members, selfUserId) : []),
+    [members, selfUserId],
   );
 
   const createMutation = useMutation({

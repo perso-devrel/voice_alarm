@@ -35,7 +35,7 @@ export default function OnboardingScreen() {
   ], [colors]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const scrollX = useMemo(() => new Animated.Value(0), []);
 
   const finishOnboarding = useCallback(async () => {
     completeOnboarding();

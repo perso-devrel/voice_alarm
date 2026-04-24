@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Spacing, BorderRadius, FontSize, FontFamily } from '../constants/theme';
@@ -17,6 +17,20 @@ export default function LoginButtons() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
+  const handleLoginSuccess = useCallback(async (idToken: string, provider: 'google' | 'apple') => {
+    try {
+      await saveAuthToken(idToken, provider);
+      const user = decodeIdToken(idToken);
+      if (user) {
+        setAuth(idToken, user.sub);
+      }
+    } catch {
+      Alert.alert(t('login.error', '로그인 실패'), t('login.saveFailed', '로그인 정보 저장에 실패했습니다.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [setAuth, t]);
+
   useEffect(() => {
     if (!response) return;
 
@@ -32,22 +46,8 @@ export default function LoginButtons() {
       Alert.alert(t('login.error', '로그인 실패'), msg);
     }
     // 'dismiss' (사용자가 취소)는 무시
-    setLoading(false);
-  }, [response]);
-
-  const handleLoginSuccess = async (idToken: string, provider: 'google' | 'apple') => {
-    try {
-      await saveAuthToken(idToken, provider);
-      const user = decodeIdToken(idToken);
-      if (user) {
-        setAuth(idToken, user.sub);
-      }
-    } catch {
-      Alert.alert(t('login.error', '로그인 실패'), t('login.saveFailed', '로그인 정보 저장에 실패했습니다.'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    setLoading(false); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [response, handleLoginSuccess, t]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);

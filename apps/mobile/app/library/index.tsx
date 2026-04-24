@@ -75,12 +75,14 @@ export default function LibraryScreen() {
     enabled: isAuthenticated && isConnected,
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (items && items.length > 0 && filter === 'all') {
       cacheLibrary(items);
       setCachedItems(items);
     }
   }, [items, filter]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const baseItems = items ?? (filter === 'all' ? cachedItems : null);
   const displayItems = useMemo(() => {

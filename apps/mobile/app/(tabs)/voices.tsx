@@ -57,12 +57,14 @@ export default function VoicesScreen() {
     enabled: isAuthenticated && isConnected,
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (profiles && profiles.length > 0) {
       cacheVoices(profiles);
       setCachedProfiles(profiles);
     }
   }, [profiles]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const displayProfiles = profiles ?? cachedProfiles;
 

@@ -20,6 +20,7 @@ function req(path: string) {
 }
 
 describe('loggerMiddleware', () => {
+  /* eslint-disable no-console */
   const origLog = console.log;
   const origWarn = console.warn;
   const origError = console.error;
@@ -41,6 +42,7 @@ describe('loggerMiddleware', () => {
     console.warn = origWarn;
     console.error = origError;
   });
+  /* eslint-enable no-console */
 
   it('X-Request-Id 헤더 설정', async () => {
     const app = buildApp();

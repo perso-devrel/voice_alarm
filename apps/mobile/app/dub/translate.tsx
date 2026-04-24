@@ -8,7 +8,7 @@ import {
   ScrollView,
   FlatList,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +33,7 @@ import { Toast } from '../../src/components/Toast';
 
 export default function TranslateScreen() {
   const { message_id } = useLocalSearchParams<{ message_id: string }>();
-  const router = useRouter();
+
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const toast = useToast();

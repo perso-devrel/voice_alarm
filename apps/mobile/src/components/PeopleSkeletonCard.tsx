@@ -1,10 +1,10 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { Spacing, BorderRadius } from '../constants/theme';
 import { useTheme, type ThemeColors } from '../hooks/useTheme';
 
 function usePulse() {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+  const opacity = useMemo(() => new Animated.Value(0.3), []);
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([

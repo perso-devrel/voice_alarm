@@ -14,7 +14,7 @@ import {
   getCharacterMe,
   grantCharacterXp,
 } from '../../src/services/api';
-import type { XpEvent, StreakAchievement, CharacterStats } from '../../src/services/api';
+import type { XpEvent, StreakAchievement } from '../../src/services/api';
 import {
   formatProgress,
   pickStreakAwareDialogue,
@@ -35,43 +35,51 @@ const DEV_EVENTS: { event: XpEvent; label: string }[] = [
 
 const MILESTONES = [7, 30, 90] as const;
 
+type DynStyles = ReturnType<typeof createStyles>;
+
+function StatBar({ label, value, max, color, dynStyles, t }: {
+  label: string; value: number; max: number; color: string;
+  dynStyles: DynStyles; t: ReturnType<typeof useTranslation>['t'];
+}) {
+  const pct = Math.min((value / Math.max(max, 1)) * 100, 100);
+  return (
+    <View
+      style={dynStyles.statBarRow}
+      accessibilityLabel={t('character.a11yStat', { name: label, value })}
+    >
+      <Text style={dynStyles.statBarLabel}>{label}</Text>
+      <View style={dynStyles.statBarTrack}>
+        <View style={[dynStyles.statBarFill, { width: `${pct}%`, backgroundColor: color }]} />
+      </View>
+      <Text style={dynStyles.statBarValue}>{value}</Text>
+    </View>
+  );
+}
+
+function MilestoneBadge({ milestone, achieved, dynStyles, t }: {
+  milestone: number; achieved: boolean;
+  dynStyles: DynStyles; t: ReturnType<typeof useTranslation>['t'];
+}) {
+  const emoji = milestone === 7 ? '🌱' : milestone === 30 ? '🌳' : '🌸';
+  return (
+    <View
+      style={[dynStyles.milestoneBadge, achieved && dynStyles.milestoneBadgeAchieved]}
+      accessibilityLabel={t('character.a11yMilestone', {
+        days: milestone,
+        status: achieved ? t('character.a11yMilestoneAchieved') : t('character.a11yMilestoneNotYet'),
+      })}
+    >
+      <Text style={dynStyles.milestoneEmoji}>{emoji}</Text>
+      <Text style={[dynStyles.milestoneDay, achieved && dynStyles.milestoneDayAchieved]}>
+        {milestone}
+      </Text>
+    </View>
+  );
+}
+
 export default function CharacterScreen() {
   const { colors } = useTheme();
   const dynStyles = useMemo(() => createStyles(colors), [colors]);
-
-  function StatBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
-    const pct = Math.min((value / Math.max(max, 1)) * 100, 100);
-    return (
-      <View
-        style={dynStyles.statBarRow}
-        accessibilityLabel={t('character.a11yStat', { name: label, value })}
-      >
-        <Text style={dynStyles.statBarLabel}>{label}</Text>
-        <View style={dynStyles.statBarTrack}>
-          <View style={[dynStyles.statBarFill, { width: `${pct}%`, backgroundColor: color }]} />
-        </View>
-        <Text style={dynStyles.statBarValue}>{value}</Text>
-      </View>
-    );
-  }
-
-  function MilestoneBadge({ milestone, achieved }: { milestone: number; achieved: boolean }) {
-    const emoji = milestone === 7 ? '🌱' : milestone === 30 ? '🌳' : '🌸';
-    return (
-      <View
-        style={[dynStyles.milestoneBadge, achieved && dynStyles.milestoneBadgeAchieved]}
-        accessibilityLabel={t('character.a11yMilestone', {
-          days: milestone,
-          status: achieved ? t('character.a11yMilestoneAchieved') : t('character.a11yMilestoneNotYet'),
-        })}
-      >
-        <Text style={dynStyles.milestoneEmoji}>{emoji}</Text>
-        <Text style={[dynStyles.milestoneDay, achieved && dynStyles.milestoneDayAchieved]}>
-          {milestone}
-        </Text>
-      </View>
-    );
-  }
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [dialogueSeed, setDialogueSeed] = useState(0);
@@ -96,8 +104,8 @@ export default function CharacterScreen() {
 
   const stage = data?.character.stage ?? 'seed';
   const prevStageRef = useRef(stage);
-  const emojiScale = useRef(new Animated.Value(1)).current;
-  const emojiOpacity = useRef(new Animated.Value(1)).current;
+  const emojiScale = useMemo(() => new Animated.Value(1), []);
+  const emojiOpacity = useMemo(() => new Animated.Value(1), []);
 
   useEffect(() => {
     if (shouldShowStageTransition(prevStageRef.current, stage)) {
@@ -191,7 +199,7 @@ export default function CharacterScreen() {
           {/* Milestone badges */}
           <View style={dynStyles.milestoneRow}>
             {MILESTONES.map((m) => (
-              <MilestoneBadge key={m} milestone={m} achieved={achievedMilestones.has(m)} />
+              <MilestoneBadge key={m} milestone={m} achieved={achievedMilestones.has(m)} dynStyles={dynStyles} t={t} />
             ))}
           </View>
         </View>
@@ -239,18 +247,24 @@ export default function CharacterScreen() {
               value={stats.diligence}
               max={Math.max(stats.diligence, stats.health, stats.consistency, 10)}
               color="#8B5E3C"
+              dynStyles={dynStyles}
+              t={t}
             />
             <StatBar
               label={t('character.statHealth')}
               value={stats.health}
               max={Math.max(stats.diligence, stats.health, stats.consistency, 10)}
               color={colors.success}
+              dynStyles={dynStyles}
+              t={t}
             />
             <StatBar
               label={t('character.statConsistency')}
               value={stats.consistency}
               max={Math.max(stats.diligence, stats.health, stats.consistency, 10)}
               color={colors.primary}
+              dynStyles={dynStyles}
+              t={t}
             />
           </View>
         </View>

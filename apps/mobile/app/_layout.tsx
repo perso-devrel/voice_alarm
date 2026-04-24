@@ -62,6 +62,7 @@ export default function RootLayout() {
       hasNavigatedToOnboarding.current = true;
       router.replace('/onboarding');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateLoaded, hasCompletedOnboarding]);
 
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function RootLayout() {
     return () => {
       responseListener.current?.remove();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!fontsLoaded && !fontError) {

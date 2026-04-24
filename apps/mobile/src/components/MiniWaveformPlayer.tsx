@@ -30,6 +30,7 @@ export function MiniWaveformPlayer({ messageId, isActive, onPlay, onStop }: Prop
 
   const bars = useMemo(() => generateWaveform(messageId, BAR_COUNT), [messageId]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isActive && sound) {
       sound.unloadAsync();
@@ -41,6 +42,7 @@ export function MiniWaveformPlayer({ messageId, isActive, onPlay, onStop }: Prop
       setDurationMs(0);
     }
   }, [isActive, sound]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     return () => {
