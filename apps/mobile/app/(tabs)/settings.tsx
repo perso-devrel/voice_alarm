@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { getUserProfile, deleteAccount } from '../../src/services/api';
 import { useState, useEffect } from 'react';
@@ -128,7 +128,7 @@ export default function SettingsScreen() {
                   >
                     <Text style={{
                       fontSize: FontSize.sm,
-                      fontWeight: '600',
+                      fontFamily: FontFamily.semibold,
                       color: defaultSnoozeMinutes === m ? '#FFF' : Colors.light.textSecondary,
                     }}>
                       {m}{t('settings.minutes')}
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.hero,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.lg,
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.textSecondary,
     textTransform: 'uppercase',
     marginBottom: Spacing.sm,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: FontSize.md,
     color: Colors.light.error,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   deleteAccountButton: {
     alignItems: 'center',
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   },
   deleteDialogTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.error,
     marginBottom: Spacing.sm,
   },
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   deleteDialogCancelText: {
     fontSize: FontSize.md,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   deleteDialogConfirm: {
     flex: 1,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   deleteDialogConfirmText: {
     fontSize: FontSize.md,
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   disabled: {
     opacity: 0.5,

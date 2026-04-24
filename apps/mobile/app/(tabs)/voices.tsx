@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getVoiceProfiles, deleteVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { ErrorView } from '../../src/components/QueryStateView';
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.hero,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
   },
   subtitle: {
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   addTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   addDesc: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.md,
   },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   profileInfo: {
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   statusBadge: {
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   profileDate: {
     fontSize: FontSize.xs,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   swipeDeleteText: {
     color: '#FFF',
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
   },
 });

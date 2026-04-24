@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity } from 'react-native';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getFriendList, getSentGifts, getReceivedGifts, getAlarms } from '../../src/services/api';
 import type { Friend, Gift, Alarm } from '../../src/types';
 
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: Spacing.lg },
   backButton: { marginBottom: Spacing.md },
-  backText: { fontSize: FontSize.md, fontWeight: '600' },
+  backText: { fontSize: FontSize.md, fontFamily: FontFamily.semibold },
   profileCard: {
     alignItems: 'center',
     padding: Spacing.xl,
@@ -193,8 +193,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.md,
   },
-  avatarText: { fontSize: 32, fontWeight: '700' },
-  name: { fontSize: FontSize.xl, fontWeight: '700', marginBottom: 4 },
+  avatarText: { fontSize: 32, fontFamily: FontFamily.bold },
+  name: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, marginBottom: 4 },
   email: { fontSize: FontSize.sm, marginBottom: 8 },
   since: { fontSize: FontSize.xs },
   statsRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.lg },
@@ -206,10 +206,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statEmoji: { fontSize: 24, marginBottom: 4 },
-  statCount: { fontSize: FontSize.xl, fontWeight: '700' },
+  statCount: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
   statLabel: { fontSize: FontSize.xs, marginTop: 2 },
   section: { marginBottom: Spacing.lg },
-  sectionTitle: { fontSize: FontSize.md, fontWeight: '600', marginBottom: Spacing.sm },
+  sectionTitle: { fontSize: FontSize.md, fontFamily: FontFamily.semibold, marginBottom: Spacing.sm },
   listItem: {
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.sm,
   },
-  actionButtonText: { color: '#FFFFFF', fontSize: FontSize.md, fontWeight: '700' },
+  actionButtonText: { color: '#FFFFFF', fontSize: FontSize.md, fontFamily: FontFamily.bold },
   giftActionButton: {
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
@@ -232,5 +232,5 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     borderWidth: 1,
   },
-  giftActionButtonText: { fontSize: FontSize.md, fontWeight: '700' as const },
+  giftActionButtonText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
 });

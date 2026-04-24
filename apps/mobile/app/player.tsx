@@ -11,7 +11,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../src/constants/theme';
 import { playAudio, getLocalAudioPath } from '../src/services/audio';
 import { useAppStore } from '../src/stores/useAppStore';
 import { generateWaveform, formatTime } from '../src/utils/waveform';
@@ -362,17 +362,17 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: '#FFF',
   },
   voiceName: {
     fontSize: FontSize.xl,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   messageText: {
     fontSize: FontSize.xxl,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
     textAlign: 'center',
     lineHeight: 38,
@@ -444,12 +444,12 @@ const styles = StyleSheet.create({
   },
   reactionText: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: '#FFF',
   },
   reactedText: {
     fontSize: FontSize.md,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

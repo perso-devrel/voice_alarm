@@ -1,8 +1,8 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P0 Phase 1-B-2 fontWeight→fontFamily 마이그레이션 Batch 1 완료
-- 현재 Phase: **P0 Phase 1-B-2 진행 중 (10/29 파일 완료, 19개 남음)**
+- 마지막 루프: 2026-04-24 — P0 Phase 1-B-2 fontWeight→fontFamily 마이그레이션 Batch 2 완료
+- 현재 Phase: **P0 Phase 1-B-2 진행 중 (20/29 파일 완료, 9개 남음)**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
@@ -37,12 +37,15 @@
 
 ## 다음 루프 지시
 
-**P0 Phase 1-B-2 Batch 2로 진행하라.**
-Batch 1(컴포넌트+소형 화면 10개)은 완료됨. 남은 19개 파일 중 다음 10개를 진행:
-1. `app/(tabs)/index.tsx`, `app/(tabs)/people.tsx`, `app/(tabs)/voices.tsx`, `app/(tabs)/alarms.tsx`, `app/(tabs)/settings.tsx`
-2. `app/family-alarm/create.tsx`, `app/library/index.tsx`, `app/player.tsx`, `app/friend/[id].tsx`, `app/message/[id].tsx`
-3. '200'/'300' fontWeight → FontFamily.regular로 대체 (Pretendard에 light/thin 없음)
-4. typecheck 통과 확인
+**P0 Phase 1-B-2 Batch 3으로 진행하라.**
+Batch 1(10개) + Batch 2(10개) 완료. 남은 9개 파일을 모두 변환:
+1. `app/alarm/edit.tsx`, `app/alarm/create.tsx`
+2. `app/voice/picker.tsx`, `app/voice/[id].tsx`, `app/voice/record.tsx`, `app/voice/diarize.tsx`
+3. `app/dub/translate.tsx`
+4. `app/message/create.tsx`
+5. `app/gift/received.tsx`
+6. typecheck 통과 확인
+7. Batch 3 완료 시 BACKLOG Phase 1-B-2 전체 완료 체크
 
 ## 알려진 이슈
 - [blocked] Perso API 404

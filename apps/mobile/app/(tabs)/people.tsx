@@ -29,7 +29,7 @@ import {
 import type { FamilyInvite } from '../../src/services/api';
 import type { Friend, PendingFriendRequest } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { useToast } from '../../src/hooks/useToast';
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.hero,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
   },
   addRow: {
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   },
   addBtnText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
   segmentRow: {
@@ -515,11 +515,11 @@ const styles = StyleSheet.create({
   segmentText: {
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   segmentTextActive: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   list: {
     paddingHorizontal: Spacing.lg,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   personInfo: {
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   },
   personName: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   personEmail: {
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
   familyAlarmBtnText: {
     color: '#FFF',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   removeBtn: {
     width: 32,
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
   },
   acceptBtnText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.sm,
   },
   inviteSection: {
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
   },
   inviteSectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
   },
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   },
   inviteListTitle: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.textSecondary,
     marginBottom: Spacing.xs,
   },
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   },
   inviteCode: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     letterSpacing: 4,
     textAlign: 'center',
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   },
   inviteShareBtnText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.sm,
   },
   inviteRevokeBtn: {
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
   },
   inviteRevokeBtnText: {
     color: Colors.light.textSecondary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.sm,
   },
   emptyContainer: {

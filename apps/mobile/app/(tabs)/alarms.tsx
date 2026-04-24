@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getAlarms, updateAlarm, deleteAlarm, getMessages, getVoiceProfiles } from '../../src/services/api';
 import { playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.hero,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
   },
   addButton: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#FFF',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   searchContainer: {
     paddingHorizontal: Spacing.lg,
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   },
   countdownValue: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primary,
   },
   cachedBanner: {
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   },
   alarmTime: {
     fontSize: 36,
-    fontWeight: '300',
+    fontFamily: FontFamily.regular,
     color: Colors.light.text,
   },
   timeInactive: {
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   alarmCountdown: {
     fontSize: FontSize.xs,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   alarmMeta: {
     marginTop: Spacing.sm,
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   alarmVoice: {
     fontSize: FontSize.sm,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   alarmMessage: {
     fontSize: FontSize.sm,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   modeBadgeText: {
     fontSize: FontSize.xs,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   familyBadge: {
     alignSelf: 'flex-start',
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   familyBadgeText: {
     fontSize: FontSize.xs,
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   alarmActions: {
     flexDirection: 'row',
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
   },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
   emptyButtonText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   swipeDeleteContainer: {
     backgroundColor: Colors.light.error,
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
   },
   swipeDeleteText: {
     color: '#FFF',
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
   },
 });

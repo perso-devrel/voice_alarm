@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getMessages } from '../../src/services/api';
 import { playAudio, isAudioCached, getLocalAudioPath } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.primary,
     backgroundColor: Colors.light.primaryLight,
     paddingHorizontal: Spacing.sm,
@@ -180,12 +180,12 @@ const styles = StyleSheet.create({
   },
   voiceAvatarText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   voiceName: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.primary,
   },
   textBox: {
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   playButtonText: {
     color: '#fff',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   alarmButton: {
     backgroundColor: Colors.light.surfaceVariant,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   alarmButtonText: {
     color: Colors.light.primary,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   translateButton: {
     backgroundColor: Colors.light.surfaceVariant,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   translateButtonText: {
     color: Colors.light.textSecondary,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   giftButton: {
     paddingVertical: Spacing.md,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   giftButtonText: {
     color: Colors.light.textSecondary,
     fontSize: FontSize.md,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   empty: {
     flex: 1,

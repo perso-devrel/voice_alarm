@@ -720,7 +720,7 @@ const styles = StyleSheet.create({
   },
   recentAvatarText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   recentContent: {

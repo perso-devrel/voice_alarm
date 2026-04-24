@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getLibrary, toggleFavorite, deleteLibraryItem } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   categoryChipText: {
     fontSize: FontSize.xs,
     color: Colors.light.text,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   filterChip: {
     paddingHorizontal: Spacing.md,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   filterText: {
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   filterTextActive: {
     color: '#FFF',
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   },
   avatarLetter: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   messageContent: {
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   voiceName: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   categoryBadge: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   },
   swipeDeleteText: {
     color: '#FFF',
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     fontSize: FontSize.md,
   },
 });

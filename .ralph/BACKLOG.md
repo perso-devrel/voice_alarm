@@ -31,7 +31,7 @@
 
 ### Phase 1-B-2: 전체 앱 fontWeight→fontFamily 마이그레이션 (진행 중)
 - [x] Batch 1: 컴포넌트+소형 화면 10개 파일 변환 완료 (Toast, OfflineBanner, ErrorBoundary, FamilyMemberRow, EmailPasswordForm, LoginButtons, QueryStateView, StateView, onboarding, voice/upload)
-- [ ] Batch 2: 탭 화면+중형 화면 10개 파일 변환 (index, people, voices, alarms, settings, family-alarm/create, library, player, friend/[id], message/[id])
+- [x] Batch 2: 탭 화면+중형 화면 10개 파일 변환 완료 (index, people, voices, alarms, settings, family-alarm/create, library, player, friend/[id], message/[id])
 - [ ] Batch 3: 나머지 9개 파일 변환 (alarm/edit, alarm/create, voice/picker, voice/[id], voice/record, voice/diarize, dub/translate, message/create, gift/received)
 - [ ] iOS/Android 모두 한국어+영어 렌더링 확인
 

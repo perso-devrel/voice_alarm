@@ -24,7 +24,7 @@ import {
   validateFamilyAlarmForm,
   buildMemberDisplayName,
 } from '../../src/lib/familyAlarmForm';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { useToast } from '../../src/hooks/useToast';
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
     marginTop: Spacing.lg,
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   recipientTextActive: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   timeInput: {
     backgroundColor: Colors.light.surface,
@@ -298,11 +298,11 @@ const styles = StyleSheet.create({
   dayText: {
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   dayTextActive: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   repeatHint: {
     fontSize: FontSize.xs,
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   emptyContainer: {
     flex: 1,
