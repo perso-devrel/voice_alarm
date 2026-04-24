@@ -91,14 +91,14 @@
 - [x] 클라이언트에서 `local_date` (YYYY-MM-DD) 전송하도록 API 설계 (타임존 대응)
 - [x] typecheck 통과 확인
 
-### 프론트엔드: 캐릭터 화면 강화
-- [ ] `apps/mobile/app/character/index.tsx` — 스트릭 뱃지 UI (🔥 N일 연속 기상)
-- [ ] `apps/mobile/app/character/index.tsx` — 능력치 바 표시 (뿌리깊이/줄기튼튼함/잎무성함)
-- [ ] `apps/mobile/app/character/index.tsx` — 마일스톤 달성 기록 섹션 (7일/30일/90일 배지)
-- [ ] `apps/mobile/app/(tabs)/index.tsx` — 홈 캐릭터 위젯에 스트릭 카운트 표시
-- [ ] `apps/mobile/src/services/api.ts` — CharacterResponse 타입에 streak/stats/achievements 필드 추가
-- [ ] `apps/mobile/src/i18n/ko.json` — 스트릭/능력치 관련 번역 키 추가
-- [ ] typecheck 통과 확인
+### 프론트엔드: 캐릭터 화면 강화 ✅ (2026-04-24)
+- [x] `apps/mobile/src/services/api.ts` — CharacterResponse 타입에 streak/stats/achievements 필드 추가
+- [x] `apps/mobile/app/character/index.tsx` — 스트릭 뱃지 UI (🔥 N일 연속 기상)
+- [x] `apps/mobile/app/character/index.tsx` — 능력치 바 표시 (뿌리깊이/줄기튼튼함/잎무성함)
+- [x] `apps/mobile/app/character/index.tsx` — 마일스톤 달성 기록 섹션 (7일/30일/90일 배지)
+- [x] `apps/mobile/app/(tabs)/index.tsx` — 홈 캐릭터 위젯에 스트릭 카운트 표시
+- [x] `apps/mobile/src/i18n/ko.json` — 스트릭/능력치 관련 번역 키 추가 (17개, ko/en)
+- [x] typecheck 통과 확인
 
 ### 나무 테마 강화
 - [ ] `apps/mobile/src/lib/character.ts` — 나무 메타포 대사 업데이트 (스트릭 관련: "뿌리가 깊어지고 있어요")

@@ -401,6 +401,26 @@
     "createError": "알람 전송에 실패했어요.",
     "noRecipients": "가족 알람을 허용한 멤버가 없습니다"
   },
+  "character": {
+    "loadError": "캐릭터를 불러오지 못했어요",
+    "tapHint": "캐릭터를 탭하면 새 대사가 나와요",
+    "streakDays": "일 연속 기상",
+    "longestStreak": "최장 기록",
+    "dayUnit": "일",
+    "growthProgress": "성장 진행도",
+    "xpProgress": "경험치 진행도",
+    "totalXp": "총 XP",
+    "affection": "애정도",
+    "todayXp": "오늘 획득",
+    "statsTitle": "나무 능력치",
+    "statDiligence": "뿌리 깊이",
+    "statHealth": "줄기 튼튼함",
+    "statConsistency": "잎 무성함",
+    "capReached": "일일 캡 도달",
+    "xpFailed": "XP 지급 실패",
+    "devXpTitle": "테스트용 XP 지급",
+    "devXpHint": "실제 앱에서는 알람 종료/가족 알람 수신 시 자동으로 호출돼요."
+  },
   "dub": {
     "title": "음성 번역",
     "description": "원래 목소리를 유지하면서 다른 언어로 번역합니다",

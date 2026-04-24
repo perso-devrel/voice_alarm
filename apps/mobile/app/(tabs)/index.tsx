@@ -239,6 +239,11 @@ export default function HomeScreen() {
               <View style={styles.widgetNameRow}>
                 <Text style={styles.widgetName}>{characterData.character.name}</Text>
                 <Text style={styles.widgetLevel}>Lv.{characterData.character.level}</Text>
+                {characterData.streak && characterData.streak.current > 0 && (
+                  <Text style={styles.widgetStreak}>
+                    🔥 {characterData.streak.current}
+                  </Text>
+                )}
               </View>
               <View style={styles.widgetProgressBg}>
                 <View
@@ -659,6 +664,11 @@ const styles = StyleSheet.create({
   widgetLevel: {
     fontSize: FontSize.xs,
     color: Colors.light.primary,
+    fontFamily: FontFamily.semibold,
+  },
+  widgetStreak: {
+    fontSize: FontSize.xs,
+    color: Colors.light.warning,
     fontFamily: FontFamily.semibold,
   },
   widgetProgressBg: {

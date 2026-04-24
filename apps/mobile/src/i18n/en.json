@@ -396,6 +396,26 @@
     "createError": "Failed to send alarm.",
     "noRecipients": "No family members have allowed alarms"
   },
+  "character": {
+    "loadError": "Could not load character",
+    "tapHint": "Tap the character for a new dialogue",
+    "streakDays": " day streak",
+    "longestStreak": "Best",
+    "dayUnit": "d",
+    "growthProgress": "Growth Progress",
+    "xpProgress": "XP progress",
+    "totalXp": "Total XP",
+    "affection": "Affection",
+    "todayXp": "Today",
+    "statsTitle": "Tree Stats",
+    "statDiligence": "Root Depth",
+    "statHealth": "Trunk Strength",
+    "statConsistency": "Leaf Density",
+    "capReached": "daily cap reached",
+    "xpFailed": "XP grant failed",
+    "devXpTitle": "Test XP Grant",
+    "devXpHint": "In the real app, this is called automatically on alarm completion."
+  },
   "dub": {
     "title": "Voice Translation",
     "description": "Translate to another language while keeping the original voice",

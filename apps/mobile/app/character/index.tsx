@@ -14,7 +14,7 @@ import {
   getCharacterMe,
   grantCharacterXp,
 } from '../../src/services/api';
-import type { XpEvent } from '../../src/services/api';
+import type { XpEvent, StreakAchievement, CharacterStats } from '../../src/services/api';
 import {
   formatProgress,
   pickRandomDialogue,
@@ -23,7 +23,8 @@ import {
   stageToEmoji,
   stageToLabel,
 } from '../../src/lib/character';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { useTranslation } from 'react-i18next';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 
 const DEV_EVENTS: { event: XpEvent; label: string }[] = [
   { event: 'alarm_completed', label: '알람 정상 종료 +30 XP' },
@@ -31,7 +32,35 @@ const DEV_EVENTS: { event: XpEvent; label: string }[] = [
   { event: 'family_alarm_received', label: '가족 알람 수신 +10 XP' },
 ];
 
+const MILESTONES = [7, 30, 90] as const;
+
+function StatBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const pct = Math.min((value / Math.max(max, 1)) * 100, 100);
+  return (
+    <View style={styles.statBarRow}>
+      <Text style={styles.statBarLabel}>{label}</Text>
+      <View style={styles.statBarTrack}>
+        <View style={[styles.statBarFill, { width: `${pct}%`, backgroundColor: color }]} />
+      </View>
+      <Text style={styles.statBarValue}>{value}</Text>
+    </View>
+  );
+}
+
+function MilestoneBadge({ milestone, achieved }: { milestone: number; achieved: boolean }) {
+  const emoji = milestone === 7 ? '🌱' : milestone === 30 ? '🌳' : '🌸';
+  return (
+    <View style={[styles.milestoneBadge, achieved && styles.milestoneBadgeAchieved]}>
+      <Text style={styles.milestoneEmoji}>{emoji}</Text>
+      <Text style={[styles.milestoneDay, achieved && styles.milestoneDayAchieved]}>
+        {milestone}
+      </Text>
+    </View>
+  );
+}
+
 export default function CharacterScreen() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [dialogueSeed, setDialogueSeed] = useState(0);
   const [lastGrantNotice, setLastGrantNotice] = useState<string | null>(null);
@@ -44,12 +73,12 @@ export default function CharacterScreen() {
   const grantMutation = useMutation({
     mutationFn: grantCharacterXp,
     onSuccess: (res) => {
-      const suffix = res.grant.capped ? ' (일일 캡 도달)' : '';
-      setLastGrantNotice(`+${res.grant.granted_xp} XP · +${res.grant.affection} 애정도${suffix}`);
+      const suffix = res.grant.capped ? ` (${t('character.capReached')})` : '';
+      setLastGrantNotice(`+${res.grant.granted_xp} XP · +${res.grant.affection} ${t('character.affection')}${suffix}`);
       queryClient.invalidateQueries({ queryKey: ['character-me'] });
     },
     onError: () => {
-      setLastGrantNotice('XP 지급 실패');
+      setLastGrantNotice(t('character.xpFailed'));
     },
   });
 
@@ -96,14 +125,15 @@ export default function CharacterScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>캐릭터를 불러오지 못했어요.</Text>
+          <Text style={styles.errorText}>{t('character.loadError')}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const { character, progress } = data;
+  const { character, progress, streak, stats, achievements } = data;
   const barWidth = progressBarWidthPct(progress);
+  const achievedMilestones = new Set(achievements.map((a: StreakAchievement) => a.milestone));
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -112,7 +142,7 @@ export default function CharacterScreen() {
           onPress={handleTap}
           style={styles.characterCard}
           accessibilityRole="button"
-          accessibilityLabel="캐릭터를 탭하면 새 대사가 나와요"
+          accessibilityLabel={t('character.tapHint')}
         >
           <Animated.Text
             style={[styles.emoji, { transform: [{ scale: emojiScale }], opacity: emojiOpacity }]}
@@ -130,9 +160,30 @@ export default function CharacterScreen() {
           <Text style={styles.dialogue}>{dialogue}</Text>
         </Pressable>
 
+        {/* Streak badge */}
+        <View style={styles.streakCard}>
+          <View style={styles.streakMain}>
+            <Text style={styles.streakFire}>🔥</Text>
+            <Text style={styles.streakCount}>{streak.current}</Text>
+            <Text style={styles.streakLabel}>{t('character.streakDays')}</Text>
+          </View>
+          <View style={styles.streakMeta}>
+            <Text style={styles.streakBest}>
+              {t('character.longestStreak')}: {streak.longest}{t('character.dayUnit')}
+            </Text>
+          </View>
+          {/* Milestone badges */}
+          <View style={styles.milestoneRow}>
+            {MILESTONES.map((m) => (
+              <MilestoneBadge key={m} milestone={m} achieved={achievedMilestones.has(m)} />
+            ))}
+          </View>
+        </View>
+
+        {/* Growth progress */}
         <View style={styles.section}>
           <View style={styles.progressHeader}>
-            <Text style={styles.sectionTitle}>성장 진행도</Text>
+            <Text style={styles.sectionTitle}>{t('character.growthProgress')}</Text>
             <Text style={styles.progressText}>{formatProgress(progress)}</Text>
           </View>
           <View
@@ -143,32 +194,55 @@ export default function CharacterScreen() {
               max: 100,
               now: Math.round(barWidth),
             }}
-            accessibilityLabel="경험치 진행도"
+            accessibilityLabel={t('character.xpProgress')}
           >
             <View style={[styles.progressBarFill, { width: `${barWidth}%` }]} />
           </View>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>총 XP</Text>
-              <Text style={styles.statValue}>{character.xp}</Text>
+          <View style={styles.xpStatsRow}>
+            <View style={styles.xpStatItem}>
+              <Text style={styles.xpStatLabel}>{t('character.totalXp')}</Text>
+              <Text style={styles.xpStatValue}>{character.xp}</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>애정도</Text>
-              <Text style={styles.statValue}>💗 {character.affection}</Text>
+            <View style={styles.xpStatItem}>
+              <Text style={styles.xpStatLabel}>{t('character.affection')}</Text>
+              <Text style={styles.xpStatValue}>💗 {character.affection}</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>오늘 획득</Text>
-              <Text style={styles.statValue}>{character.daily_xp} / 200</Text>
+            <View style={styles.xpStatItem}>
+              <Text style={styles.xpStatLabel}>{t('character.todayXp')}</Text>
+              <Text style={styles.xpStatValue}>{character.daily_xp} / 200</Text>
             </View>
+          </View>
+        </View>
+
+        {/* Character stats */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('character.statsTitle')}</Text>
+          <View style={styles.statBarsContainer}>
+            <StatBar
+              label={t('character.statDiligence')}
+              value={stats.diligence}
+              max={Math.max(stats.diligence, stats.health, stats.consistency, 10)}
+              color="#8B5E3C"
+            />
+            <StatBar
+              label={t('character.statHealth')}
+              value={stats.health}
+              max={Math.max(stats.diligence, stats.health, stats.consistency, 10)}
+              color={Colors.light.success}
+            />
+            <StatBar
+              label={t('character.statConsistency')}
+              value={stats.consistency}
+              max={Math.max(stats.diligence, stats.health, stats.consistency, 10)}
+              color={Colors.light.primary}
+            />
           </View>
         </View>
 
         {__DEV__ && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>테스트용 XP 지급</Text>
-          <Text style={styles.devHint}>
-            실제 앱에서는 알람 종료/가족 알람 수신 시 자동으로 호출돼요.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('character.devXpTitle')}</Text>
+          <Text style={styles.devHint}>{t('character.devXpHint')}</Text>
           <View style={styles.devButtonsRow}>
             {DEV_EVENTS.map((e) => (
               <Pressable
@@ -200,7 +274,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,
@@ -239,7 +313,7 @@ const styles = StyleSheet.create({
   },
   characterName: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
   },
   badge: {
@@ -251,12 +325,70 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: FontSize.xs,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   dialogue: {
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
     textAlign: 'center',
+  },
+  streakCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
+  },
+  streakMain: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.xs,
+  },
+  streakFire: {
+    fontSize: 28,
+  },
+  streakCount: {
+    fontSize: 36,
+    fontFamily: FontFamily.bold,
+    color: Colors.light.text,
+  },
+  streakLabel: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.medium,
+    color: Colors.light.textSecondary,
+  },
+  streakMeta: {
+    marginTop: Spacing.xs,
+  },
+  streakBest: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textTertiary,
+  },
+  milestoneRow: {
+    flexDirection: 'row',
+    gap: Spacing.lg,
+    marginTop: Spacing.md,
+  },
+  milestoneBadge: {
+    alignItems: 'center',
+    opacity: 0.35,
+  },
+  milestoneBadgeAchieved: {
+    opacity: 1,
+  },
+  milestoneEmoji: {
+    fontSize: 28,
+  },
+  milestoneDay: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.semibold,
+    color: Colors.light.textTertiary,
+    marginTop: 2,
+  },
+  milestoneDayAchieved: {
+    color: Colors.light.primary,
   },
   section: {
     backgroundColor: Colors.light.surface,
@@ -268,7 +400,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   progressHeader: {
@@ -292,23 +424,55 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.primary,
     borderRadius: BorderRadius.full,
   },
-  statsRow: {
+  xpStatsRow: {
     flexDirection: 'row',
     marginTop: Spacing.md,
   },
-  statItem: {
+  xpStatItem: {
     flex: 1,
     alignItems: 'center',
   },
-  statLabel: {
+  xpStatLabel: {
     fontSize: FontSize.xs,
     color: Colors.light.textTertiary,
     marginBottom: 2,
   },
-  statValue: {
+  xpStatValue: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
+  },
+  statBarsContainer: {
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+  statBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  statBarLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textSecondary,
+    width: 80,
+  },
+  statBarTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: Colors.light.surfaceVariant,
+    borderRadius: BorderRadius.full,
+    overflow: 'hidden',
+  },
+  statBarFill: {
+    height: '100%',
+    borderRadius: BorderRadius.full,
+  },
+  statBarValue: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.semibold,
+    color: Colors.light.text,
+    width: 30,
+    textAlign: 'right',
   },
   devHint: {
     fontSize: FontSize.xs,
@@ -335,7 +499,7 @@ const styles = StyleSheet.create({
   devButtonText: {
     fontSize: FontSize.xs,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   grantNotice: {
     marginTop: Spacing.md,
