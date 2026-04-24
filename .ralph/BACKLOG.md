@@ -85,11 +85,11 @@
 - [x] `packages/backend/src/lib/xpRules.ts` — streak_bonus_7/30/90 이벤트 + isCapExempt (일일캡 면제)
 - [x] `packages/backend/src/lib/character.ts` — CharacterStats 타입 + computeStats 함수
 
-### 백엔드: API 확장
-- [ ] `packages/backend/src/routes/character.ts` — GET /characters/me 응답에 streak, stats, achievements 필드 추가
-- [ ] `packages/backend/src/routes/character.ts` — POST /characters/xp에 스트릭 계산 + 능력치 업데이트 통합
-- [ ] 클라이언트에서 `local_date` (YYYY-MM-DD) 전송하도록 API 설계 (타임존 대응)
-- [ ] typecheck 통과 확인
+### 백엔드: API 확장 ✅ (2026-04-24)
+- [x] `packages/backend/src/routes/character.ts` — GET /characters/me 응답에 streak, stats, achievements 필드 추가
+- [x] `packages/backend/src/routes/character.ts` — POST /characters/xp에 스트릭 계산 + 능력치 업데이트 통합
+- [x] 클라이언트에서 `local_date` (YYYY-MM-DD) 전송하도록 API 설계 (타임존 대응)
+- [x] typecheck 통과 확인
 
 ### 프론트엔드: 캐릭터 화면 강화
 - [ ] `apps/mobile/app/character/index.tsx` — 스트릭 뱃지 UI (🔥 N일 연속 기상)
