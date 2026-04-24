@@ -2,20 +2,22 @@
 
 ## P0 (지금 바로) — 프로젝트 정리 + 탭 구조 개편
 
-### Phase 1-A: packages/web 삭제
-- [ ] `packages/web/` 디렉토리 전체 삭제
-- [ ] `.github/workflows/deploy-web.yml` 삭제
-- [ ] 루트 `package.json`에서 `"web"` 스크립트 제거
-- [ ] `eslint.config.js`에서 `packages/web/src/**` 패턴 제거
-- [ ] `.github/workflows/ci.yml` — typecheck/test matrix에서 `packages/web` 제거
-- [ ] `.github/dependabot.yml`에서 `/packages/web` 섹션 삭제
-- [ ] `CLAUDE.md` — `Web: React + TypeScript + Vite + Tailwind CSS` 줄, `packages/web` 줄 삭제
-- [ ] `ARCHITECTURE.md` — web 관련 섹션 삭제
-- [ ] `README.md` — web 대시보드 관련 언급 삭제
-- [ ] `.ralph/PROMPT.md` — web 참조 삭제 (디렉토리, 빌드, 배포)
-- [ ] `packages/backend/src/index.ts` — CORS ALLOWED_ORIGINS에서 web origin 3개 삭제 (`voice-alarm.pages.dev`, `voicealarm.pages.dev`, `voice-alarm-web.pages.dev`)
-- [ ] `npm install` 실행하여 lock 파일 재생성
-- [ ] `npm run lint && npm run typecheck` 통과 확인
+### Phase 1-A: packages/web 삭제 ✅ (2026-04-24)
+- [x] `packages/web/` 디렉토리 전체 삭제
+- [x] `.github/workflows/deploy-web.yml` 삭제
+- [x] 루트 `package.json`에서 `"web"` 스크립트 제거
+- [x] `eslint.config.js`에서 `packages/web/src/**` 패턴 제거
+- [x] `.github/workflows/ci.yml` — typecheck/test matrix에서 `packages/web` 제거
+- [x] `.github/dependabot.yml`에서 `/packages/web` 섹션 삭제
+- [x] `CLAUDE.md` — `Web: React + TypeScript + Vite + Tailwind CSS` 줄, `packages/web` 줄 삭제
+- [x] `ARCHITECTURE.md` — web 관련 섹션 삭제
+- [x] `README.md` — web 대시보드 관련 언급 삭제
+- [x] `.ralph/PROMPT.md` — web 참조 삭제 (PROMPT.md는 빌드 지시서이므로 유지, 실제 참조만 정리)
+- [x] `packages/backend/src/index.ts` — CORS ALLOWED_ORIGINS에서 web origin 4개 삭제 + localhost:5173(Vite) 삭제
+- [x] `npm install` 실행하여 lock 파일 재생성
+- [x] `npm run lint && npm run typecheck` 통과 확인
+- [x] 추가: `.github/CONTRIBUTING.md` — web dev 명령어 삭제
+- [x] 추가: `packages/backend/src/middleware/cors.test.ts` — web origin 제거 + 테스트 업데이트
 
 ### Phase 1-B: Pretendard 폰트 적용
 - [ ] `expo-font` 의존성 확인 (이미 Expo에 포함)

@@ -35,13 +35,8 @@ app.use('*', bodyLimitMiddleware);
 
 // CORS
 const ALLOWED_ORIGINS = [
-  'http://localhost:5173',
   'http://localhost:8081',
   'exp://localhost:8081',
-  'https://voice-alarm.pages.dev',
-  'https://voicealarm.pages.dev',
-  'https://voice-alarm-web.pages.dev',
-  'https://main.voice-alarm-web.pages.dev',
 ];
 
 app.use(
