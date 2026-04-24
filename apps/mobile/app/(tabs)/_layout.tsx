@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors } from '../../src/constants/theme';
+import { FontFamily } from '../../src/constants/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 import { OfflineBanner } from '../../src/components/OfflineBanner';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
@@ -9,10 +10,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     home: '🏠',
     voices: '🎙️',
     alarms: '⏰',
-    friends: '👥',
-    family: '👨‍👩‍👧',
-    character: '🌱',
-    library: '📚',
+    people: '👤',
     settings: '⚙️',
   };
   return <Text style={[styles.icon, focused && styles.iconFocused]}>{icons[name] || '📱'}</Text>;
@@ -20,6 +18,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.root}>
@@ -27,9 +26,9 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: Colors.light.primary,
-          tabBarInactiveTintColor: Colors.light.textTertiary,
+          tabBarStyle: [styles.tabBar, { backgroundColor: colors.surface, borderTopColor: colors.border }],
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textTertiary,
           tabBarLabelStyle: styles.tabLabel,
         }}
       >
@@ -55,31 +54,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="friends"
+        name="people"
         options={{
-          title: t('tab.friends'),
-          tabBarIcon: ({ focused }) => <TabIcon name="friends" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="family"
-        options={{
-          title: t('tab.family'),
-          tabBarIcon: ({ focused }) => <TabIcon name="family" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="character"
-        options={{
-          title: t('tab.character'),
-          tabBarIcon: ({ focused }) => <TabIcon name="character" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="library"
-        options={{
-          title: t('tab.library'),
-          tabBarIcon: ({ focused }) => <TabIcon name="library" focused={focused} />,
+          title: t('tab.people'),
+          tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -99,8 +77,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: Colors.light.border,
     borderTopWidth: 1,
     height: 85,
     paddingTop: 8,
@@ -108,7 +84,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   icon: {
     fontSize: 22,

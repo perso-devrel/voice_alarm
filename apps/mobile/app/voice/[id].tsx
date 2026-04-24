@@ -13,7 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getVoiceProfiles, getMessages, getAlarms, updateVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { sanitizeVoiceName } from '../../src/lib/voiceName';
@@ -25,6 +26,8 @@ export default function VoiceDetailScreen() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   const { data: profiles } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -43,7 +46,7 @@ export default function VoiceDetailScreen() {
       setDraftName('');
     },
     onError: (err) => {
-      Alert.alert('이름 변경 실패', err instanceof Error ? err.message : '네트워크 오류');
+      Alert.alert(t('voiceDetail.renameFailed'), err instanceof Error ? err.message : t('voiceDetail.renameNetworkError'));
     },
   });
 
@@ -55,7 +58,7 @@ export default function VoiceDetailScreen() {
   const commitEdit = (currentName: string) => {
     const sanitized = sanitizeVoiceName(draftName);
     if (!sanitized.ok) {
-      Alert.alert('입력 오류', sanitized.error ?? '이름이 올바르지 않습니다.');
+      Alert.alert(t('common.error'), sanitized.error ?? t('voiceDetail.renameInputError'));
       return;
     }
     if (sanitized.value === currentName) {
@@ -88,7 +91,7 @@ export default function VoiceDetailScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       {profile && (
         <View style={styles.profileHeader}>
-          <View style={styles.avatarLarge}>
+          <View style={styles.avatarLarge} accessibilityLabel={t('voiceDetail.a11yAvatar', { name: profile.name })}>
             <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
           </View>
           {isEditingName ? (
@@ -100,38 +103,41 @@ export default function VoiceDetailScreen() {
                 onSubmitEditing={() => commitEdit(profile.name)}
                 maxLength={60}
                 style={styles.renameInput}
-                accessibilityLabel="음성 이름 입력"
+                accessibilityLabel={t('voiceDetail.a11yRenameInput')}
               />
               <TouchableOpacity
-                accessibilityLabel="이름 변경 저장"
+                accessibilityLabel={t('voiceDetail.a11yRenameSave')}
+                accessibilityRole="button"
                 onPress={() => commitEdit(profile.name)}
                 disabled={renameMutation.isPending}
                 style={styles.renameSaveBtn}
               >
                 <Text style={styles.renameSaveText}>
-                  {renameMutation.isPending ? '저장…' : '저장'}
+                  {renameMutation.isPending ? t('voiceDetail.renameSaving') : t('voiceDetail.renameSave')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                accessibilityLabel="이름 변경 취소"
+                accessibilityLabel={t('voiceDetail.a11yRenameCancel')}
+                accessibilityRole="button"
                 onPress={() => {
                   setIsEditingName(false);
                   setDraftName('');
                 }}
                 style={styles.renameCancelBtn}
               >
-                <Text style={styles.renameCancelText}>취소</Text>
+                <Text style={styles.renameCancelText}>{t('voiceDetail.renameCancel')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <>
               <Text style={styles.profileName}>{profile.name}</Text>
               <TouchableOpacity
-                accessibilityLabel="음성 이름 변경"
+                accessibilityLabel={t('voiceDetail.a11yRename')}
+                accessibilityRole="button"
                 onPress={() => beginEdit(profile.name)}
                 style={styles.renameBtn}
               >
-                <Text style={styles.renameText}>이름 변경</Text>
+                <Text style={styles.renameText}>{t('voiceDetail.rename')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -139,11 +145,11 @@ export default function VoiceDetailScreen() {
             {new Date(profile.created_at).toLocaleDateString('ko-KR')}
           </Text>
           <View style={styles.statsRow}>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityLabel={t('voiceDetail.a11yStat', { label: t('voiceDetail.messages'), count: voiceMessages.length })}>
               <Text style={styles.statValue}>{voiceMessages.length}</Text>
               <Text style={styles.statLabel}>{t('voiceDetail.messages')}</Text>
             </View>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityLabel={t('voiceDetail.a11yStat', { label: t('voiceDetail.alarms'), count: voiceAlarms.length })}>
               <Text style={styles.statValue}>{voiceAlarms.length}</Text>
               <Text style={styles.statLabel}>{t('voiceDetail.alarms')}</Text>
             </View>
@@ -152,6 +158,8 @@ export default function VoiceDetailScreen() {
             <TouchableOpacity
               style={styles.createMessageBtn}
               onPress={() => router.push(`/message/create?voice_id=${id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={t('voiceDetail.a11yCreateMessage')}
             >
               <Text style={styles.createMessageText}>{t('voiceDetail.createMessage')}</Text>
             </TouchableOpacity>
@@ -160,7 +168,7 @@ export default function VoiceDetailScreen() {
       )}
 
       {isLoading ? (
-        <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={[
@@ -219,39 +227,39 @@ export default function VoiceDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   profileHeader: {
     alignItems: 'center',
     paddingVertical: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: colors.border,
   },
   avatarLarge: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: Colors.light.primaryLight,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.sm,
   },
   avatarText: {
     fontSize: 32,
-    fontWeight: '700',
-    color: Colors.light.primaryDark,
+    fontFamily: FontFamily.bold,
+    color: colors.primaryDark,
   },
   profileName: {
     fontSize: FontSize.xxl,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontFamily: FontFamily.bold,
+    color: colors.text,
   },
   profileDate: {
     fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     marginTop: Spacing.xs,
   },
   renameBtn: {
@@ -261,8 +269,8 @@ const styles = StyleSheet.create({
   },
   renameText: {
     fontSize: FontSize.sm,
-    color: Colors.light.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: FontFamily.semibold,
   },
   renameRow: {
     flexDirection: 'row',
@@ -274,30 +282,30 @@ const styles = StyleSheet.create({
   renameInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
   },
   renameSaveBtn: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.sm,
   },
   renameSaveText: {
     color: '#fff',
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   renameCancelBtn: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
   },
   renameCancelText: {
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontSize: FontSize.sm,
   },
   statsRow: {
@@ -310,12 +318,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: FontSize.xxl,
-    fontWeight: '700',
-    color: Colors.light.primary,
+    fontFamily: FontFamily.bold,
+    color: colors.primary,
   },
   statLabel: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   list: {
@@ -323,45 +331,45 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontFamily: FontFamily.bold,
+    color: colors.text,
     marginBottom: Spacing.sm,
     marginTop: Spacing.md,
   },
   itemCard: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
   },
   itemCategory: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   itemText: {
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     lineHeight: 22,
   },
   itemDate: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     marginTop: 4,
   },
   alarmTime: {
     fontSize: FontSize.xl,
-    fontWeight: '300',
-    color: Colors.light.text,
+    fontFamily: FontFamily.regular,
+    color: colors.text,
     marginBottom: 4,
   },
   inactive: {
-    color: Colors.light.error,
+    color: colors.error,
   },
   createMessageBtn: {
     marginTop: Spacing.md,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.lg,
@@ -369,7 +377,7 @@ const styles = StyleSheet.create({
   createMessageText: {
     color: '#fff',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   empty: {
     alignItems: 'center',
@@ -377,6 +385,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
   },
 });

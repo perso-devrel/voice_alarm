@@ -19,6 +19,10 @@
     "addAlarm": "Add alarm",
     "receivedGifts": "Received gifts",
     "manageFriends": "Friends",
+    "viewCharacter": "View character",
+    "recentMessages": "Recent messages",
+    "noMessages": "No messages received yet",
+    "viewAll": "View all ›",
     "loginTitle": "Sign in to get started",
     "loginDesc": "Register a loved one's voice and\nreceive warm messages every day"
   },
@@ -29,16 +33,15 @@
     "alarmSetting": "Alarm Settings",
     "writeMessage": "Create Message",
     "receivedGifts": "Received Gifts",
-    "voiceDetail": "Voice Detail"
+    "voiceDetail": "Voice Detail",
+    "character": "Character",
+    "library": "Library"
   },
   "tab": {
     "home": "Home",
     "voices": "Voices",
     "alarms": "Alarms",
-    "friends": "Friends",
-    "family": "Family",
-    "character": "Character",
-    "library": "Library",
+    "people": "People",
     "settings": "Settings"
   },
   "common": {
@@ -71,7 +74,10 @@
     "weekday": "Weekdays",
     "weekend": "Weekends",
     "nextIn": "Next alarm in",
-    "searchPlaceholder": "Search by time, voice, message"
+    "searchPlaceholder": "Search by time, voice, message",
+    "countdownDaysHours": "{{days}}d {{hours}}h",
+    "countdownHoursMinutes": "{{hours}}h {{minutes}}m",
+    "countdownMinutes": "{{minutes}}m"
   },
   "voices": {
     "title": "Voice Profiles",
@@ -118,7 +124,39 @@
     "pending": "Pending",
     "accepted": "Accepted",
     "rejected": "Rejected",
-    "setAlarm": "Send alarm to this friend"
+    "setAlarm": "Send alarm to this friend",
+    "sendGift": "Send gift to this friend",
+    "a11yBack": "Go back",
+    "a11yAvatar": "{{name}} profile",
+    "a11yStat": "{{label}}: {{count}}",
+    "a11ySetAlarm": "Send alarm to this friend",
+    "a11ySendGift": "Send gift to this friend",
+    "a11yGiftItem": "{{text}}, status: {{status}}"
+  },
+  "people": {
+    "members": "Members",
+    "friends": "Friends",
+    "requests": "Requests",
+    "owner": "Owner",
+    "member": "Member",
+    "alarmAllowed": "Alarm allowed",
+    "noGroup": "No family group yet",
+    "noGroupHint": "Upgrade to a family plan in Settings",
+    "sendFamilyAlarm": "Send family alarm",
+    "inviteCode": "Invite Code",
+    "generateInvite": "Generate Invite",
+    "generating": "Generating...",
+    "codeCopied": "Invite code copied",
+    "shareInvite": "Share the invite code",
+    "shareMessage": "Join my family on VoiceAlarm! Code: {{code}}",
+    "expiresAt": "Expires {{time}}",
+    "revokeInvite": "Revoke",
+    "revoked": "Revoked",
+    "noInvites": "No invite codes yet",
+    "pendingInvites": "Pending Invites",
+    "coupleConnected": "Connected",
+    "bothAlarmAllowed": "Both can send alarms",
+    "coupleAlarmHint": "Enable alarm receiving in Settings"
   },
   "library": {
     "title": "Library",
@@ -130,7 +168,20 @@
     "favoriteError": "Failed to update favorite.",
     "deleteTitle": "Delete message",
     "deleteConfirm": "Remove this message from your library?",
-    "deleteError": "Failed to delete message."
+    "deleteError": "Failed to delete message.",
+    "createMessage": "Create message",
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
+    "categoryMorning": "Morning",
+    "categoryLunch": "Lunch",
+    "categoryAfternoon": "Afternoon",
+    "categoryEvening": "Evening",
+    "categoryNight": "Night",
+    "categoryCheer": "Cheer",
+    "categoryLove": "Love",
+    "categoryHealth": "Health",
+    "categoryCustom": "Custom",
+    "a11yCategoryBadge": "Category: {{category}}"
   },
   "settings": {
     "title": "Settings",
@@ -159,6 +210,9 @@
     "terms": "Terms of service",
     "privacy": "Privacy policy",
     "openSource": "Open source licenses",
+    "contactSupport": "Contact support",
+    "appDescription": "Start your day with the voice of someone you love",
+    "buildNumber": "Build",
     "logoutConfirm": "Are you sure you want to log out?",
     "deleteAccount": "Delete account",
     "deleteAccountWarning": "Deleting your account will permanently remove all voice profiles, messages, alarms, and friend connections. This action cannot be undone.",
@@ -182,7 +236,9 @@
     "page2Title": "Warm messages\nevery day",
     "page2Desc": "\"Don't forget to eat lunch\"\n\"You did great today\"\nHear encouragement in their voice.",
     "page3Title": "Start your day\nwith a special voice",
-    "page3Desc": "From morning alarms to evening reminders,\nspend the day with a loved one's voice.\nReady to begin?"
+    "page3Desc": "From morning alarms to evening reminders,\nspend the day with a loved one's voice.",
+    "page4Title": "Your tree grows\nevery morning",
+    "page4Desc": "Earn XP each time you wake up to your alarm.\nGrow from a seed to a blooming tree.\nBuild your wake-up streak!"
   },
   "alarmCreate": {
     "forWho": "For who?",
@@ -208,7 +264,32 @@
     "ttsError": "Failed to generate voice.",
     "noMessages": "No voice messages yet",
     "noMessagesDesc": "Create one yourself, or use presets below for a quick start!",
-    "goCreate": "Create message"
+    "goCreate": "Create message",
+    "playMode": "Play mode",
+    "ttsMode": "TTS",
+    "soundOnlyMode": "Original",
+    "voiceProfile": "Voice profile",
+    "voiceProfileRequired": "Original mode requires a registered voice profile.",
+    "voiceProfileHint": "Please select a voice profile for original mode.",
+    "am": "AM",
+    "pm": "PM",
+    "alarmIn": "Alarm in {{hours}}h {{minutes}}m",
+    "alarmInMinutes": "Alarm in {{minutes}}m",
+    "alarmInHours": "Alarm in {{hours}}h",
+    "hourUp": "Increase hour",
+    "hourDown": "Decrease hour",
+    "minuteUp": "Increase minute",
+    "minuteDown": "Decrease minute",
+    "vibration": "Vibration",
+    "vibrationDefault": "Default",
+    "vibrationStrong": "Strong",
+    "vibrationNone": "None"
+  },
+  "alarmValidation": {
+    "messageRequired": "Please select a message.",
+    "invalidTime": "Invalid time format.",
+    "invalidMode": "Invalid play mode.",
+    "voiceProfileRequired": "Voice profile is required for original play mode."
   },
   "alarmEdit": {
     "title": "Edit Alarm",
@@ -248,7 +329,10 @@
     "giftSent": "Gift sent to {{name}}!",
     "giftSentTitle": "Sent",
     "giftError": "Failed to send gift.",
-    "friendListError": "Could not load friends list."
+    "friendListError": "Could not load friends list.",
+    "a11yVoiceProfile": "Voice profile: {{name}}",
+    "a11yCategory": "Category: {{label}}",
+    "a11ySendGiftTo": "Send gift to {{name}}"
   },
   "giftReceived": {
     "emptyText": "No gifts received",
@@ -281,6 +365,10 @@
     "tooShort": "Please record at least 10 seconds.",
     "tooShortTitle": "Recording too short",
     "permissionRequired": "Microphone permission is required.\nPlease allow microphone access in settings.",
+    "a11yStartRecording": "Start recording",
+    "a11yStopRecording": "Stop recording",
+    "a11yDuration": "Recording duration {{time}}",
+    "a11yAudioLevel": "Audio input level",
     "sentences": [
       "Hello, have a great day today.",
       "Don't forget to eat lunch, keep going this afternoon.",
@@ -298,7 +386,11 @@
     "successDesc": "Voice clone is being generated.",
     "uploadError": "Upload failed.",
     "inputRequired": "Select a file and enter a name.",
-    "inputRequiredTitle": "Input required"
+    "inputRequiredTitle": "Input required",
+    "a11yPickFile": "Select audio file button",
+    "a11yFileInfo": "Selected file: {{name}}",
+    "a11yNameInput": "Voice profile name",
+    "a11ySubmit": "Register voice button"
   },
   "voiceDiarize": {
     "step1Title": "Upload call recording",
@@ -325,7 +417,13 @@
     "successDesc": "Voice clone for the selected speaker is being generated.",
     "cloneError": "Failed to create voice clone.",
     "backToSelect": "← Choose another speaker",
-    "minSec": "{{min}}m {{sec}}s"
+    "minSec": "{{min}}m {{sec}}s",
+    "a11yPickFile": "Select recording file button",
+    "a11yAnalyze": "Start speaker separation button",
+    "a11ySpeaker": "Speaker {{index}}, {{duration}}, {{segments}} segments",
+    "a11yNameInput": "Voice profile name input",
+    "a11ySubmit": "Register voice button",
+    "a11yBack": "Go back to previous step"
   },
   "voiceDetail": {
     "messages": "Messages",
@@ -335,11 +433,31 @@
     "active": "Active",
     "inactive": "Inactive",
     "empty": "No messages or alarms with this voice",
-    "createMessage": "Create message with this voice"
+    "createMessage": "Create message with this voice",
+    "a11yAvatar": "{{name}} voice profile",
+    "a11yRename": "Rename voice",
+    "a11yRenameInput": "Voice name input",
+    "a11yRenameSave": "Save name change",
+    "a11yRenameCancel": "Cancel name change",
+    "a11yStat": "{{label}}: {{count}}",
+    "a11yCreateMessage": "Create message with this voice button",
+    "renameFailed": "Rename failed",
+    "renameNetworkError": "Network error",
+    "renameInputError": "Invalid name",
+    "renameSaving": "Saving…",
+    "renameSave": "Save",
+    "renameCancel": "Cancel",
+    "rename": "Rename"
   },
   "player": {
     "thanks": "💝 Thank you",
-    "thanked": "💝 You sent your thanks"
+    "thanked": "💝 You sent your thanks",
+    "a11yClose": "Close",
+    "a11yPlay": "Play",
+    "a11yPause": "Pause",
+    "a11yWaveform": "Audio playback progress",
+    "a11yReaction": "Send thanks",
+    "a11yVoice": "Voice message from {{name}}"
   },
   "offline": {
     "banner": "You are offline",
@@ -356,6 +474,57 @@
     "useForAlarm": "Set as alarm",
     "createAnother": "Create new message with same voice",
     "translate": "Translate to another language"
+  },
+  "familyAlarm": {
+    "title": "Send Family Alarm",
+    "recipient": "Who to send to?",
+    "wakeTime": "Wake time",
+    "message": "Alarm message",
+    "messagePlaceholder": "Leave a warm message (max 500 chars)",
+    "repeat": "Repeat days",
+    "onceHint": "If none selected, it rings once",
+    "submit": "⏰ Send alarm",
+    "sending": "Sending...",
+    "successTitle": "Alarm sent!",
+    "successDesc": "A warm alarm has been delivered to your family.",
+    "createError": "Failed to send alarm.",
+    "noRecipients": "No family members have allowed alarms",
+    "a11yRecipient": "Recipient: {{name}}",
+    "a11yDay": "{{day}}"
+  },
+  "character": {
+    "loadError": "Could not load character",
+    "tapHint": "Tap the character for a new dialogue",
+    "streakDays": " day streak",
+    "longestStreak": "Best",
+    "dayUnit": "d",
+    "growthProgress": "Growth Progress",
+    "xpProgress": "XP progress",
+    "totalXp": "Total XP",
+    "affection": "Affection",
+    "todayXp": "Today",
+    "statsTitle": "Tree Stats",
+    "statDiligence": "Root Depth",
+    "statHealth": "Trunk Strength",
+    "statConsistency": "Leaf Density",
+    "capReached": "daily cap reached",
+    "xpFailed": "XP grant failed",
+    "devXpTitle": "Test XP Grant",
+    "devXpHint": "In the real app, this is called automatically on alarm completion.",
+    "a11yStreak": "{{count}} day streak, best: {{longest}} days",
+    "a11yMilestone": "{{days}} day milestone, {{status}}",
+    "a11yMilestoneAchieved": "achieved",
+    "a11yMilestoneNotYet": "not yet",
+    "a11yStat": "{{name}}: {{value}}",
+    "a11yXpStat": "{{label}}: {{value}}"
+  },
+  "lastSeen": {
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "longAgo": "Long ago",
+    "unknown": "Never seen"
   },
   "dub": {
     "title": "Voice Translation",
@@ -375,6 +544,9 @@
     "noAudio": "No audio file available to play",
     "sameLanguage": "Please select a different language",
     "jobs": "Translation history",
-    "noJobs": "No translation history yet"
+    "noJobs": "No translation history yet",
+    "a11ySourceLang": "Source language: {{name}}",
+    "a11yTargetLang": "Target language: {{name}}",
+    "a11yProgress": "Translating, {{progress}}% complete"
   }
 }

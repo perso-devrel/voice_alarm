@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getVoiceProfiles, deleteVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { ErrorView } from '../../src/components/QueryStateView';
@@ -25,6 +26,8 @@ import type { VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
+import { cacheVoices, getCachedVoices } from '../../src/services/offlineCache';
 
 export default function VoicesScreen() {
   const router = useRouter();
@@ -32,7 +35,15 @@ export default function VoicesScreen() {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const isConnected = useNetworkStatus();
   const [searchQuery, setSearchQuery] = useState('');
+  const [cachedProfiles, setCachedProfiles] = useState<VoiceProfile[] | null>(null);
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  useEffect(() => {
+    getCachedVoices().then(setCachedProfiles);
+  }, []);
 
   const {
     data: profiles,
@@ -43,15 +54,26 @@ export default function VoicesScreen() {
   } = useQuery({
     queryKey: ['voiceProfiles'],
     queryFn: getVoiceProfiles,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (profiles && profiles.length > 0) {
+      cacheVoices(profiles);
+      setCachedProfiles(profiles);
+    }
+  }, [profiles]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const displayProfiles = profiles ?? cachedProfiles;
+
   const filteredProfiles = useMemo(() => {
-    if (!profiles) return profiles;
+    if (!displayProfiles) return displayProfiles;
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return profiles;
-    return profiles.filter((p) => p.name.toLowerCase().includes(q));
-  }, [profiles, searchQuery]);
+    if (!q) return displayProfiles;
+    return displayProfiles.filter((p) => p.name.toLowerCase().includes(q));
+  }, [displayProfiles, searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteVoiceProfile,
@@ -77,13 +99,13 @@ export default function VoicesScreen() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ready':
-        return { label: t('voices.statusReady'), color: Colors.light.success };
+        return { label: t('voices.statusReady'), color: colors.success };
       case 'processing':
-        return { label: t('voices.statusProcessing'), color: Colors.light.warning };
+        return { label: t('voices.statusProcessing'), color: colors.warning };
       case 'failed':
-        return { label: t('voices.statusFailed'), color: Colors.light.error };
+        return { label: t('voices.statusFailed'), color: colors.error };
       default:
-        return { label: status, color: Colors.light.textTertiary };
+        return { label: status, color: colors.textTertiary };
     }
   };
 
@@ -117,6 +139,8 @@ export default function VoicesScreen() {
           style={styles.profileCard}
           activeOpacity={0.7}
           onPress={() => router.push({ pathname: '/voice/[id]', params: { id: item.id } })}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.name} ${badge.label}`}
         >
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
@@ -134,6 +158,8 @@ export default function VoicesScreen() {
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => handleDelete(item.id, item.name)}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('common.delete')} ${item.name}`}
           >
             <Text style={styles.deleteText}>{t('common.delete')}</Text>
           </TouchableOpacity>
@@ -147,6 +173,7 @@ export default function VoicesScreen() {
       <ScrollView
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
       <View style={styles.header}>
         <Text style={styles.title}>{t('voices.title')}</Text>
@@ -154,7 +181,12 @@ export default function VoicesScreen() {
       </View>
 
       <View style={styles.addSection}>
-        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/record')}>
+        <TouchableOpacity
+          style={styles.addCard}
+          onPress={() => router.push('/voice/record')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.record')}
+        >
           <Text style={styles.addEmoji}>🎙️</Text>
           <View>
             <Text style={styles.addTitle}>{t('voices.record')}</Text>
@@ -162,7 +194,12 @@ export default function VoicesScreen() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/upload')}>
+        <TouchableOpacity
+          style={styles.addCard}
+          onPress={() => router.push('/voice/upload')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.upload')}
+        >
           <Text style={styles.addEmoji}>📁</Text>
           <View>
             <Text style={styles.addTitle}>{t('voices.upload')}</Text>
@@ -173,6 +210,8 @@ export default function VoicesScreen() {
         <TouchableOpacity
           style={[styles.addCard, styles.addCardHighlight]}
           onPress={() => router.push('/voice/diarize')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.callRecord')}
         >
           <Text style={styles.addEmoji}>📞</Text>
           <View>
@@ -183,7 +222,12 @@ export default function VoicesScreen() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/picker')}>
+        <TouchableOpacity
+          style={styles.addCard}
+          onPress={() => router.push('/voice/picker')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.speakerDetect', '화자 감지')}
+        >
           <Text style={styles.addEmoji}>🧩</Text>
           <View>
             <Text style={styles.addTitle}>화자 감지 (mock)</Text>
@@ -194,13 +238,13 @@ export default function VoicesScreen() {
 
       <View style={styles.listSection}>
         <Text style={styles.listTitle}>
-          {t('voices.registered')} ({profiles?.length ?? 0})
+          {t('voices.registered')} ({displayProfiles?.length ?? 0})
         </Text>
-        {profiles && profiles.length > 0 && (
+        {displayProfiles && displayProfiles.length > 0 && (
           <TextInput
             style={styles.searchInput}
             placeholder={t('voices.searchPlaceholder')}
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -208,7 +252,7 @@ export default function VoicesScreen() {
           />
         )}
         {isLoading ? (
-          <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
         ) : isError ? (
           <ErrorView onRetry={refetch} />
         ) : filteredProfiles?.length === 0 ? (
@@ -219,6 +263,14 @@ export default function VoicesScreen() {
               {'\n'}
               {t('voices.emptyDesc')}
             </Text>
+            <TouchableOpacity
+              style={styles.emptyCta}
+              onPress={() => router.push('/voice/record')}
+              accessibilityRole="button"
+              accessibilityLabel={t('voices.record')}
+            >
+              <Text style={styles.emptyCtaText}>{t('voices.record')}</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <FlatList
@@ -235,165 +287,186 @@ export default function VoicesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  header: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.hero,
-    fontWeight: '700',
-    color: Colors.light.text,
-  },
-  subtitle: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    marginTop: Spacing.xs,
-  },
-  addSection: {
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-  addCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    gap: Spacing.md,
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  addCardHighlight: {
-    backgroundColor: Colors.light.primary,
-  },
-  addEmoji: {
-    fontSize: 28,
-  },
-  addTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  addDesc: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  listSection: {
-    padding: Spacing.lg,
-    flex: 1,
-  },
-  listTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: Spacing.md,
-  },
-  searchInput: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: FontSize.xl,
-    fontWeight: '700',
-    color: Colors.light.primaryDark,
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  profileName: {
-    fontSize: FontSize.lg,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    marginTop: 4,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 4,
-  },
-  statusText: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
-  },
-  profileDate: {
-    fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
-    marginTop: 2,
-  },
-  deleteButton: {
-    padding: Spacing.sm,
-  },
-  deleteText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.error,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxl,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
-  },
-  emptyText: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  swipeDeleteContainer: {
-    backgroundColor: Colors.light.error,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.sm,
-  },
-  swipeDeleteText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: FontSize.md,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      padding: Spacing.lg,
+      paddingBottom: Spacing.sm,
+    },
+    title: {
+      fontSize: FontSize.hero,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+    },
+    subtitle: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      marginTop: Spacing.xs,
+    },
+    addSection: {
+      padding: Spacing.lg,
+      gap: Spacing.md,
+    },
+    addCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.lg,
+      gap: Spacing.md,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    addCardHighlight: {
+      backgroundColor: colors.primary,
+    },
+    addEmoji: {
+      fontSize: 28,
+    },
+    addTitle: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.semibold,
+      color: colors.text,
+    },
+    addDesc: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    listSection: {
+      padding: Spacing.lg,
+      flex: 1,
+    },
+    listTitle: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      marginBottom: Spacing.md,
+    },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      fontSize: FontSize.md,
+      color: colors.text,
+      marginBottom: Spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    profileCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+      marginBottom: Spacing.md,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    avatarContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    avatarText: {
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
+      color: colors.primaryDark,
+    },
+    profileInfo: {
+      flex: 1,
+      marginLeft: Spacing.md,
+    },
+    profileName: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.semibold,
+      color: colors.text,
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+      marginTop: 4,
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 4,
+    },
+    statusText: {
+      fontSize: FontSize.xs,
+      fontFamily: FontFamily.semibold,
+    },
+    profileDate: {
+      fontSize: FontSize.xs,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    deleteButton: {
+      padding: Spacing.sm,
+    },
+    deleteText: {
+      fontSize: FontSize.sm,
+      color: colors.error,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: Spacing.xxl,
+    },
+    emptyEmoji: {
+      fontSize: 48,
+      marginBottom: Spacing.md,
+    },
+    emptyText: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    emptyCta: {
+      marginTop: Spacing.lg,
+      backgroundColor: colors.primary,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.sm + 4,
+      borderRadius: BorderRadius.full,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    emptyCtaText: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+      color: colors.surface,
+    },
+    swipeDeleteContainer: {
+      backgroundColor: colors.error,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+      paddingHorizontal: Spacing.xl,
+      borderRadius: BorderRadius.lg,
+      marginBottom: Spacing.sm,
+    },
+    swipeDeleteText: {
+      color: '#FFF',
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.md,
+    },
+  });
+}
