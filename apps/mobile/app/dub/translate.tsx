@@ -12,7 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import {
   getMessages,
   getDubLanguages,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   messagePreviewLabel: {
     fontSize: FontSize.sm,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginBottom: Spacing.xs,
   },
   messagePreviewText: {
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
     marginTop: Spacing.sm,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   sourceChipText: {
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   sourceChipTextActive: {
     color: '#FFF',
@@ -386,11 +386,11 @@ const styles = StyleSheet.create({
   langText: {
     fontSize: FontSize.sm,
     color: Colors.light.text,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   langTextActive: {
     color: '#FFF',
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   experimentBadge: {
     fontSize: 10,
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.primary,
   },
   remainingText: {
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   },
   completeText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.success,
   },
   playResultButton: {
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   playResultText: {
     color: '#FFF',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   savedText: {
     fontSize: FontSize.sm,
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   },
   failedText: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.error,
   },
   retryButton: {
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   retryText: {
     color: Colors.light.primary,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   footer: {
     position: 'absolute',
@@ -479,6 +479,6 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { requestMicPermission, startRecording, stopRecording } from '../../src/services/audio';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   guideTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.md,
   },
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     marginRight: Spacing.sm,
   },
   guideText: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   },
   timer: {
     fontSize: 48,
-    fontWeight: '200',
+    fontFamily: FontFamily.regular,
     color: Colors.light.text,
     marginBottom: Spacing.lg,
   },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.success,
     marginBottom: Spacing.md,
     textAlign: 'center',
@@ -383,6 +383,6 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

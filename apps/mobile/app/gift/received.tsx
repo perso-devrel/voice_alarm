@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getApiErrorMessage } from '../../src/types';
 import type { Gift } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FontSize.lg,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   card: {
     backgroundColor: Colors.light.surface,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   },
   senderName: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   senderEmail: {
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   },
   status: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.warning,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   category: {
     fontSize: FontSize.xs,
     color: Colors.light.textTertiary,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
     marginBottom: 4,
     textTransform: 'uppercase',
   },
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   },
   acceptBtnText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
   rejectBtn: {
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   },
   rejectBtnText: {
     color: Colors.light.textSecondary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
   setAlarmBtn: {
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   },
   setAlarmBtnText: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.sm,
   },
 });

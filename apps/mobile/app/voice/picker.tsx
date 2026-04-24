@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
-import { BorderRadius, Colors, FontSize, Spacing } from '../../src/constants/theme';
+import { BorderRadius, Colors, FontFamily, FontSize, Spacing } from '../../src/constants/theme';
 import {
   listSpeakers,
   renameSpeaker,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   header: { marginBottom: Spacing.lg },
   title: {
     fontSize: FontSize.xxl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
   },
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   pickEmoji: { fontSize: 48, marginBottom: Spacing.sm },
-  pickText: { fontSize: FontSize.md, color: Colors.light.primary, fontWeight: '600' },
+  pickText: { fontSize: FontSize.md, color: Colors.light.primary, fontFamily: FontFamily.semibold },
   primaryButton: {
     backgroundColor: Colors.light.primary,
     borderRadius: BorderRadius.lg,
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.md,
   },
-  primaryText: { color: '#FFF', fontSize: FontSize.lg, fontWeight: '700' },
+  primaryText: { color: '#FFF', fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   secondaryButton: {
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  labelText: { fontSize: FontSize.lg, fontWeight: '600', color: Colors.light.text },
+  labelText: { fontSize: FontSize.lg, fontFamily: FontFamily.semibold, color: Colors.light.text },
   labelInput: {
     flex: 1,
     borderWidth: 1,
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.light.text,
   },
-  renameText: { color: Colors.light.primary, fontSize: FontSize.sm, fontWeight: '600' },
+  renameText: { color: Colors.light.primary, fontSize: FontSize.sm, fontFamily: FontFamily.semibold },
   metaText: {
     marginTop: Spacing.sm,
     fontSize: FontSize.sm,

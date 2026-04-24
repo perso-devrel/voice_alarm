@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getVoiceProfiles, getMessages, getAlarms, updateVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { sanitizeVoiceName } from '../../src/lib/voiceName';
@@ -241,12 +241,12 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   profileName: {
     fontSize: FontSize.xxl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
   },
   profileDate: {
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   renameText: {
     fontSize: FontSize.sm,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   renameRow: {
     flexDirection: 'row',
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   renameSaveText: {
     color: '#fff',
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   renameCancelBtn: {
     paddingHorizontal: Spacing.sm,
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: FontSize.xxl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primary,
   },
   statLabel: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
     marginTop: Spacing.md,
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   },
   alarmTime: {
     fontSize: FontSize.xl,
-    fontWeight: '300',
+    fontFamily: FontFamily.regular,
     color: Colors.light.text,
     marginBottom: 4,
   },
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   createMessageText: {
     color: '#fff',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   empty: {
     alignItems: 'center',

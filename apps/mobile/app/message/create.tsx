@@ -14,7 +14,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { PRESET_CATEGORIES } from '../../src/constants/presets';
 import { getVoiceProfiles, generateTTS, getFriendList, sendGift } from '../../src/services/api';
 import { saveAudioLocally, playAudio } from '../../src/services/audio';
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.md,
   },
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   },
   emptyVoiceText: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   voiceRow: {
     marginBottom: Spacing.lg,
@@ -415,14 +415,14 @@ const styles = StyleSheet.create({
   },
   voiceChipAvatar: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primary,
     marginBottom: 4,
   },
   voiceChipName: {
     fontSize: FontSize.sm,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   voiceChipNameSelected: {
     color: Colors.light.primary,
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   tabTextActive: {
     color: '#FFF',
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontSize: FontSize.sm,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   categoryLabelActive: {
     color: '#FFF',
@@ -505,12 +505,12 @@ const styles = StyleSheet.create({
   },
   presetTextSelected: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   checkmark: {
     fontSize: FontSize.lg,
     color: Colors.light.primary,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   customSection: {
     marginBottom: Spacing.lg,
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   generateText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   resultCard: {
     backgroundColor: Colors.light.surface,
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.success,
     marginBottom: Spacing.sm,
   },
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   },
   previewText: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   useButton: {
     flex: 1,
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   },
   useText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   giftButton: {
     borderRadius: BorderRadius.md,
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
   },
   giftText: {
     color: Colors.light.accent,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
   modalOverlay: {
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.xs,
   },
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   },
   friendAvatarText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   friendInfo: {
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   },
   friendName: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   friendEmail: {
@@ -687,6 +687,6 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

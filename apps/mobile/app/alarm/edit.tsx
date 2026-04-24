@@ -11,7 +11,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import {
   getMessages,
@@ -363,12 +363,12 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     fontSize: FontSize.hero,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
   },
   sectionTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.md,
     marginTop: Spacing.lg,
@@ -395,14 +395,14 @@ const styles = StyleSheet.create({
   },
   timeValue: {
     fontSize: 56,
-    fontWeight: '200',
+    fontFamily: FontFamily.regular,
     color: Colors.light.text,
     width: 80,
     textAlign: 'center',
   },
   timeSeparator: {
     fontSize: 48,
-    fontWeight: '200',
+    fontFamily: FontFamily.regular,
     color: Colors.light.text,
     marginHorizontal: Spacing.sm,
   },
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
   dayText: {
     fontSize: FontSize.md,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   dayTextActive: {
     color: '#FFF',
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   snoozeText: {
     fontSize: FontSize.md,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   snoozeTextActive: {
     color: '#FFF',
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   messageVoice: {
     fontSize: FontSize.sm,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   messageText: {
     fontSize: FontSize.md,
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   checkmark: {
     fontSize: FontSize.lg,
     color: Colors.light.primary,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   emptyMessageBox: {
     backgroundColor: Colors.light.surface,
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
   },
   emptyMessageTitle: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.xs,
   },
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   saveText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   modeRow: {
     flexDirection: 'row',
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
   modeText: {
     fontSize: FontSize.md,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   modeTextActive: {
     color: '#FFF',
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
   voiceText: {
     fontSize: FontSize.md,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   voiceTextActive: {
     color: '#FFF',

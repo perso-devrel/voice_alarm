@@ -1,14 +1,15 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P0 Phase 1-B-2 fontWeight→fontFamily 마이그레이션 Batch 2 완료
-- 현재 Phase: **P0 Phase 1-B-2 진행 중 (20/29 파일 완료, 9개 남음)**
+- 마지막 루프: 2026-04-24 — P0 Phase 1-B-2 fontWeight→fontFamily 마이그레이션 Batch 3 (최종) 완료
+- 현재 Phase: **P0 Phase 1-B-2 완료 (29/29 파일). 다음: P4 진행**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
 
 - **P0 Phase 1-A**: packages/web 전체 삭제 완료.
 - **P0 Phase 1-B**: Pretendard 폰트 적용 완료.
+- **P0 Phase 1-B-2**: 전체 앱 fontWeight→fontFamily 마이그레이션 완료 (29개 파일, 3배치).
 - **P0 Phase 1-C**: 탭 8→5 축소 완료 (Home/Voices/Alarms/People/Settings).
 - **P1 세그먼트**: People 탭 3-세그먼트 컨트롤 (Members/Friends/Requests) + 플랜별 분기.
 - **P1 가족 알람**: `app/family-alarm/create.tsx` 생성.
@@ -37,17 +38,14 @@
 
 ## 다음 루프 지시
 
-**P0 Phase 1-B-2 Batch 3으로 진행하라.**
-Batch 1(10개) + Batch 2(10개) 완료. 남은 9개 파일을 모두 변환:
-1. `app/alarm/edit.tsx`, `app/alarm/create.tsx`
-2. `app/voice/picker.tsx`, `app/voice/[id].tsx`, `app/voice/record.tsx`, `app/voice/diarize.tsx`
-3. `app/dub/translate.tsx`
-4. `app/message/create.tsx`
-5. `app/gift/received.tsx`
-6. typecheck 통과 확인
-7. Batch 3 완료 시 BACKLOG Phase 1-B-2 전체 완료 체크
+**P4 — 기획서 동기화 + 추가 정비로 진행하라.**
+P0~P3 모두 완료. 다음 우선순위는 P4:
+1. 온보딩 플로우 점검 (`apps/mobile/app/onboarding.tsx`)
+2. 알람 정확도 강화 (expo-notifications 트리거 검증)
+3. 오프라인 캐싱 검증
+4. Notion 기획서 업데이트는 외부 시스템이므로 건너뜀 — 코드 수준 정비에 집중
 
 ## 알려진 이슈
 - [blocked] Perso API 404
 - [blocked] ElevenLabs 통합 테스트
-- FontFamily/fontForWeight 중복
+- FontFamily/fontForWeight 중복 (fontForWeight는 남아 있으나 현재 사용처 없음 — 추후 정리)

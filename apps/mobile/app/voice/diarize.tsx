@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { diarizeAudio, createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 import type { Speaker } from '../../src/types';
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   stepBadge: {
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primary,
     backgroundColor: Colors.light.primaryLight + '40',
     alignSelf: 'flex-start',
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontSize: FontSize.xxl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
   },
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   pickText: {
     fontSize: FontSize.md,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   analyzeButton: {
     backgroundColor: Colors.light.primary,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   analyzeText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   speakerCard: {
     flexDirection: 'row',
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   speakerAvatarText: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   speakerInfo: {
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   speakerLabel: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   speakerDuration: {
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   backButton: {
     alignItems: 'center',
