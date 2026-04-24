@@ -188,17 +188,44 @@ export default function SettingsScreen() {
               value={t('settings.languageKorean')}
               onPress={() => {}}
             />
-            <SettingRow colors={colors} label={t('settings.version')} value={appVersion} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.info')}</Text>
           <View style={styles.card}>
-            <SettingRow colors={colors} label={t('settings.terms')} value="→" onPress={() => {}} />
-            <SettingRow colors={colors} label={t('settings.privacy')} value="→" onPress={() => {}} />
-            <SettingRow colors={colors} label={t('settings.openSource')} value="→" onPress={() => {}} />
+            <SettingRow colors={colors} label={t('settings.version')} value={`${appVersion} (${Constants.expoConfig?.extra?.eas?.projectId ? 'EAS' : t('settings.buildNumber')})`} />
+            <SettingRow
+              colors={colors}
+              label={t('settings.terms')}
+              value="→"
+              onPress={() => Linking.openURL('https://voicealarm.app/terms')}
+            />
+            <SettingRow
+              colors={colors}
+              label={t('settings.privacy')}
+              value="→"
+              onPress={() => Linking.openURL('https://voicealarm.app/privacy')}
+            />
+            <SettingRow
+              colors={colors}
+              label={t('settings.openSource')}
+              value="→"
+              onPress={() => Linking.openURL('https://voicealarm.app/licenses')}
+            />
+            <SettingRow
+              colors={colors}
+              label={t('settings.contactSupport')}
+              value="→"
+              onPress={() => Linking.openURL('mailto:devrel.365@gmail.com?subject=VoiceAlarm%20Support')}
+            />
           </View>
+        </View>
+
+        <View style={styles.appFooter}>
+          <Text style={styles.footerAppName}>VoiceAlarm</Text>
+          <Text style={styles.footerDescription}>{t('settings.appDescription')}</Text>
+          <Text style={styles.footerCopyright}>© 2026 VoiceAlarm</Text>
         </View>
 
         {isAuthenticated && (
@@ -444,6 +471,27 @@ function createStyles(colors: ThemeColors) {
     },
     disabled: {
       opacity: 0.5,
+    },
+    appFooter: {
+      alignItems: 'center',
+      paddingTop: Spacing.xl,
+      paddingBottom: Spacing.md,
+    },
+    footerAppName: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+      color: colors.primary,
+      marginBottom: Spacing.xs,
+    },
+    footerDescription: {
+      fontSize: FontSize.sm,
+      color: colors.textTertiary,
+      textAlign: 'center',
+      marginBottom: Spacing.xs,
+    },
+    footerCopyright: {
+      fontSize: FontSize.xs,
+      color: colors.textTertiary,
     },
   });
 }
