@@ -17,7 +17,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getAlarms, updateAlarm, deleteAlarm, getMessages, getVoiceProfiles } from '../../src/services/api';
 import { playAudio } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -85,12 +86,14 @@ export default function AlarmsScreen() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const toast = useToast();
   const isConnected = useNetworkStatus();
   const [cachedAlarms, setCachedAlarms] = useState<Alarm[] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [countdownText, setCountdownText] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     getCachedAlarms().then(setCachedAlarms);
@@ -318,10 +321,10 @@ export default function AlarmsScreen() {
               value={!!item.is_active}
               onValueChange={(value) => toggleMutation.mutate({ id: item.id, is_active: value })}
               trackColor={{
-                false: Colors.light.border,
-                true: Colors.light.primaryLight,
+                false: colors.border,
+                true: colors.primaryLight,
               }}
-              thumbColor={item.is_active ? Colors.light.primary : '#f4f3f4'}
+              thumbColor={item.is_active ? colors.primary : colors.surfaceVariant}
             />
           </View>
         </TouchableOpacity>
@@ -343,7 +346,7 @@ export default function AlarmsScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder={t('alarms.searchPlaceholder')}
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -366,7 +369,7 @@ export default function AlarmsScreen() {
       )}
 
       {isLoading && !cachedAlarms ? (
-        <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 80 }} />
       ) : isError && !cachedAlarms ? (
         <ErrorView onRetry={refetch} />
       ) : filteredAlarms?.length === 0 ? (
@@ -393,230 +396,232 @@ export default function AlarmsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Spacing.lg,
-  },
-  title: {
-    fontSize: FontSize.hero,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.text,
-  },
-  addButton: {
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-  },
-  addButtonText: {
-    color: '#FFF',
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.semibold,
-  },
-  searchContainer: {
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-  },
-  searchInput: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-  },
-  countdownBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.primaryLight + '33',
-  },
-  countdownLabel: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-  },
-  countdownValue: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.primary,
-  },
-  cachedBanner: {
-    backgroundColor: Colors.light.surfaceVariant,
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    alignItems: 'center',
-  },
-  cachedText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-  },
-  list: {
-    padding: Spacing.lg,
-    paddingTop: 0,
-    paddingBottom: 100,
-  },
-  alarmCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  alarmCardInactive: {
-    opacity: 0.6,
-  },
-  alarmLeft: {
-    flex: 1,
-  },
-  alarmTime: {
-    fontSize: 36,
-    fontFamily: FontFamily.regular,
-    color: Colors.light.text,
-  },
-  timeInactive: {
-    color: Colors.light.textTertiary,
-    textDecorationLine: 'line-through' as const,
-  },
-  textInactive: {
-    color: Colors.light.textTertiary,
-  },
-  alarmSubRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginTop: 2,
-  },
-  alarmRepeat: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-  },
-  alarmCountdown: {
-    fontSize: FontSize.xs,
-    color: Colors.light.primary,
-    fontFamily: FontFamily.semibold,
-  },
-  alarmMeta: {
-    marginTop: Spacing.sm,
-  },
-  alarmVoice: {
-    fontSize: FontSize.sm,
-    color: Colors.light.primary,
-    fontFamily: FontFamily.semibold,
-  },
-  alarmMessage: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  modeBadge: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-  modeBadgeText: {
-    fontSize: FontSize.xs,
-    color: Colors.light.primary,
-    fontFamily: FontFamily.semibold,
-  },
-  familyBadge: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.primaryLight,
-  },
-  familyBadgeText: {
-    fontSize: FontSize.xs,
-    color: '#FFFFFF',
-    fontFamily: FontFamily.bold,
-  },
-  alarmActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  previewButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.light.surfaceVariant,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewIcon: {
-    fontSize: 18,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: Spacing.lg,
-  },
-  emptyTitle: {
-    fontSize: FontSize.xl,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.text,
-    marginBottom: Spacing.sm,
-  },
-  emptyDesc: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: Spacing.lg,
-  },
-  emptyButton: {
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-  },
-  emptyButtonText: {
-    color: '#FFF',
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.bold,
-  },
-  swipeDeleteContainer: {
-    backgroundColor: Colors.light.error,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.md,
-  },
-  swipeDeleteText: {
-    color: '#FFF',
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.md,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: Spacing.lg,
+    },
+    title: {
+      fontSize: FontSize.hero,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+    },
+    addButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.full,
+    },
+    addButtonText: {
+      color: '#FFF',
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+    },
+    searchContainer: {
+      paddingHorizontal: Spacing.lg,
+      marginBottom: Spacing.sm,
+    },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      fontSize: FontSize.md,
+      color: colors.text,
+    },
+    countdownBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      marginHorizontal: Spacing.lg,
+      marginBottom: Spacing.sm,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.primaryLight + '33',
+    },
+    countdownLabel: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+    },
+    countdownValue: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.bold,
+      color: colors.primary,
+    },
+    cachedBanner: {
+      backgroundColor: colors.surfaceVariant,
+      marginHorizontal: Spacing.lg,
+      marginBottom: Spacing.sm,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      borderRadius: BorderRadius.sm,
+      alignItems: 'center',
+    },
+    cachedText: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+    },
+    list: {
+      padding: Spacing.lg,
+      paddingTop: 0,
+      paddingBottom: 100,
+    },
+    alarmCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.lg,
+      marginBottom: Spacing.md,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    alarmCardInactive: {
+      opacity: 0.6,
+    },
+    alarmLeft: {
+      flex: 1,
+    },
+    alarmTime: {
+      fontSize: 36,
+      fontFamily: FontFamily.regular,
+      color: colors.text,
+    },
+    timeInactive: {
+      color: colors.textTertiary,
+      textDecorationLine: 'line-through' as const,
+    },
+    textInactive: {
+      color: colors.textTertiary,
+    },
+    alarmSubRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      marginTop: 2,
+    },
+    alarmRepeat: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+    },
+    alarmCountdown: {
+      fontSize: FontSize.xs,
+      color: colors.primary,
+      fontFamily: FontFamily.semibold,
+    },
+    alarmMeta: {
+      marginTop: Spacing.sm,
+    },
+    alarmVoice: {
+      fontSize: FontSize.sm,
+      color: colors.primary,
+      fontFamily: FontFamily.semibold,
+    },
+    alarmMessage: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    modeBadge: {
+      alignSelf: 'flex-start',
+      marginTop: 4,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.surfaceVariant,
+    },
+    modeBadgeText: {
+      fontSize: FontSize.xs,
+      color: colors.primary,
+      fontFamily: FontFamily.semibold,
+    },
+    familyBadge: {
+      alignSelf: 'flex-start',
+      marginTop: 4,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.primaryLight,
+    },
+    familyBadgeText: {
+      fontSize: FontSize.xs,
+      color: '#FFFFFF',
+      fontFamily: FontFamily.bold,
+    },
+    alarmActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    previewButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surfaceVariant,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    previewIcon: {
+      fontSize: 18,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.xl,
+    },
+    emptyEmoji: {
+      fontSize: 64,
+      marginBottom: Spacing.lg,
+    },
+    emptyTitle: {
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      marginBottom: Spacing.sm,
+    },
+    emptyDesc: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: Spacing.lg,
+    },
+    emptyButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.md,
+      borderRadius: BorderRadius.full,
+    },
+    emptyButtonText: {
+      color: '#FFF',
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+    },
+    swipeDeleteContainer: {
+      backgroundColor: colors.error,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+      paddingHorizontal: Spacing.xl,
+      borderRadius: BorderRadius.lg,
+      marginBottom: Spacing.md,
+    },
+    swipeDeleteText: {
+      color: '#FFF',
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.md,
+    },
+  });
+}

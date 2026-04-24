@@ -167,7 +167,7 @@
   - [x] 인프라: ThemeColorScheme 인터페이스, useTheme 훅, useAppStore darkMode persist, Settings 토글 연결
   - [x] root _layout.tsx + tabs _layout.tsx 테마 적용
   - [x] settings.tsx createStyles 패턴 전체 재작성
-  - [ ] Batch 1: 탭 화면 4개 (index, alarms, voices, people)
+  - [x] Batch 1: 탭 화면 4개 (index, alarms, voices, people)
   - [ ] Batch 2: 스택 화면 (character, library, alarm/create, alarm/edit 등)
   - [ ] Batch 3: 컴포넌트 (Toast, OfflineBanner, ErrorBoundary, LoginButtons 등)
   - [ ] Batch 4: 나머지 스택 화면 (player, message, voice, dub, gift 등)

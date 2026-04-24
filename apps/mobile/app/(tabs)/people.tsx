@@ -29,7 +29,8 @@ import {
 import type { FamilyInvite } from '../../src/services/api';
 import type { Friend, PendingFriendRequest } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { useToast } from '../../src/hooks/useToast';
@@ -43,6 +44,8 @@ export default function PeopleScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const toast = useToast();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const plan = useAppStore((s) => s.plan);
@@ -405,7 +408,7 @@ export default function PeopleScreen() {
           <TextInput
             style={styles.addInput}
             placeholder={t('friends.addPlaceholder')}
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -448,256 +451,258 @@ export default function PeopleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  header: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.hero,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.text,
-  },
-  addRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-    gap: Spacing.sm,
-  },
-  addInput: {
-    flex: 1,
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    minHeight: 44,
-  },
-  addBtn: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.lg,
-    justifyContent: 'center',
-    minHeight: 44,
-  },
-  addBtnDisabled: {
-    opacity: 0.4,
-  },
-  addBtnText: {
-    color: '#FFF',
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSize.md,
-  },
-  segmentRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  segmentActive: {
-    borderBottomColor: Colors.light.primary,
-  },
-  segmentText: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    fontFamily: FontFamily.medium,
-  },
-  segmentTextActive: {
-    color: Colors.light.primary,
-    fontFamily: FontFamily.semibold,
-  },
-  list: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 100,
-  },
-  personCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.md,
-  },
-  avatarText: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.primaryDark,
-  },
-  personInfo: {
-    flex: 1,
-  },
-  personName: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
-  },
-  personEmail: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  familyAlarmBtn: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    marginTop: Spacing.md,
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  familyAlarmBtnText: {
-    color: '#FFF',
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.semibold,
-  },
-  removeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.light.surfaceVariant,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removeBtnText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
-  },
-  acceptBtn: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    minHeight: 36,
-    justifyContent: 'center',
-  },
-  acceptBtnText: {
-    color: '#FFF',
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSize.sm,
-  },
-  inviteSection: {
-    marginTop: Spacing.lg,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
-  },
-  inviteSectionTitle: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
-    marginBottom: Spacing.sm,
-  },
-  inviteGenerateBtn: {
-    backgroundColor: Colors.light.primaryDark,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  inviteList: {
-    marginTop: Spacing.md,
-  },
-  inviteListTitle: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.textSecondary,
-    marginBottom: Spacing.xs,
-  },
-  inviteCard: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  inviteCode: {
-    fontSize: FontSize.xl,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.text,
-    letterSpacing: 4,
-    textAlign: 'center',
-  },
-  inviteExpiry: {
-    fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
-    textAlign: 'center',
-    marginTop: Spacing.xs,
-  },
-  inviteActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
-  },
-  inviteShareBtn: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    minHeight: 36,
-    justifyContent: 'center',
-  },
-  inviteShareBtnText: {
-    color: '#FFF',
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSize.sm,
-  },
-  inviteRevokeBtn: {
-    backgroundColor: Colors.light.surfaceVariant,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    minHeight: 36,
-    justifyContent: 'center',
-  },
-  inviteRevokeBtnText: {
-    color: Colors.light.textSecondary,
-    fontFamily: FontFamily.semibold,
-    fontSize: FontSize.sm,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.xl,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
-  },
-  emptyText: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-  },
-  emptyHint: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
-    textAlign: 'center',
-    marginTop: Spacing.xs,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      paddingHorizontal: Spacing.lg,
+      paddingTop: Spacing.md,
+      paddingBottom: Spacing.sm,
+    },
+    title: {
+      fontSize: FontSize.hero,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+    },
+    addRow: {
+      flexDirection: 'row',
+      paddingHorizontal: Spacing.lg,
+      paddingBottom: Spacing.md,
+      gap: Spacing.sm,
+    },
+    addInput: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      fontSize: FontSize.md,
+      color: colors.text,
+      minHeight: 44,
+    },
+    addBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.lg,
+      justifyContent: 'center',
+      minHeight: 44,
+    },
+    addBtnDisabled: {
+      opacity: 0.4,
+    },
+    addBtnText: {
+      color: '#FFF',
+      fontFamily: FontFamily.semibold,
+      fontSize: FontSize.md,
+    },
+    segmentRow: {
+      flexDirection: 'row',
+      paddingHorizontal: Spacing.lg,
+      marginBottom: Spacing.sm,
+      gap: Spacing.xs,
+    },
+    segment: {
+      flex: 1,
+      paddingVertical: Spacing.sm,
+      alignItems: 'center',
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
+    },
+    segmentActive: {
+      borderBottomColor: colors.primary,
+    },
+    segmentText: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      fontFamily: FontFamily.medium,
+    },
+    segmentTextActive: {
+      color: colors.primary,
+      fontFamily: FontFamily.semibold,
+    },
+    list: {
+      paddingHorizontal: Spacing.lg,
+      paddingBottom: 100,
+    },
+    personCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    avatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: Spacing.md,
+    },
+    avatarText: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+      color: colors.primaryDark,
+    },
+    personInfo: {
+      flex: 1,
+    },
+    personName: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+      color: colors.text,
+    },
+    personEmail: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    familyAlarmBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: BorderRadius.lg,
+      paddingVertical: Spacing.md,
+      alignItems: 'center',
+      marginTop: Spacing.md,
+      minHeight: 48,
+      justifyContent: 'center',
+    },
+    familyAlarmBtnText: {
+      color: '#FFF',
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+    },
+    removeBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceVariant,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    removeBtnText: {
+      fontSize: FontSize.sm,
+      color: colors.textTertiary,
+    },
+    acceptBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      minHeight: 36,
+      justifyContent: 'center',
+    },
+    acceptBtnText: {
+      color: '#FFF',
+      fontFamily: FontFamily.semibold,
+      fontSize: FontSize.sm,
+    },
+    inviteSection: {
+      marginTop: Spacing.lg,
+      paddingTop: Spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    inviteSectionTitle: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.semibold,
+      color: colors.text,
+      marginBottom: Spacing.sm,
+    },
+    inviteGenerateBtn: {
+      backgroundColor: colors.primaryDark,
+      borderRadius: BorderRadius.lg,
+      paddingVertical: Spacing.md,
+      alignItems: 'center',
+      minHeight: 48,
+      justifyContent: 'center',
+    },
+    inviteList: {
+      marginTop: Spacing.md,
+    },
+    inviteListTitle: {
+      fontSize: FontSize.sm,
+      fontFamily: FontFamily.semibold,
+      color: colors.textSecondary,
+      marginBottom: Spacing.xs,
+    },
+    inviteCard: {
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    inviteCode: {
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      letterSpacing: 4,
+      textAlign: 'center',
+    },
+    inviteExpiry: {
+      fontSize: FontSize.xs,
+      color: colors.textTertiary,
+      textAlign: 'center',
+      marginTop: Spacing.xs,
+    },
+    inviteActions: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      marginTop: Spacing.sm,
+    },
+    inviteShareBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      minHeight: 36,
+      justifyContent: 'center',
+    },
+    inviteShareBtnText: {
+      color: '#FFF',
+      fontFamily: FontFamily.semibold,
+      fontSize: FontSize.sm,
+    },
+    inviteRevokeBtn: {
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      minHeight: 36,
+      justifyContent: 'center',
+    },
+    inviteRevokeBtnText: {
+      color: colors.textSecondary,
+      fontFamily: FontFamily.semibold,
+      fontSize: FontSize.sm,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: Spacing.xl,
+    },
+    emptyEmoji: {
+      fontSize: 48,
+      marginBottom: Spacing.md,
+    },
+    emptyText: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    emptyHint: {
+      fontSize: FontSize.sm,
+      color: colors.textTertiary,
+      textAlign: 'center',
+      marginTop: Spacing.xs,
+    },
+  });
+}

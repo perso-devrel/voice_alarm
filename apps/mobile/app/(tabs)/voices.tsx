@@ -17,7 +17,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getVoiceProfiles, deleteVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { ErrorView } from '../../src/components/QueryStateView';
@@ -34,9 +35,11 @@ export default function VoicesScreen() {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
   const isConnected = useNetworkStatus();
   const [searchQuery, setSearchQuery] = useState('');
   const [cachedProfiles, setCachedProfiles] = useState<VoiceProfile[] | null>(null);
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     getCachedVoices().then(setCachedProfiles);
@@ -94,13 +97,13 @@ export default function VoicesScreen() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ready':
-        return { label: t('voices.statusReady'), color: Colors.light.success };
+        return { label: t('voices.statusReady'), color: colors.success };
       case 'processing':
-        return { label: t('voices.statusProcessing'), color: Colors.light.warning };
+        return { label: t('voices.statusProcessing'), color: colors.warning };
       case 'failed':
-        return { label: t('voices.statusFailed'), color: Colors.light.error };
+        return { label: t('voices.statusFailed'), color: colors.error };
       default:
-        return { label: status, color: Colors.light.textTertiary };
+        return { label: status, color: colors.textTertiary };
     }
   };
 
@@ -218,7 +221,7 @@ export default function VoicesScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder={t('voices.searchPlaceholder')}
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -226,7 +229,7 @@ export default function VoicesScreen() {
           />
         )}
         {isLoading ? (
-          <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
         ) : isError ? (
           <ErrorView onRetry={refetch} />
         ) : filteredProfiles?.length === 0 ? (
@@ -261,179 +264,181 @@ export default function VoicesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  header: {
-    padding: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize.hero,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.text,
-  },
-  subtitle: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    marginTop: Spacing.xs,
-  },
-  addSection: {
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-  addCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    gap: Spacing.md,
-    shadowColor: Colors.light.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  addCardHighlight: {
-    backgroundColor: Colors.light.primary,
-  },
-  addEmoji: {
-    fontSize: 28,
-  },
-  addTitle: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
-  },
-  addDesc: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  listSection: {
-    padding: Spacing.lg,
-    flex: 1,
-  },
-  listTitle: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.text,
-    marginBottom: Spacing.md,
-  },
-  searchInput: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: FontSize.xl,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.primaryDark,
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: Spacing.md,
-  },
-  profileName: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-    marginTop: 4,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 4,
-  },
-  statusText: {
-    fontSize: FontSize.xs,
-    fontFamily: FontFamily.semibold,
-  },
-  profileDate: {
-    fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
-    marginTop: 2,
-  },
-  deleteButton: {
-    padding: Spacing.sm,
-  },
-  deleteText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.error,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxl,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
-  },
-  emptyText: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  emptyCta: {
-    marginTop: Spacing.lg,
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm + 4,
-    borderRadius: BorderRadius.full,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  emptyCtaText: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.surface,
-  },
-  swipeDeleteContainer: {
-    backgroundColor: Colors.light.error,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.sm,
-  },
-  swipeDeleteText: {
-    color: '#FFF',
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.md,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      padding: Spacing.lg,
+      paddingBottom: Spacing.sm,
+    },
+    title: {
+      fontSize: FontSize.hero,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+    },
+    subtitle: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      marginTop: Spacing.xs,
+    },
+    addSection: {
+      padding: Spacing.lg,
+      gap: Spacing.md,
+    },
+    addCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.lg,
+      gap: Spacing.md,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    addCardHighlight: {
+      backgroundColor: colors.primary,
+    },
+    addEmoji: {
+      fontSize: 28,
+    },
+    addTitle: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.semibold,
+      color: colors.text,
+    },
+    addDesc: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    listSection: {
+      padding: Spacing.lg,
+      flex: 1,
+    },
+    listTitle: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      marginBottom: Spacing.md,
+    },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.md,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      fontSize: FontSize.md,
+      color: colors.text,
+      marginBottom: Spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    profileCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    avatarContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    avatarText: {
+      fontSize: FontSize.xl,
+      fontFamily: FontFamily.bold,
+      color: colors.primaryDark,
+    },
+    profileInfo: {
+      flex: 1,
+      marginLeft: Spacing.md,
+    },
+    profileName: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.semibold,
+      color: colors.text,
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: BorderRadius.full,
+      marginTop: 4,
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 4,
+    },
+    statusText: {
+      fontSize: FontSize.xs,
+      fontFamily: FontFamily.semibold,
+    },
+    profileDate: {
+      fontSize: FontSize.xs,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    deleteButton: {
+      padding: Spacing.sm,
+    },
+    deleteText: {
+      fontSize: FontSize.sm,
+      color: colors.error,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: Spacing.xxl,
+    },
+    emptyEmoji: {
+      fontSize: 48,
+      marginBottom: Spacing.md,
+    },
+    emptyText: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    emptyCta: {
+      marginTop: Spacing.lg,
+      backgroundColor: colors.primary,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.sm + 4,
+      borderRadius: BorderRadius.full,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    emptyCtaText: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+      color: colors.surface,
+    },
+    swipeDeleteContainer: {
+      backgroundColor: colors.error,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+      paddingHorizontal: Spacing.xl,
+      borderRadius: BorderRadius.lg,
+      marginBottom: Spacing.sm,
+    },
+    swipeDeleteText: {
+      color: '#FFF',
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.md,
+    },
+  });
+}
