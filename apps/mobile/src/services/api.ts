@@ -277,6 +277,7 @@ export async function createAlarm(params: {
   snooze_minutes?: number;
   target_user_id?: string;
   mode?: 'tts' | 'sound-only';
+  vibration_pattern?: 'default' | 'strong' | 'none';
   voice_profile_id?: string;
   speaker_id?: string;
 }) {
@@ -293,6 +294,7 @@ export async function updateAlarm(
     snooze_minutes?: number;
     message_id?: string;
     mode?: 'tts' | 'sound-only';
+    vibration_pattern?: 'default' | 'strong' | 'none';
     voice_profile_id?: string | null;
     speaker_id?: string | null;
   },

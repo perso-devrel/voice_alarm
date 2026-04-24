@@ -413,6 +413,14 @@ export const migrations: Migration[] = [
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_push_tokens_unique ON push_tokens(user_id, token)',
     ],
   },
+  {
+    id: 15,
+    name: 'alarm-vibration-pattern',
+    statements: [
+      `ALTER TABLE alarms ADD COLUMN vibration_pattern TEXT NOT NULL DEFAULT 'default'
+         CHECK(vibration_pattern IN ('default','strong','none'))`,
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

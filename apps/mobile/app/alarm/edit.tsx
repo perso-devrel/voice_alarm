@@ -23,11 +23,12 @@ import {
 } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
-import type { AlarmMode, Message, VoiceProfile } from '../../src/types';
+import type { AlarmMode, VibrationPattern, Message, VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 import { parseRepeatDays, validateAlarmForm, getTimeUntilAlarm } from '../../src/lib/alarmForm';
+import * as Haptics from 'expo-haptics';
 
 export default function EditAlarmScreen() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function EditAlarmScreen() {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [snooze, setSnooze] = useState(5);
   const [mode, setMode] = useState<AlarmMode>('tts');
+  const [vibrationPattern, setVibrationPattern] = useState<VibrationPattern>('default');
   const [voiceProfileId, setVoiceProfileId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -78,6 +80,7 @@ export default function EditAlarmScreen() {
       setSelectedMessageId(alarm.message_id);
       setSnooze(alarm.snooze_minutes);
       setMode(alarm.mode === 'sound-only' ? 'sound-only' : 'tts');
+      setVibrationPattern(alarm.vibration_pattern ?? 'default');
       setVoiceProfileId(alarm.voice_profile_id ?? null);
       setLoaded(true);
     }
@@ -90,6 +93,7 @@ export default function EditAlarmScreen() {
       snooze_minutes?: number;
       message_id?: string;
       mode?: AlarmMode;
+      vibration_pattern?: VibrationPattern;
       voice_profile_id?: string | null;
     }) => updateAlarm(id!, params),
     onSuccess: async () => {
@@ -109,6 +113,12 @@ export default function EditAlarmScreen() {
     setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
+  const selectVibration = (pattern: VibrationPattern) => {
+    setVibrationPattern(pattern);
+    if (pattern === 'default') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    else if (pattern === 'strong') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  };
+
   const handleSubmit = () => {
     const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     const validated = validateAlarmForm({
@@ -116,6 +126,7 @@ export default function EditAlarmScreen() {
       time,
       repeatDays,
       mode,
+      vibrationPattern,
       voiceProfileId,
       snoozeMinutes: snooze,
     });
@@ -130,6 +141,7 @@ export default function EditAlarmScreen() {
       repeat_days: payload.repeat_days,
       snooze_minutes: payload.snooze_minutes,
       mode: payload.mode,
+      vibration_pattern: payload.vibration_pattern,
       voice_profile_id: payload.voice_profile_id ?? null,
     });
   };
@@ -315,6 +327,25 @@ export default function EditAlarmScreen() {
           >
             <Text style={[dynStyles.snoozeText, snooze === min && dynStyles.snoozeTextActive]}>
               {t('alarmCreate.snoozeMin', { min })}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* 진동 패턴 */}
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.vibration')}</Text>
+      <View style={dynStyles.snoozeRow}>
+        {(['default', 'strong', 'none'] as const).map((pattern) => (
+          <TouchableOpacity
+            key={pattern}
+            style={[dynStyles.snoozeChip, vibrationPattern === pattern && dynStyles.snoozeChipActive]}
+            onPress={() => selectVibration(pattern)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: vibrationPattern === pattern }}
+            accessibilityLabel={t(`alarmCreate.vibration${pattern.charAt(0).toUpperCase() + pattern.slice(1)}`)}
+          >
+            <Text style={[dynStyles.snoozeText, vibrationPattern === pattern && dynStyles.snoozeTextActive]}>
+              {t(`alarmCreate.vibration${pattern.charAt(0).toUpperCase() + pattern.slice(1)}`)}
             </Text>
           </TouchableOpacity>
         ))}

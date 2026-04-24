@@ -257,7 +257,11 @@
     "hourUp": "Increase hour",
     "hourDown": "Decrease hour",
     "minuteUp": "Increase minute",
-    "minuteDown": "Decrease minute"
+    "minuteDown": "Decrease minute",
+    "vibration": "Vibration",
+    "vibrationDefault": "Default",
+    "vibrationStrong": "Strong",
+    "vibrationNone": "None"
   },
   "alarmEdit": {
     "title": "Edit Alarm",

@@ -1,10 +1,12 @@
 export type AlarmMode = 'tts' | 'sound-only';
+export type VibrationPattern = 'default' | 'strong' | 'none';
 
 export interface AlarmFormInput {
   messageId: string | null;
   time: string;
   repeatDays: number[];
   mode: AlarmMode;
+  vibrationPattern?: VibrationPattern;
   voiceProfileId?: string | null;
   speakerId?: string | null;
   snoozeMinutes?: number;
@@ -16,6 +18,7 @@ export interface AlarmCreatePayload {
   time: string;
   repeat_days: number[];
   mode: AlarmMode;
+  vibration_pattern?: VibrationPattern;
   voice_profile_id?: string;
   speaker_id?: string;
   snooze_minutes?: number;
@@ -52,6 +55,7 @@ export function buildCreatePayload(input: AlarmFormInput): AlarmCreatePayload {
     repeat_days: Array.isArray(input.repeatDays) ? input.repeatDays : [],
     mode: input.mode,
   };
+  if (input.vibrationPattern) payload.vibration_pattern = input.vibrationPattern;
   if (input.voiceProfileId) payload.voice_profile_id = input.voiceProfileId;
   if (input.speakerId) payload.speaker_id = input.speakerId;
   if (typeof input.snoozeMinutes === 'number') payload.snooze_minutes = input.snoozeMinutes;

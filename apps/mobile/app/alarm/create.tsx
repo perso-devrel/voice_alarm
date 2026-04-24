@@ -25,11 +25,12 @@ import {
 } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
-import type { AlarmMode, Friend, Message, VoiceProfile } from '../../src/types';
+import type { AlarmMode, VibrationPattern, Friend, Message, VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 import { validateAlarmForm, getTimeUntilAlarm } from '../../src/lib/alarmForm';
+import * as Haptics from 'expo-haptics';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function CreateAlarmScreen() {
   const [presetText, setPresetText] = useState<string | null>(null);
   const [presetVoiceId, setPresetVoiceId] = useState<string | null>(null);
   const [mode, setMode] = useState<AlarmMode>('tts');
+  const [vibrationPattern, setVibrationPattern] = useState<VibrationPattern>('default');
   const [voiceProfileId, setVoiceProfileId] = useState<string | null>(null);
 
   const { data: messages } = useQuery({
@@ -116,6 +118,12 @@ export default function CreateAlarmScreen() {
     setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
+  const selectVibration = (pattern: VibrationPattern) => {
+    setVibrationPattern(pattern);
+    if (pattern === 'default') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    else if (pattern === 'strong') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  };
+
   const handleSubmit = () => {
     const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     const validated = validateAlarmForm({
@@ -123,6 +131,7 @@ export default function CreateAlarmScreen() {
       time,
       repeatDays,
       mode,
+      vibrationPattern,
       voiceProfileId,
       snoozeMinutes: snooze,
       targetUserId,
@@ -348,6 +357,25 @@ export default function CreateAlarmScreen() {
           >
             <Text style={[dynStyles.snoozeText, snooze === min && dynStyles.snoozeTextActive]}>
               {t('alarmCreate.snoozeMin', { min })}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* 진동 패턴 */}
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.vibration')}</Text>
+      <View style={dynStyles.snoozeRow}>
+        {(['default', 'strong', 'none'] as const).map((pattern) => (
+          <TouchableOpacity
+            key={pattern}
+            style={[dynStyles.snoozeChip, vibrationPattern === pattern && dynStyles.snoozeChipActive]}
+            onPress={() => selectVibration(pattern)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: vibrationPattern === pattern }}
+            accessibilityLabel={t(`alarmCreate.vibration${pattern.charAt(0).toUpperCase() + pattern.slice(1)}`)}
+          >
+            <Text style={[dynStyles.snoozeText, vibrationPattern === pattern && dynStyles.snoozeTextActive]}>
+              {t(`alarmCreate.vibration${pattern.charAt(0).toUpperCase() + pattern.slice(1)}`)}
             </Text>
           </TouchableOpacity>
         ))}

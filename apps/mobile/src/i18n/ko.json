@@ -257,7 +257,11 @@
     "hourUp": "시간 올리기",
     "hourDown": "시간 내리기",
     "minuteUp": "분 올리기",
-    "minuteDown": "분 내리기"
+    "minuteDown": "분 내리기",
+    "vibration": "진동",
+    "vibrationDefault": "기본",
+    "vibrationStrong": "강하게",
+    "vibrationNone": "없음"
   },
   "alarmEdit": {
     "title": "알람 편집",
