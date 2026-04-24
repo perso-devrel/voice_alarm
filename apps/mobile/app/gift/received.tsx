@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,14 +14,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { getReceivedGifts, acceptGift, rejectGift } from '../../src/services/api';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getApiErrorMessage } from '../../src/types';
 import type { Gift } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 
-function SkeletonGiftCard() {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+function SkeletonGiftCard({ dynStyles }: { dynStyles: ReturnType<typeof createStyles> }) {
+  const opacity = useMemo(() => new Animated.Value(0.3), []);
 
   useEffect(() => {
     const pulse = Animated.loop(
@@ -35,24 +36,24 @@ function SkeletonGiftCard() {
   }, [opacity]);
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.senderInfo}>
-          <Animated.View style={[styles.skeletonLine, { width: 100, height: 14, opacity }]} />
-          <Animated.View style={[styles.skeletonLine, { width: 160, height: 11, marginTop: 4, opacity }]} />
+    <View style={dynStyles.card}>
+      <View style={dynStyles.header}>
+        <View style={dynStyles.senderInfo}>
+          <Animated.View style={[dynStyles.skeletonLine, { width: 100, height: 14, opacity }]} />
+          <Animated.View style={[dynStyles.skeletonLine, { width: 160, height: 11, marginTop: 4, opacity }]} />
         </View>
-        <Animated.View style={[styles.skeletonLine, { width: 50, height: 18, opacity }]} />
+        <Animated.View style={[dynStyles.skeletonLine, { width: 50, height: 18, opacity }]} />
       </View>
-      <Animated.View style={[styles.skeletonBlock, { opacity }]} />
+      <Animated.View style={[dynStyles.skeletonBlock, { opacity }]} />
     </View>
   );
 }
 
-function SkeletonGiftList({ count = 3 }: { count?: number }) {
+function SkeletonGiftList({ count = 3, dynStyles }: { count?: number; dynStyles: ReturnType<typeof createStyles> }) {
   return (
-    <View style={styles.list}>
+    <View style={dynStyles.list}>
       {Array.from({ length: count }, (_, i) => (
-        <SkeletonGiftCard key={i} />
+        <SkeletonGiftCard key={i} dynStyles={dynStyles} />
       ))}
     </View>
   );
@@ -63,6 +64,8 @@ export default function ReceivedGiftsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['gifts-received'],
@@ -117,7 +120,7 @@ export default function ReceivedGiftsScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <SkeletonGiftList count={3} />
+        <SkeletonGiftList count={3} dynStyles={styles} />
       </SafeAreaView>
     );
   }
@@ -218,10 +221,10 @@ export default function ReceivedGiftsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   listWrap: {
     flex: 1,
@@ -231,12 +234,12 @@ const styles = StyleSheet.create({
   },
   skeletonLine: {
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.border,
+    backgroundColor: colors.border,
   },
   skeletonBlock: {
     height: 60,
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.border,
+    backgroundColor: colors.border,
   },
   list: {
     padding: Spacing.lg,
@@ -252,14 +255,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.lg,
-    color: Colors.light.text,
-    fontWeight: '600',
+    color: colors.text,
+    fontFamily: FontFamily.semibold,
   },
   card: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    shadowColor: Colors.light.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -276,51 +279,51 @@ const styles = StyleSheet.create({
   },
   senderName: {
     fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.light.text,
+    fontFamily: FontFamily.semibold,
+    color: colors.text,
   },
   senderEmail: {
     fontSize: FontSize.xs,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     marginTop: 1,
   },
   status: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
-    color: Colors.light.warning,
+    fontFamily: FontFamily.semibold,
+    color: colors.warning,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     overflow: 'hidden',
   },
   statusAccepted: {
-    color: Colors.light.success,
+    color: colors.success,
   },
   statusRejected: {
-    color: Colors.light.error,
+    color: colors.error,
   },
   messageBox: {
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     borderRadius: BorderRadius.sm,
     padding: Spacing.sm,
     marginBottom: Spacing.sm,
   },
   category: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
-    fontWeight: '500',
+    color: colors.textTertiary,
+    fontFamily: FontFamily.medium,
     marginBottom: 4,
     textTransform: 'uppercase',
   },
   messageText: {
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     lineHeight: 22,
   },
   note: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontStyle: 'italic',
     marginBottom: Spacing.sm,
   },
@@ -330,39 +333,39 @@ const styles = StyleSheet.create({
   },
   acceptBtn: {
     flex: 1,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
   },
   acceptBtnText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
   rejectBtn: {
     flex: 1,
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
   },
   rejectBtnText: {
-    color: Colors.light.textSecondary,
-    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
   setAlarmBtn: {
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.light.primary,
+    borderColor: colors.primary,
   },
   setAlarmBtnText: {
-    color: Colors.light.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.sm,
   },
 });

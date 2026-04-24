@@ -8,11 +8,12 @@ import {
   ScrollView,
   FlatList,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import {
   getMessages,
   getDubLanguages,
@@ -32,10 +33,12 @@ import { Toast } from '../../src/components/Toast';
 
 export default function TranslateScreen() {
   const { message_id } = useLocalSearchParams<{ message_id: string }>();
-  const router = useRouter();
+
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   const [sourceLanguage, setSourceLanguage] = useState('ko');
   const [targetLanguage, setTargetLanguage] = useState('');
@@ -178,6 +181,9 @@ export default function TranslateScreen() {
     <TouchableOpacity
       style={[styles.langItem, targetLanguage === item.code && styles.langItemActive]}
       onPress={() => setTargetLanguage(item.code)}
+      accessibilityLabel={t('dub.a11yTargetLang', { name: item.name })}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: targetLanguage === item.code }}
     >
       <Text style={[styles.langText, targetLanguage === item.code && styles.langTextActive]}>
         {item.name}
@@ -194,13 +200,13 @@ export default function TranslateScreen() {
         <Text style={styles.description}>{t('dub.description')}</Text>
 
         {message && (
-          <View style={styles.messagePreview}>
+          <View style={styles.messagePreview} accessibilityLabel={`${message.voice_name || ''}: ${message.text}`}>
             <Text style={styles.messagePreviewLabel}>{message.voice_name || ''}</Text>
             <Text style={styles.messagePreviewText}>"{message.text}"</Text>
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>{t('dub.sourceLanguage')}</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">{t('dub.sourceLanguage')}</Text>
         <View style={styles.sourceRow}>
           {[
             { code: 'ko', name: '한국어' },
@@ -213,6 +219,9 @@ export default function TranslateScreen() {
               style={[styles.sourceChip, sourceLanguage === lang.code && styles.sourceChipActive]}
               onPress={() => setSourceLanguage(lang.code)}
               disabled={isProcessing}
+              accessibilityLabel={t('dub.a11ySourceLang', { name: lang.name })}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: sourceLanguage === lang.code, disabled: isProcessing }}
             >
               <Text style={[styles.sourceChipText, sourceLanguage === lang.code && styles.sourceChipTextActive]}>
                 {lang.name}
@@ -221,9 +230,9 @@ export default function TranslateScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>{t('dub.targetLanguage')}</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">{t('dub.targetLanguage')}</Text>
         {languagesLoading ? (
-          <ActivityIndicator style={styles.loader} color={Colors.light.primary} />
+          <ActivityIndicator style={styles.loader} color={colors.primary} />
         ) : (
           <FlatList
             data={languages?.filter((l: DubLanguage) => l.code !== sourceLanguage)}
@@ -236,8 +245,8 @@ export default function TranslateScreen() {
         )}
 
         {dubStatus === 'processing' && (
-          <View style={styles.progressSection}>
-            <ActivityIndicator color={Colors.light.primary} />
+          <View style={styles.progressSection} accessibilityLiveRegion="polite" accessibilityLabel={t('dub.a11yProgress', { progress: dubProgress })}>
+            <ActivityIndicator color={colors.primary} />
             <Text style={styles.progressText}>{t('dub.progress', { progress: dubProgress })}</Text>
             {remainingMinutes != null && (
               <Text style={styles.remainingText}>{t('dub.remainingTime', { minutes: remainingMinutes })}</Text>
@@ -250,7 +259,7 @@ export default function TranslateScreen() {
             <Text style={styles.completeText}>{t('dub.complete')}</Text>
             {resultAudioSaved && (
               <>
-                <TouchableOpacity style={styles.playResultButton} onPress={handlePlayResult}>
+                <TouchableOpacity style={styles.playResultButton} onPress={handlePlayResult} accessibilityRole="button" accessibilityLabel={isPlaying ? t('messageDetail.stop') : t('dub.playResult')}>
                   <Text style={styles.playResultText}>
                     {isPlaying ? t('messageDetail.stop') : t('dub.playResult')}
                   </Text>
@@ -264,7 +273,7 @@ export default function TranslateScreen() {
         {dubStatus === 'failed' && (
           <View style={styles.resultSection}>
             <Text style={styles.failedText}>{t('dub.failed')}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={handleStart}>
+            <TouchableOpacity style={styles.retryButton} onPress={handleStart} accessibilityRole="button" accessibilityLabel={t('dub.retry')}>
               <Text style={styles.retryText}>{t('dub.retry')}</Text>
             </TouchableOpacity>
           </View>
@@ -277,6 +286,9 @@ export default function TranslateScreen() {
             style={[styles.startButton, (!targetLanguage || isProcessing) && styles.startButtonDisabled]}
             onPress={handleStart}
             disabled={!targetLanguage || isProcessing}
+            accessibilityLabel={dubMutation.isPending ? t('dub.processing') : t('dub.start')}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !targetLanguage || isProcessing, busy: dubMutation.isPending }}
           >
             {dubMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
@@ -292,10 +304,10 @@ export default function TranslateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
@@ -306,32 +318,32 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
     marginBottom: Spacing.lg,
   },
   messagePreview: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.lg,
   },
   messagePreviewLabel: {
     fontSize: FontSize.sm,
-    color: Colors.light.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: FontFamily.semibold,
     marginBottom: Spacing.xs,
   },
   messagePreviewText: {
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     fontStyle: 'italic',
     lineHeight: 24,
   },
   sectionTitle: {
     fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontFamily: FontFamily.bold,
+    color: colors.text,
     marginBottom: Spacing.sm,
     marginTop: Spacing.sm,
   },
@@ -346,16 +358,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
   },
   sourceChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   sourceChipText: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: FontFamily.semibold,
   },
   sourceChipTextActive: {
     color: '#FFF',
@@ -376,26 +388,26 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.light.border,
-    backgroundColor: Colors.light.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   langItemActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   langText: {
     fontSize: FontSize.sm,
-    color: Colors.light.text,
-    fontWeight: '500',
+    color: colors.text,
+    fontFamily: FontFamily.medium,
   },
   langTextActive: {
     color: '#FFF',
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   experimentBadge: {
     fontSize: 10,
-    color: Colors.light.textTertiary,
-    backgroundColor: Colors.light.surfaceVariant,
+    color: colors.textTertiary,
+    backgroundColor: colors.surfaceVariant,
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 4,
@@ -408,12 +420,12 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
-    color: Colors.light.primary,
+    fontFamily: FontFamily.semibold,
+    color: colors.primary,
   },
   remainingText: {
     fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
   },
   resultSection: {
     alignItems: 'center',
@@ -422,11 +434,11 @@ const styles = StyleSheet.create({
   },
   completeText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.light.success,
+    fontFamily: FontFamily.bold,
+    color: colors.success,
   },
   playResultButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.lg,
@@ -434,28 +446,28 @@ const styles = StyleSheet.create({
   playResultText: {
     color: '#FFF',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   savedText: {
     fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
   },
   failedText: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
-    color: Colors.light.error,
+    fontFamily: FontFamily.semibold,
+    color: colors.error,
   },
   retryButton: {
     borderWidth: 1,
-    borderColor: Colors.light.primary,
+    borderColor: colors.primary,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.lg,
   },
   retryText: {
-    color: Colors.light.primary,
+    color: colors.primary,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   footer: {
     position: 'absolute',
@@ -463,12 +475,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: Spacing.lg,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
+    borderTopColor: colors.border,
   },
   startButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
@@ -479,6 +491,6 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

@@ -102,7 +102,8 @@ friend.get('/list', async (c) => {
       }),
       db.execute({
         sql: `SELECT f.id, f.user_a, f.user_b, f.created_at,
-                u.email as friend_email, u.name as friend_name, u.picture as friend_picture
+                u.email as friend_email, u.name as friend_name, u.picture as friend_picture,
+                u.last_active_at as friend_last_active_at
               FROM friendships f
               JOIN users u ON u.google_id = CASE WHEN f.user_a = ? THEN f.user_b ELSE f.user_a END
               WHERE (f.user_a = ? OR f.user_b = ?) AND f.status = 'accepted'${searchClause}

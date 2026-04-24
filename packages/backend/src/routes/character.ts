@@ -6,8 +6,10 @@ import {
   computeStageFromLevel,
   xpThresholdForLevel,
   type CharacterStage,
+  type CharacterStats,
 } from '../lib/character';
-import { computeGrant, isXpEvent } from '../lib/xpRules';
+import { computeGrant, isXpEvent, type XpEvent } from '../lib/xpRules';
+import { computeStreak, MILESTONE_BONUS_XP } from '../lib/streak';
 
 const character = new Hono<AppEnv>();
 
@@ -21,8 +23,17 @@ interface CharacterRow {
   stage: CharacterStage;
   daily_xp: number;
   daily_xp_reset_at: string | null;
+  current_streak: number;
+  longest_streak: number;
+  last_wakeup_date: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface StreakAchievementRow {
+  milestone: number;
+  bonus_xp: number;
+  achieved_at: string;
 }
 
 async function resolveUserPk(
@@ -47,6 +58,9 @@ function rowToCharacter(row: Record<string, unknown>): CharacterRow {
     stage: (row.stage as CharacterStage) ?? 'seed',
     daily_xp: Number(row.daily_xp ?? 0),
     daily_xp_reset_at: (row.daily_xp_reset_at as string | null) ?? null,
+    current_streak: Number(row.current_streak ?? 0),
+    longest_streak: Number(row.longest_streak ?? 0),
+    last_wakeup_date: (row.last_wakeup_date as string | null) ?? null,
     created_at: String(row.created_at ?? ''),
     updated_at: String(row.updated_at ?? ''),
   };
@@ -89,13 +103,69 @@ function buildProgress(xp: number, level: number) {
   };
 }
 
-function serializeCharacter(row: CharacterRow) {
+function serializeCharacter(
+  row: CharacterRow,
+  stats: CharacterStats | null = null,
+  achievements: StreakAchievementRow[] = [],
+) {
   const level = computeLevelFromXp(row.xp);
   const stage = computeStageFromLevel(level);
   return {
     character: { ...row, level, stage },
     progress: buildProgress(row.xp, level),
+    streak: {
+      current: row.current_streak,
+      longest: row.longest_streak,
+      last_wakeup_date: row.last_wakeup_date,
+    },
+    stats: stats ?? { diligence: 0, health: 0, consistency: 0 },
+    achievements,
   };
+}
+
+async function loadStats(
+  db: ReturnType<typeof getDB>,
+  characterId: string,
+): Promise<CharacterStats | null> {
+  const res = await db.execute({
+    sql: 'SELECT diligence, health, consistency FROM character_stats WHERE character_id = ?',
+    args: [characterId],
+  });
+  if (res.rows.length === 0) return null;
+  const r = res.rows[0] as Record<string, unknown>;
+  return {
+    diligence: Number(r.diligence ?? 0),
+    health: Number(r.health ?? 0),
+    consistency: Number(r.consistency ?? 0),
+  };
+}
+
+async function loadAchievements(
+  db: ReturnType<typeof getDB>,
+  characterId: string,
+): Promise<StreakAchievementRow[]> {
+  const res = await db.execute({
+    sql: 'SELECT milestone, bonus_xp, achieved_at FROM streak_achievements WHERE character_id = ? ORDER BY milestone',
+    args: [characterId],
+  });
+  return res.rows.map((r) => {
+    const row = r as Record<string, unknown>;
+    return {
+      milestone: Number(row.milestone),
+      bonus_xp: Number(row.bonus_xp),
+      achieved_at: String(row.achieved_at ?? ''),
+    };
+  });
+}
+
+async function ensureStatsRow(
+  db: ReturnType<typeof getDB>,
+  characterId: string,
+): Promise<void> {
+  await db.execute({
+    sql: `INSERT OR IGNORE INTO character_stats (id, character_id) VALUES (?, ?)`,
+    args: [crypto.randomUUID(), characterId],
+  });
 }
 
 function todayString(now: Date = new Date()): string {
@@ -114,7 +184,11 @@ character.get('/me', async (c) => {
   if (!userPk) return c.json({ error: '사용자를 찾을 수 없습니다' }, 404);
 
   const row = await loadOrCreateCharacter(db, userPk);
-  return c.json(serializeCharacter(row));
+  const [stats, achievements] = await Promise.all([
+    loadStats(db, row.id),
+    loadAchievements(db, row.id),
+  ]);
+  return c.json(serializeCharacter(row, stats, achievements));
 });
 
 /**
@@ -127,8 +201,8 @@ character.post('/xp', async (c) => {
   const db = getDB(c.env);
 
   const body = await c.req
-    .json<{ event?: unknown; client_nonce?: unknown }>()
-    .catch(() => ({ event: undefined, client_nonce: undefined }));
+    .json<{ event?: unknown; client_nonce?: unknown; local_date?: unknown }>()
+    .catch(() => ({ event: undefined, client_nonce: undefined, local_date: undefined }));
 
   if (!isXpEvent(body.event)) {
     return c.json({ error: '지원하지 않는 event 입니다' }, 400);
@@ -138,11 +212,14 @@ character.post('/xp', async (c) => {
     typeof body.client_nonce === 'string' && body.client_nonce.trim().length > 0
       ? body.client_nonce.trim()
       : null;
+  const localDate =
+    typeof body.local_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.local_date)
+      ? body.local_date
+      : todayString();
 
   const userPk = await resolveUserPk(db, userId);
   if (!userPk) return c.json({ error: '사용자를 찾을 수 없습니다' }, 404);
 
-  // 멱등성: 동일 client_nonce 로 이미 지급된 로그가 있으면 그대로 재응답.
   if (clientNonce) {
     const dup = await db.execute({
       sql: `SELECT l.* FROM character_xp_logs l
@@ -154,9 +231,12 @@ character.post('/xp', async (c) => {
     if (dup.rows.length > 0) {
       const log = dup.rows[0] as Record<string, unknown>;
       const row = await loadOrCreateCharacter(db, userPk);
-      const serialized = serializeCharacter(row);
+      const [stats, achievements] = await Promise.all([
+        loadStats(db, row.id),
+        loadAchievements(db, row.id),
+      ]);
       return c.json({
-        ...serialized,
+        ...serializeCharacter(row, stats, achievements),
         grant: {
           event: String(log.event),
           granted_xp: Number(log.granted_xp ?? 0),
@@ -175,9 +255,42 @@ character.post('/xp', async (c) => {
     current.daily_xp_reset_at === today ? current.daily_xp : 0;
 
   const grant = computeGrant(event, dailyXpBase);
-  const newXp = current.xp + grant.xp.grantedXp;
-  const newAffection = current.affection + grant.affection;
-  const newDailyXp = dailyXpBase + grant.xp.grantedXp;
+  let totalGrantedXp = grant.xp.grantedXp;
+  let totalAffection = grant.affection;
+  let newDailyXp = dailyXpBase + grant.xp.grantedXp;
+
+  // Streak computation for alarm_completed
+  let streakUpdated = false;
+  const milestoneEvents: XpEvent[] = [];
+  let newStreak = current.current_streak;
+  let newLongest = current.longest_streak;
+  let newLastWakeup = current.last_wakeup_date;
+
+  if (event === 'alarm_completed') {
+    const result = computeStreak(current.last_wakeup_date, localDate, current.current_streak);
+    newStreak = result.newStreak;
+    newLongest = Math.max(current.longest_streak, result.newStreak);
+    streakUpdated = result.isNewDay;
+
+    if (result.isNewDay) {
+      newLastWakeup = localDate;
+    }
+
+    if (result.milestoneReached) {
+      const bonusXp = MILESTONE_BONUS_XP[result.milestoneReached];
+      if (bonusXp) {
+        const milestoneEvent = `streak_bonus_${result.milestoneReached}` as XpEvent;
+        if (isXpEvent(milestoneEvent)) {
+          milestoneEvents.push(milestoneEvent);
+        }
+      }
+    }
+  }
+
+  let newXp = current.xp + totalGrantedXp;
+  const newAffectionTotal = current.affection + totalAffection;
+
+  // Apply main XP update + streak fields
   const newLevel = computeLevelFromXp(newXp);
   const newStage = computeStageFromLevel(newLevel);
 
@@ -185,9 +298,15 @@ character.post('/xp', async (c) => {
     sql: `UPDATE characters
           SET xp = ?, affection = ?, level = ?, stage = ?,
               daily_xp = ?, daily_xp_reset_at = ?,
+              current_streak = ?, longest_streak = ?, last_wakeup_date = ?,
               updated_at = datetime('now')
           WHERE id = ?`,
-    args: [newXp, newAffection, newLevel, newStage, newDailyXp, today, current.id],
+    args: [
+      newXp, newAffectionTotal, newLevel, newStage,
+      newDailyXp, today,
+      newStreak, newLongest, newLastWakeup,
+      current.id,
+    ],
   });
 
   const logId = crypto.randomUUID();
@@ -196,28 +315,85 @@ character.post('/xp', async (c) => {
           (id, character_id, event, client_nonce, granted_xp, affection_delta, capped)
           VALUES (?, ?, ?, ?, ?, ?, ?)`,
     args: [
-      logId,
-      current.id,
-      event,
-      clientNonce,
-      grant.xp.grantedXp,
-      grant.affection,
+      logId, current.id, event, clientNonce,
+      grant.xp.grantedXp, grant.affection,
       grant.xp.capped ? 1 : 0,
     ],
   });
 
+  // Process milestone bonus events
+  const milestoneGrants: Array<{ event: XpEvent; xp: number }> = [];
+  for (const mEvent of milestoneEvents) {
+    const existing = await db.execute({
+      sql: 'SELECT id FROM streak_achievements WHERE character_id = ? AND milestone = ?',
+      args: [current.id, newStreak],
+    });
+    if (existing.rows.length > 0) continue;
+
+    const mGrant = computeGrant(mEvent, newDailyXp);
+    newXp += mGrant.xp.grantedXp;
+    newDailyXp += mGrant.xp.grantedXp;
+    totalGrantedXp += mGrant.xp.grantedXp;
+    totalAffection += mGrant.affection;
+
+    const updatedLevel = computeLevelFromXp(newXp);
+    const updatedStage = computeStageFromLevel(updatedLevel);
+
+    await db.execute({
+      sql: `UPDATE characters
+            SET xp = ?, level = ?, stage = ?,
+                affection = affection + ?,
+                daily_xp = ?,
+                updated_at = datetime('now')
+            WHERE id = ?`,
+      args: [newXp, updatedLevel, updatedStage, mGrant.affection, newDailyXp, current.id],
+    });
+
+    await db.execute({
+      sql: `INSERT INTO streak_achievements (id, character_id, milestone, bonus_xp)
+            VALUES (?, ?, ?, ?)`,
+      args: [crypto.randomUUID(), current.id, newStreak, mGrant.xp.grantedXp],
+    });
+
+    await db.execute({
+      sql: `INSERT INTO character_xp_logs
+            (id, character_id, event, client_nonce, granted_xp, affection_delta, capped)
+            VALUES (?, ?, ?, NULL, ?, ?, 0)`,
+      args: [crypto.randomUUID(), current.id, mEvent, mGrant.xp.grantedXp, mGrant.affection],
+    });
+
+    milestoneGrants.push({ event: mEvent, xp: mGrant.xp.grantedXp });
+  }
+
+  // Update character_stats for alarm_completed
+  if (event === 'alarm_completed' && streakUpdated) {
+    await ensureStatsRow(db, current.id);
+    await db.execute({
+      sql: `UPDATE character_stats
+            SET diligence = diligence + 1, consistency = consistency + 1,
+                updated_at = datetime('now')
+            WHERE character_id = ?`,
+      args: [current.id],
+    });
+  }
+
   const refreshed = await loadOrCreateCharacter(db, userPk);
-  const serialized = serializeCharacter(refreshed);
+  const [stats, achievements] = await Promise.all([
+    loadStats(db, refreshed.id),
+    loadAchievements(db, refreshed.id),
+  ]);
+
   return c.json(
     {
-      ...serialized,
+      ...serializeCharacter(refreshed, stats, achievements),
       grant: {
         event,
-        granted_xp: grant.xp.grantedXp,
-        affection: grant.affection,
+        granted_xp: totalGrantedXp,
+        affection: totalAffection,
         capped: grant.xp.capped,
         remaining_cap: grant.xp.remainingCap,
         duplicated: false,
+        milestone_grants: milestoneGrants.length > 0 ? milestoneGrants : undefined,
       },
     },
     201,
