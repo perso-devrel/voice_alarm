@@ -469,6 +469,7 @@ const styles = StyleSheet.create({
   list: {
     padding: Spacing.lg,
     paddingTop: 0,
+    paddingBottom: 100,
   },
   alarmCard: {
     flexDirection: 'row',

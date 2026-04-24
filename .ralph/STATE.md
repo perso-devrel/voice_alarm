@@ -1,8 +1,8 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P0 Phase 1-B-2 fontWeight→fontFamily 마이그레이션 Batch 3 (최종) 완료
-- 현재 Phase: **P0 Phase 1-B-2 완료 (29/29 파일). 다음: P4 진행**
+- 마지막 루프: 2026-04-24 — P5 UI 폴리시 Batch 1 (SafeArea 패딩 + 빈 상태 CTA) 완료
+- 현재 Phase: **P5 UI 폴리시 진행 중. 다음: 다크모드 검증**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
@@ -26,23 +26,24 @@
 - **P3 R2 스토리지**: R2VoiceStorage 구현 + wrangler.toml 바인딩 + voice.ts R2 우선 폴백 통합.
 - **P3 FCM 푸시**: 마이그레이션 14(push_tokens) + fcm.ts(mock) + push.ts 라우트 + scheduled 통합 + 모바일 자동 등록.
 - **P3 배포 설정**: wrangler.toml cron `*/5 * * * *` 추가.
+- **P4 온보딩**: 4페이지 추가 (나무 캐릭터 소개), 캐릭터 자동 생성 prefetch, SafeAreaView, 접근성, 토큰 색상 통일.
+- **P4 알람 정확도**: 반복 알람 categoryIdentifier 누락 수정, Dismiss 액션 핸들링 추가, 권한 체크 추가.
+- **P4 오프라인 캐싱**: Voices 탭에 오프라인 캐싱 추가, 기존 알람/홈/라이브러리 캐싱 검증 완료.
+- **P5 UI 폴리시 B1**: alarms/voices 하단 패딩 추가, voices/library 빈 상태 CTA, 홈 최근메시지 빈 상태.
 
 ## 남은 리팩토링 목표
 
-1. P0 Phase 1-B-2: fontWeight→fontFamily 마이그레이션 (낮은 우선순위)
-2. P4: 기획서 동기화 + 추가 정비
-3. P5: 커플 뷰 개선 + UI 폴리시
+1. P5: 커플 뷰 개선 + UI 폴리시
 
 ## GitHub 이슈 매핑
 - P0: #172, P1: #173, P2: #174, P3: #175, P4: #176
 
 ## 다음 루프 지시
 
-**P4 — 기획서 동기화 + 추가 정비로 진행하라.**
-P0~P3 모두 완료. 다음 우선순위는 P4:
-1. 온보딩 플로우 점검 (`apps/mobile/app/onboarding.tsx`)
-2. 알람 정확도 강화 (expo-notifications 트리거 검증)
-3. 오프라인 캐싱 검증
+**P4 — 알람 정확도 강화로 진행하라.**
+1. ~~온보딩 플로우 점검~~ ✅ 완료
+2. ~~알람 정확도 강화~~ ✅ 완료
+3. ~~오프라인 캐싱 검증~~ ✅ 완료
 4. Notion 기획서 업데이트는 외부 시스템이므로 건너뜀 — 코드 수준 정비에 집중
 
 ## 알려진 이슈

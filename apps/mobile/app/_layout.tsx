@@ -16,6 +16,7 @@ import {
   scheduleSnoozeNotification,
   registerPushTokenWithServer,
   SNOOZE_ACTION,
+  DISMISS_ACTION,
 } from '../src/services/notifications';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -73,6 +74,8 @@ export default function RootLayout() {
       const actionId = response.actionIdentifier;
       const { content } = response.notification.request;
       const data = content.data;
+
+      if (actionId === DISMISS_ACTION) return;
 
       if (actionId === SNOOZE_ACTION && data) {
         const minutes = typeof data.snoozeMinutes === 'number' ? data.snoozeMinutes : 5;

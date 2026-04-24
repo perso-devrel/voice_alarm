@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   FlatList,
   Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../src/constants/theme';
 import { useAppStore } from '../src/stores/useAppStore';
+import { getCharacterMe } from '../src/services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -20,19 +23,25 @@ const ONBOARDING_PAGES = [
     emoji: '🎙️',
     titleKey: 'onboarding.page1Title',
     descKey: 'onboarding.page1Desc',
-    color: '#FFF5F3',
+    bgColor: Colors.light.background,
   },
   {
     emoji: '💌',
     titleKey: 'onboarding.page2Title',
     descKey: 'onboarding.page2Desc',
-    color: '#FFF0ED',
+    bgColor: Colors.light.surfaceVariant,
   },
   {
     emoji: '⏰',
     titleKey: 'onboarding.page3Title',
     descKey: 'onboarding.page3Desc',
-    color: '#FFEAE5',
+    bgColor: Colors.light.surfaceVariant,
+  },
+  {
+    emoji: '🌱',
+    titleKey: 'onboarding.page4Title',
+    descKey: 'onboarding.page4Desc',
+    bgColor: Colors.light.background,
   },
 ];
 
@@ -40,27 +49,28 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+
+  const finishOnboarding = useCallback(async () => {
+    completeOnboarding();
+    queryClient.prefetchQuery({ queryKey: ['character'], queryFn: getCharacterMe });
+    router.replace('/(tabs)');
+  }, [completeOnboarding, queryClient, router]);
 
   const handleNext = () => {
     if (currentIndex < ONBOARDING_PAGES.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      completeOnboarding();
-      router.replace('/(tabs)');
+      finishOnboarding();
     }
   };
 
-  const handleSkip = () => {
-    completeOnboarding();
-    router.replace('/(tabs)');
-  };
-
   const renderPage = ({ item }: { item: (typeof ONBOARDING_PAGES)[0] }) => (
-    <View style={[styles.page, { width, backgroundColor: item.color }]}>
+    <View style={[styles.page, { width, backgroundColor: item.bgColor }]}>
       <Text style={styles.emoji}>{item.emoji}</Text>
       <Text style={styles.title}>{t(item.titleKey)}</Text>
       <Text style={styles.description}>{t(item.descKey)}</Text>
@@ -70,8 +80,13 @@ export default function OnboardingScreen() {
   const isLastPage = currentIndex === ONBOARDING_PAGES.length - 1;
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+    <SafeAreaView style={styles.container}>
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={finishOnboarding}
+        accessibilityRole="button"
+        accessibilityLabel={t('onboarding.skip')}
+      >
         <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
       </TouchableOpacity>
 
@@ -92,7 +107,6 @@ export default function OnboardingScreen() {
         keyExtractor={(_, i) => i.toString()}
       />
 
-      {/* 인디케이터 */}
       <View style={styles.indicatorRow}>
         {ONBOARDING_PAGES.map((_, i) => {
           const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
@@ -110,12 +124,17 @@ export default function OnboardingScreen() {
         })}
       </View>
 
-      <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+      <TouchableOpacity
+        style={styles.nextButton}
+        onPress={handleNext}
+        accessibilityRole="button"
+        accessibilityLabel={isLastPage ? t('onboarding.start') : t('onboarding.next')}
+      >
         <Text style={styles.nextText}>
           {isLastPage ? t('onboarding.start') : t('onboarding.next')}
         </Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -126,13 +145,18 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     position: 'absolute',
-    top: 60,
+    top: Spacing.md,
     right: Spacing.lg,
     zIndex: 10,
     padding: Spacing.sm,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   skipText: {
     fontSize: FontSize.md,
+    fontFamily: FontFamily.medium,
     color: Colors.light.textSecondary,
   },
   page: {
@@ -155,6 +179,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: FontSize.lg,
+    fontFamily: FontFamily.regular,
     color: Colors.light.textSecondary,
     textAlign: 'center',
     lineHeight: 26,
@@ -174,10 +199,12 @@ const styles = StyleSheet.create({
   nextButton: {
     backgroundColor: Colors.light.primary,
     marginHorizontal: Spacing.xl,
-    marginBottom: 50,
+    marginBottom: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
+    minHeight: 52,
+    justifyContent: 'center',
     shadowColor: Colors.light.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -187,6 +214,6 @@ const styles = StyleSheet.create({
   nextText: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
-    color: '#FFF',
+    color: Colors.light.surface,
   },
 });

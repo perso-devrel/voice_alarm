@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,8 @@ import type { VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
+import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
+import { cacheVoices, getCachedVoices } from '../../src/services/offlineCache';
 
 export default function VoicesScreen() {
   const router = useRouter();
@@ -32,7 +34,13 @@ export default function VoicesScreen() {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
   const toast = useToast();
+  const isConnected = useNetworkStatus();
   const [searchQuery, setSearchQuery] = useState('');
+  const [cachedProfiles, setCachedProfiles] = useState<VoiceProfile[] | null>(null);
+
+  useEffect(() => {
+    getCachedVoices().then(setCachedProfiles);
+  }, []);
 
   const {
     data: profiles,
@@ -43,15 +51,24 @@ export default function VoicesScreen() {
   } = useQuery({
     queryKey: ['voiceProfiles'],
     queryFn: getVoiceProfiles,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isConnected,
   });
 
+  useEffect(() => {
+    if (profiles && profiles.length > 0) {
+      cacheVoices(profiles);
+      setCachedProfiles(profiles);
+    }
+  }, [profiles]);
+
+  const displayProfiles = profiles ?? cachedProfiles;
+
   const filteredProfiles = useMemo(() => {
-    if (!profiles) return profiles;
+    if (!displayProfiles) return displayProfiles;
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return profiles;
-    return profiles.filter((p) => p.name.toLowerCase().includes(q));
-  }, [profiles, searchQuery]);
+    if (!q) return displayProfiles;
+    return displayProfiles.filter((p) => p.name.toLowerCase().includes(q));
+  }, [displayProfiles, searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteVoiceProfile,
@@ -147,6 +164,7 @@ export default function VoicesScreen() {
       <ScrollView
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
       <View style={styles.header}>
         <Text style={styles.title}>{t('voices.title')}</Text>
@@ -194,9 +212,9 @@ export default function VoicesScreen() {
 
       <View style={styles.listSection}>
         <Text style={styles.listTitle}>
-          {t('voices.registered')} ({profiles?.length ?? 0})
+          {t('voices.registered')} ({displayProfiles?.length ?? 0})
         </Text>
-        {profiles && profiles.length > 0 && (
+        {displayProfiles && displayProfiles.length > 0 && (
           <TextInput
             style={styles.searchInput}
             placeholder={t('voices.searchPlaceholder')}
@@ -219,6 +237,14 @@ export default function VoicesScreen() {
               {'\n'}
               {t('voices.emptyDesc')}
             </Text>
+            <TouchableOpacity
+              style={styles.emptyCta}
+              onPress={() => router.push('/voice/record')}
+              accessibilityRole="button"
+              accessibilityLabel={t('voices.record')}
+            >
+              <Text style={styles.emptyCtaText}>{t('voices.record')}</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <FlatList
@@ -382,6 +408,20 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  emptyCta: {
+    marginTop: Spacing.lg,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm + 4,
+    borderRadius: BorderRadius.full,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  emptyCtaText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.semibold,
+    color: Colors.light.surface,
   },
   swipeDeleteContainer: {
     backgroundColor: Colors.light.error,

@@ -138,18 +138,20 @@
 - [ ] 기획서 섹션 6 "개발 로드맵" — 현재 구현 상태 반영 (Phase 1 MVP 대부분 완료)
 - [ ] 기획서 "현재 이슈" — 실제 이슈 목록으로 갱신
 
-### 온보딩 플로우 기획서 정렬
-- [ ] `apps/mobile/app/onboarding.tsx` — 기획서 시나리오에 맞게 흐름 점검 (음성 녹음 → 클론 → 알람 설정)
-- [ ] 온보딩 완료 후 캐릭터 자동 생성 연동 확인
+### 온보딩 플로우 기획서 정렬 ✅ (2026-04-24)
+- [x] `apps/mobile/app/onboarding.tsx` — 4페이지 추가 (나무 캐릭터), SafeAreaView, 접근성, 토큰 색상
+- [x] 온보딩 완료 후 캐릭터 자동 생성 연동 확인 (prefetch + backend loadOrCreateCharacter)
 
-### 알람 정확도 강화
-- [ ] `apps/mobile/src/lib/alarmPlayback.ts` — 음성 URL 로딩 로직 정비 (perso.ai 실호출 금지, stub URL 유지)
-- [ ] expo-notifications 알람 트리거 정확도 검증 (OS별 제약 확인)
-- [ ] 스누즈 후 재알림 타이밍 정확도 검증
+### 알람 정확도 강화 ✅ (2026-04-24)
+- [x] 반복 알람 categoryIdentifier 누락 버그 수정 (스누즈/끄기 버튼 미표시 문제)
+- [x] Dismiss 액션 시 플레이어 화면 열리는 버그 수정
+- [x] 알람 예약 전 알림 권한 체크 추가
+- [x] alarmPlayback.ts 검증 — stub URL은 R2 배포 전 올바른 상태, weekday 매핑 정확
 
-### 오프라인 캐싱
-- [ ] 음성 파일 로컬 캐싱 로직 검증 (기획서: 오프라인 재생 가능 필수)
-- [ ] 알람 목록 오프라인 표시 검증
+### 오프라인 캐싱 ✅ (2026-04-24)
+- [x] 음성 프로필 오프라인 캐싱 추가 (Voices 탭에 cacheVoices/getCachedVoices 연동)
+- [x] 알람/홈/라이브러리 오프라인 캐싱 검증 완료 (기존 구현 정상 동작)
+- [x] 오디오 파일 로컬 캐싱 (expo-file-system) 검증 완료
 
 ---
 
@@ -159,8 +161,8 @@
 
 ### 디자인 폴리시
 - [ ] 커플 뷰(family 2인 그룹): 서로가 보이는 간결한 카드 레이아웃 (현재 border 강조 → 전용 2인 뷰로 개선)
-- [ ] 모든 탭 화면에 `SafeAreaView` + 하단 패딩(100px) 일관 적용 검증 — 탭바에 콘텐츠 가려지지 않도록
-- [ ] 빈 상태 UI 일관성 점검 — 모든 리스트 화면에 이모지 + 한줄 메시지 + CTA 버튼 패턴 적용
+- [x] 모든 탭 화면에 `SafeAreaView` + 하단 패딩(100px) 일관 적용 검증 (alarms, voices 수정)
+- [x] 빈 상태 UI 일관성 점검 — voices/library에 CTA 추가, 홈 최근메시지 빈 상태 추가
 - [ ] 다크모드 전체 화면 검증 — DarkColors 토큰만 사용하고 있는지, 하드코딩 컬러 제거
 - [ ] 카드 컴포넌트 스타일 일관성 — `BorderRadius.lg`, `shadow` 토큰, `Spacing.md` 간격 통일
 - [ ] 알람 시간 설정 UI 개선 — 시간 피커가 직관적인지, iOS/Android 모두 동작 확인

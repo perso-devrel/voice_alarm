@@ -53,6 +53,9 @@ Notifications.setNotificationCategoryAsync(ALARM_CATEGORY, [
 export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') return;
+
   const activeAlarms = alarms.filter((a) => a.is_active);
 
   for (const alarm of activeAlarms) {
@@ -69,16 +72,18 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
       snoozeMinutes: alarm.snooze_minutes || 5,
     };
 
+    const content: Notifications.NotificationContentInput = {
+      title,
+      body,
+      sound: 'default',
+      categoryIdentifier: ALARM_CATEGORY,
+      data: notificationData,
+      ...(Platform.OS === 'android' && { channelId: 'alarms' }),
+    };
+
     if (repeatDays.length === 0) {
       await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          sound: 'default',
-          categoryIdentifier: ALARM_CATEGORY,
-          data: notificationData,
-          ...(Platform.OS === 'android' && { channelId: 'alarms' }),
-        },
+        content,
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour,
@@ -89,13 +94,7 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
       for (const weekday of repeatDays) {
         const expoWeekday = weekday === 0 ? 1 : weekday + 1;
         await Notifications.scheduleNotificationAsync({
-          content: {
-            title,
-            body,
-            sound: 'default',
-            data: notificationData,
-            ...(Platform.OS === 'android' && { channelId: 'alarms' }),
-          },
+          content,
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
             weekday: expoWeekday,

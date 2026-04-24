@@ -310,40 +310,48 @@ export default function HomeScreen() {
         )}
 
         {/* 최근 메시지 */}
-        {isAuthenticated && libraryItems && libraryItems.length > 0 && (
+        {isAuthenticated && (
           <View style={styles.recentSection}>
             <View style={styles.recentHeader}>
               <Text style={styles.sectionTitle}>{t('home.recentMessages')}</Text>
-              <TouchableOpacity onPress={() => router.push('/library')}>
-                <Text style={styles.viewAllLink}>{t('home.viewAll')}</Text>
-              </TouchableOpacity>
+              {libraryItems && libraryItems.length > 0 && (
+                <TouchableOpacity onPress={() => router.push('/library')}>
+                  <Text style={styles.viewAllLink}>{t('home.viewAll')}</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            {libraryItems.slice(0, 3).map((item: LibraryItem) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.recentItem}
-                onPress={() => router.push(`/message/${item.message_id}`)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.recentAvatar}>
-                  <Text style={styles.recentAvatarText}>
-                    {(item.voice_name || '?').charAt(0)}
+            {libraryItems && libraryItems.length > 0 ? (
+              libraryItems.slice(0, 3).map((item: LibraryItem) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.recentItem}
+                  onPress={() => router.push(`/message/${item.message_id}`)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.recentAvatar}>
+                    <Text style={styles.recentAvatarText}>
+                      {(item.voice_name || '?').charAt(0)}
+                    </Text>
+                  </View>
+                  <View style={styles.recentContent}>
+                    <Text style={styles.recentVoiceName}>{item.voice_name}</Text>
+                    <Text style={styles.recentText} numberOfLines={1}>
+                      &quot;{item.text}&quot;
+                    </Text>
+                  </View>
+                  <Text style={styles.recentDate}>
+                    {new Date(item.received_at).toLocaleDateString('ko-KR', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
                   </Text>
-                </View>
-                <View style={styles.recentContent}>
-                  <Text style={styles.recentVoiceName}>{item.voice_name}</Text>
-                  <Text style={styles.recentText} numberOfLines={1}>
-                    &quot;{item.text}&quot;
-                  </Text>
-                </View>
-                <Text style={styles.recentDate}>
-                  {new Date(item.received_at).toLocaleDateString('ko-KR', {
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.recentEmpty}>
+                <Text style={styles.recentEmptyText}>{t('home.noMessages')}</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -740,6 +748,14 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.light.textTertiary,
     marginLeft: Spacing.sm,
+  },
+  recentEmpty: {
+    paddingVertical: Spacing.xl,
+    alignItems: 'center',
+  },
+  recentEmptyText: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textTertiary,
   },
   loginButton: {
     backgroundColor: Colors.light.primary,

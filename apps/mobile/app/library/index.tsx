@@ -274,6 +274,16 @@ export default function LibraryScreen() {
           <Text style={styles.emptyText}>
             {filter === 'favorite' ? t('library.emptyFavorites') : t('library.emptyAll')}
           </Text>
+          {filter !== 'favorite' && (
+            <TouchableOpacity
+              style={styles.emptyCta}
+              onPress={() => router.push('/message/create')}
+              accessibilityRole="button"
+              accessibilityLabel={t('library.createMessage')}
+            >
+              <Text style={styles.emptyCtaText}>{t('library.createMessage')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
@@ -438,6 +448,20 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
     textAlign: 'center',
+  },
+  emptyCta: {
+    marginTop: Spacing.lg,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm + 4,
+    borderRadius: BorderRadius.full,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  emptyCtaText: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.semibold,
+    color: Colors.light.surface,
   },
   swipeDeleteContainer: {
     backgroundColor: Colors.light.error,

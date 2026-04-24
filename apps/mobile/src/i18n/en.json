@@ -21,6 +21,7 @@
     "manageFriends": "Friends",
     "viewCharacter": "View character",
     "recentMessages": "Recent messages",
+    "noMessages": "No messages received yet",
     "viewAll": "View all ›",
     "loginTitle": "Sign in to get started",
     "loginDesc": "Register a loved one's voice and\nreceive warm messages every day"
@@ -154,7 +155,8 @@
     "favoriteError": "Failed to update favorite.",
     "deleteTitle": "Delete message",
     "deleteConfirm": "Remove this message from your library?",
-    "deleteError": "Failed to delete message."
+    "deleteError": "Failed to delete message.",
+    "createMessage": "Create message"
   },
   "settings": {
     "title": "Settings",
@@ -206,7 +208,9 @@
     "page2Title": "Warm messages\nevery day",
     "page2Desc": "\"Don't forget to eat lunch\"\n\"You did great today\"\nHear encouragement in their voice.",
     "page3Title": "Start your day\nwith a special voice",
-    "page3Desc": "From morning alarms to evening reminders,\nspend the day with a loved one's voice.\nReady to begin?"
+    "page3Desc": "From morning alarms to evening reminders,\nspend the day with a loved one's voice.",
+    "page4Title": "Your tree grows\nevery morning",
+    "page4Desc": "Earn XP each time you wake up to your alarm.\nGrow from a seed to a blooming tree.\nBuild your wake-up streak!"
   },
   "alarmCreate": {
     "forWho": "For who?",
