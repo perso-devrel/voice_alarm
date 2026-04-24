@@ -252,6 +252,13 @@
 - [x] `fontForWeight` 미사용 함수 삭제 (tokens.ts, index.ts, theme.ts)
 - [x] `alarmForm.test.ts` mock t 함수 + 검증 업데이트 (17/17 통과)
 
+## P9 — dub 라우트 테스트 커버리지 확장 ✅ (2026-04-24)
+
+- [x] GET /dub/languages 테스트 2건 (정상 + Perso API 에러)
+- [x] POST /dub 테스트 8건 (validation 5건 + 성공 2건 + 에러 2건)
+- [x] GET /dub/:id processing 분기 테스트 4건 (진행중 + 실패보고 + 폴링에러 + 다운로드불가)
+- [x] PersoClient mock 재작성 (arrow→function, ENV 바인딩)
+
 ## 자가 생성 가능 풀 (BACKLOG 고갈 시)
 
 - 모바일 E2E 테스트 (Detox 또는 Maestro)
