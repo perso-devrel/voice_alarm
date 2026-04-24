@@ -119,7 +119,12 @@ export default function DiarizeScreen() {
             <Text style={styles.stepDesc}>{t('voiceDiarize.step1Desc')}</Text>
           </View>
 
-          <TouchableOpacity style={styles.pickButton} onPress={handlePickFile}>
+          <TouchableOpacity
+            style={styles.pickButton}
+            onPress={handlePickFile}
+            accessibilityRole="button"
+            accessibilityLabel={selectedFile ? t('voiceDiarize.a11yPickFile') + ': ' + selectedFile.name : t('voiceDiarize.a11yPickFile')}
+          >
             <Text style={styles.pickEmoji}>📞</Text>
             <Text style={styles.pickText}>
               {selectedFile ? selectedFile.name : t('voiceDiarize.pickFile')}
@@ -131,6 +136,9 @@ export default function DiarizeScreen() {
               style={[styles.analyzeButton, diarizeMutation.isPending && styles.disabled]}
               onPress={handleAnalyze}
               disabled={diarizeMutation.isPending}
+              accessibilityRole="button"
+              accessibilityLabel={t('voiceDiarize.a11yAnalyze')}
+              accessibilityState={{ disabled: diarizeMutation.isPending }}
             >
               {diarizeMutation.isPending ? (
                 <View style={styles.loadingRow}>
@@ -164,6 +172,13 @@ export default function DiarizeScreen() {
                 selectedSpeaker === speaker.speaker_id && styles.speakerCardSelected,
               ]}
               onPress={() => handleSelectSpeaker(speaker.speaker_id)}
+              accessibilityRole="button"
+              accessibilityLabel={t('voiceDiarize.a11ySpeaker', {
+                index: index + 1,
+                duration: formatDuration(speaker.total_duration),
+                segments: speaker.segments.length,
+              })}
+              accessibilityState={{ selected: selectedSpeaker === speaker.speaker_id }}
             >
               <View style={styles.speakerAvatar}>
                 <Text style={styles.speakerAvatarText}>{String.fromCharCode(65 + index)}</Text>
@@ -185,7 +200,12 @@ export default function DiarizeScreen() {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity style={styles.backButton} onPress={() => setStep('upload')}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setStep('upload')}
+            accessibilityRole="button"
+            accessibilityLabel={t('voiceDiarize.a11yBack')}
+          >
             <Text style={styles.backText}>{t('voiceDiarize.back')}</Text>
           </TouchableOpacity>
         </>
@@ -207,12 +227,16 @@ export default function DiarizeScreen() {
             onChangeText={setName}
             placeholderTextColor={colors.textTertiary}
             autoFocus
+            accessibilityLabel={t('voiceDiarize.a11yNameInput')}
           />
 
           <TouchableOpacity
             style={[styles.submitButton, cloneMutation.isPending && styles.disabled]}
             onPress={handleSubmit}
             disabled={cloneMutation.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={t('voiceDiarize.a11ySubmit')}
+            accessibilityState={{ disabled: cloneMutation.isPending }}
           >
             {cloneMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
@@ -221,7 +245,12 @@ export default function DiarizeScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.backButton} onPress={() => setStep('select')}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setStep('select')}
+            accessibilityRole="button"
+            accessibilityLabel={t('voiceDiarize.a11yBack')}
+          >
             <Text style={styles.backText}>{t('voiceDiarize.backToSelect')}</Text>
           </TouchableOpacity>
         </>

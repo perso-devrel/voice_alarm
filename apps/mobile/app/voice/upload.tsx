@@ -75,7 +75,12 @@ export default function UploadScreen() {
         <Text style={styles.description}>{t('voiceUpload.description')}</Text>
 
         {/* 파일 선택 */}
-        <TouchableOpacity style={styles.pickButton} onPress={handlePickFile}>
+        <TouchableOpacity
+          style={styles.pickButton}
+          onPress={handlePickFile}
+          accessibilityRole="button"
+          accessibilityLabel={selectedFile ? t('voiceUpload.a11yFileInfo', { name: selectedFile.name }) : t('voiceUpload.a11yPickFile')}
+        >
           <Text style={styles.pickEmoji}>📁</Text>
           <Text style={styles.pickText}>
             {selectedFile ? selectedFile.name : t('voiceUpload.pickFile')}
@@ -98,6 +103,7 @@ export default function UploadScreen() {
           value={name}
           onChangeText={setName}
           placeholderTextColor={colors.textTertiary}
+          accessibilityLabel={t('voiceUpload.a11yNameInput')}
         />
 
         {/* 제출 */}
@@ -108,6 +114,9 @@ export default function UploadScreen() {
           ]}
           onPress={handleSubmit}
           disabled={!selectedFile || !name.trim() || cloneMutation.isPending}
+          accessibilityRole="button"
+          accessibilityLabel={t('voiceUpload.a11ySubmit')}
+          accessibilityState={{ disabled: !selectedFile || !name.trim() || cloneMutation.isPending }}
         >
           {cloneMutation.isPending ? (
             <ActivityIndicator color="#FFF" />

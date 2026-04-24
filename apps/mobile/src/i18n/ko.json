@@ -124,7 +124,14 @@
     "pending": "대기중",
     "accepted": "수락됨",
     "rejected": "거절됨",
-    "setAlarm": "이 친구에게 알람 보내기"
+    "setAlarm": "이 친구에게 알람 보내기",
+    "sendGift": "이 친구에게 선물하기",
+    "a11yBack": "돌아가기",
+    "a11yAvatar": "{{name}} 프로필",
+    "a11yStat": "{{label}} {{count}}개",
+    "a11ySetAlarm": "이 친구에게 알람 보내기 버튼",
+    "a11ySendGift": "이 친구에게 선물하기 버튼",
+    "a11yGiftItem": "{{text}}, 상태: {{status}}"
   },
   "people": {
     "members": "멤버",
@@ -363,7 +370,11 @@
     "successDesc": "음성 클론이 생성되고 있어요.",
     "uploadError": "업로드에 실패했습니다.",
     "inputRequired": "파일을 선택하고 이름을 입력해주세요.",
-    "inputRequiredTitle": "입력 필요"
+    "inputRequiredTitle": "입력 필요",
+    "a11yPickFile": "오디오 파일 선택 버튼",
+    "a11yFileInfo": "선택된 파일: {{name}}",
+    "a11yNameInput": "음성 프로필 이름",
+    "a11ySubmit": "음성 등록 버튼"
   },
   "voiceDiarize": {
     "step1Title": "통화 녹음 업로드",
@@ -390,7 +401,13 @@
     "successDesc": "선택한 화자의 음성 클론이 생성되고 있어요.",
     "cloneError": "음성 클론 생성에 실패했습니다.",
     "backToSelect": "← 다른 화자 선택",
-    "minSec": "{{min}}분 {{sec}}초"
+    "minSec": "{{min}}분 {{sec}}초",
+    "a11yPickFile": "녹음 파일 선택 버튼",
+    "a11yAnalyze": "화자 분리 시작 버튼",
+    "a11ySpeaker": "화자 {{index}}, {{duration}}, {{segments}}개 구간",
+    "a11yNameInput": "음성 프로필 이름 입력",
+    "a11ySubmit": "음성 등록 버튼",
+    "a11yBack": "이전 단계로 돌아가기"
   },
   "voiceDetail": {
     "messages": "메시지",
@@ -400,7 +417,21 @@
     "active": "활성",
     "inactive": "비활성",
     "empty": "이 음성으로 만든 메시지나 알람이 없습니다",
-    "createMessage": "이 음성으로 메시지 만들기"
+    "createMessage": "이 음성으로 메시지 만들기",
+    "a11yAvatar": "{{name}} 음성 프로필",
+    "a11yRename": "음성 이름 변경",
+    "a11yRenameInput": "음성 이름 입력",
+    "a11yRenameSave": "이름 변경 저장",
+    "a11yRenameCancel": "이름 변경 취소",
+    "a11yStat": "{{label}} {{count}}개",
+    "a11yCreateMessage": "이 음성으로 메시지 만들기 버튼",
+    "renameFailed": "이름 변경 실패",
+    "renameNetworkError": "네트워크 오류",
+    "renameInputError": "이름이 올바르지 않습니다",
+    "renameSaving": "저장 중…",
+    "renameSave": "저장",
+    "renameCancel": "취소",
+    "rename": "이름 변경"
   },
   "messageDetail": {
     "title": "메시지 상세",
@@ -417,7 +448,13 @@
   },
   "player": {
     "thanks": "💝 고마워",
-    "thanked": "💝 고마움을 전했어요"
+    "thanked": "💝 고마움을 전했어요",
+    "a11yClose": "닫기",
+    "a11yPlay": "재생",
+    "a11yPause": "일시정지",
+    "a11yWaveform": "오디오 재생 진행률",
+    "a11yReaction": "감사 반응 보내기",
+    "a11yVoice": "{{name}}의 음성 메시지"
   },
   "offline": {
     "banner": "오프라인 상태입니다",
@@ -462,7 +499,13 @@
     "capReached": "일일 캡 도달",
     "xpFailed": "XP 지급 실패",
     "devXpTitle": "테스트용 XP 지급",
-    "devXpHint": "실제 앱에서는 알람 종료/가족 알람 수신 시 자동으로 호출돼요."
+    "devXpHint": "실제 앱에서는 알람 종료/가족 알람 수신 시 자동으로 호출돼요.",
+    "a11yStreak": "연속 기상 {{count}}일, 최장 기록 {{longest}}일",
+    "a11yMilestone": "{{days}}일 마일스톤, {{status}}",
+    "a11yMilestoneAchieved": "달성",
+    "a11yMilestoneNotYet": "미달성",
+    "a11yStat": "{{name}}: {{value}}",
+    "a11yXpStat": "{{label}}: {{value}}"
   },
   "lastSeen": {
     "justNow": "방금 전",

@@ -124,7 +124,14 @@
     "pending": "Pending",
     "accepted": "Accepted",
     "rejected": "Rejected",
-    "setAlarm": "Send alarm to this friend"
+    "setAlarm": "Send alarm to this friend",
+    "sendGift": "Send gift to this friend",
+    "a11yBack": "Go back",
+    "a11yAvatar": "{{name}} profile",
+    "a11yStat": "{{label}}: {{count}}",
+    "a11ySetAlarm": "Send alarm to this friend",
+    "a11ySendGift": "Send gift to this friend",
+    "a11yGiftItem": "{{text}}, status: {{status}}"
   },
   "people": {
     "members": "Members",
@@ -363,7 +370,11 @@
     "successDesc": "Voice clone is being generated.",
     "uploadError": "Upload failed.",
     "inputRequired": "Select a file and enter a name.",
-    "inputRequiredTitle": "Input required"
+    "inputRequiredTitle": "Input required",
+    "a11yPickFile": "Select audio file button",
+    "a11yFileInfo": "Selected file: {{name}}",
+    "a11yNameInput": "Voice profile name",
+    "a11ySubmit": "Register voice button"
   },
   "voiceDiarize": {
     "step1Title": "Upload call recording",
@@ -390,7 +401,13 @@
     "successDesc": "Voice clone for the selected speaker is being generated.",
     "cloneError": "Failed to create voice clone.",
     "backToSelect": "← Choose another speaker",
-    "minSec": "{{min}}m {{sec}}s"
+    "minSec": "{{min}}m {{sec}}s",
+    "a11yPickFile": "Select recording file button",
+    "a11yAnalyze": "Start speaker separation button",
+    "a11ySpeaker": "Speaker {{index}}, {{duration}}, {{segments}} segments",
+    "a11yNameInput": "Voice profile name input",
+    "a11ySubmit": "Register voice button",
+    "a11yBack": "Go back to previous step"
   },
   "voiceDetail": {
     "messages": "Messages",
@@ -400,11 +417,31 @@
     "active": "Active",
     "inactive": "Inactive",
     "empty": "No messages or alarms with this voice",
-    "createMessage": "Create message with this voice"
+    "createMessage": "Create message with this voice",
+    "a11yAvatar": "{{name}} voice profile",
+    "a11yRename": "Rename voice",
+    "a11yRenameInput": "Voice name input",
+    "a11yRenameSave": "Save name change",
+    "a11yRenameCancel": "Cancel name change",
+    "a11yStat": "{{label}}: {{count}}",
+    "a11yCreateMessage": "Create message with this voice button",
+    "renameFailed": "Rename failed",
+    "renameNetworkError": "Network error",
+    "renameInputError": "Invalid name",
+    "renameSaving": "Saving…",
+    "renameSave": "Save",
+    "renameCancel": "Cancel",
+    "rename": "Rename"
   },
   "player": {
     "thanks": "💝 Thank you",
-    "thanked": "💝 You sent your thanks"
+    "thanked": "💝 You sent your thanks",
+    "a11yClose": "Close",
+    "a11yPlay": "Play",
+    "a11yPause": "Pause",
+    "a11yWaveform": "Audio playback progress",
+    "a11yReaction": "Send thanks",
+    "a11yVoice": "Voice message from {{name}}"
   },
   "offline": {
     "banner": "You are offline",
@@ -457,7 +494,13 @@
     "capReached": "daily cap reached",
     "xpFailed": "XP grant failed",
     "devXpTitle": "Test XP Grant",
-    "devXpHint": "In the real app, this is called automatically on alarm completion."
+    "devXpHint": "In the real app, this is called automatically on alarm completion.",
+    "a11yStreak": "{{count}} day streak, best: {{longest}} days",
+    "a11yMilestone": "{{days}} day milestone, {{status}}",
+    "a11yMilestoneAchieved": "achieved",
+    "a11yMilestoneNotYet": "not yet",
+    "a11yStat": "{{name}}: {{value}}",
+    "a11yXpStat": "{{label}}: {{value}}"
   },
   "lastSeen": {
     "justNow": "Just now",

@@ -248,14 +248,22 @@ export default function PlayerScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
-      <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={handleClose}
+        accessibilityRole="button"
+        accessibilityLabel={t('player.a11yClose')}
+      >
         <Text style={styles.closeText}>✕</Text>
       </TouchableOpacity>
 
       <View style={styles.content}>
         <Text style={styles.categoryEmoji}>{getEmoji()}</Text>
 
-        <View style={styles.profileSection}>
+        <View
+          style={styles.profileSection}
+          accessibilityLabel={t('player.a11yVoice', { name: params.voiceName })}
+        >
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{params.voiceName?.charAt(0) || '?'}</Text>
           </View>
@@ -264,7 +272,12 @@ export default function PlayerScreen() {
 
         <Text style={styles.messageText}>"{params.text}"</Text>
 
-        <View style={styles.waveformContainer}>
+        <View
+          style={styles.waveformContainer}
+          accessibilityRole="adjustable"
+          accessibilityLabel={t('player.a11yWaveform')}
+          accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
+        >
           <View
             style={styles.waveformBars}
             onLayout={onWaveformLayout}
@@ -300,12 +313,22 @@ export default function PlayerScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.playButton} onPress={handlePlay}>
+        <TouchableOpacity
+          style={styles.playButton}
+          onPress={handlePlay}
+          accessibilityRole="button"
+          accessibilityLabel={isPlaying ? t('player.a11yPause') : t('player.a11yPlay')}
+        >
           <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶️'}</Text>
         </TouchableOpacity>
 
         {!reacted ? (
-          <TouchableOpacity style={styles.reactionButton} onPress={() => setReacted(true)}>
+          <TouchableOpacity
+            style={styles.reactionButton}
+            onPress={() => setReacted(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('player.a11yReaction')}
+          >
             <Text style={styles.reactionText}>{t('player.thanks')}</Text>
           </TouchableOpacity>
         ) : (

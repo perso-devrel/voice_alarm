@@ -189,7 +189,7 @@
 - [x] 탭 화면 접근성 일괄 추가 (alarms, voices, people, settings, LoginButtons — ~30개 라벨)
 - [x] 스택 화면 접근성 Batch 1 (alarm/create ~25, alarm/edit ~15, library/index ~6 = ~46 라벨)
 - [x] 스택 화면 접근성 Batch 2 (voice/record, message/create, dub/translate, family-alarm/create, voice/picker)
-- [ ] 스택 화면 접근성 Batch 3 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id])
+- [x] 스택 화면 접근성 Batch 3 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id]) + friend/[id] 다크모드 수정
 - [ ] 이모지가 단독으로 정보를 전달하는 곳에 텍스트 라벨 병기 확인
 - [ ] 한국어/영어 전환 시 레이아웃 깨짐 없는지 점검 (영어가 한국어보다 길어서 줄바꿈 발생 가능)
 

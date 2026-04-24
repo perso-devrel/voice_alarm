@@ -46,7 +46,7 @@ export default function VoiceDetailScreen() {
       setDraftName('');
     },
     onError: (err) => {
-      Alert.alert('이름 변경 실패', err instanceof Error ? err.message : '네트워크 오류');
+      Alert.alert(t('voiceDetail.renameFailed'), err instanceof Error ? err.message : t('voiceDetail.renameNetworkError'));
     },
   });
 
@@ -58,7 +58,7 @@ export default function VoiceDetailScreen() {
   const commitEdit = (currentName: string) => {
     const sanitized = sanitizeVoiceName(draftName);
     if (!sanitized.ok) {
-      Alert.alert('입력 오류', sanitized.error ?? '이름이 올바르지 않습니다.');
+      Alert.alert(t('common.error'), sanitized.error ?? t('voiceDetail.renameInputError'));
       return;
     }
     if (sanitized.value === currentName) {
@@ -91,7 +91,7 @@ export default function VoiceDetailScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       {profile && (
         <View style={styles.profileHeader}>
-          <View style={styles.avatarLarge}>
+          <View style={styles.avatarLarge} accessibilityLabel={t('voiceDetail.a11yAvatar', { name: profile.name })}>
             <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
           </View>
           {isEditingName ? (
@@ -103,38 +103,41 @@ export default function VoiceDetailScreen() {
                 onSubmitEditing={() => commitEdit(profile.name)}
                 maxLength={60}
                 style={styles.renameInput}
-                accessibilityLabel="음성 이름 입력"
+                accessibilityLabel={t('voiceDetail.a11yRenameInput')}
               />
               <TouchableOpacity
-                accessibilityLabel="이름 변경 저장"
+                accessibilityLabel={t('voiceDetail.a11yRenameSave')}
+                accessibilityRole="button"
                 onPress={() => commitEdit(profile.name)}
                 disabled={renameMutation.isPending}
                 style={styles.renameSaveBtn}
               >
                 <Text style={styles.renameSaveText}>
-                  {renameMutation.isPending ? '저장…' : '저장'}
+                  {renameMutation.isPending ? t('voiceDetail.renameSaving') : t('voiceDetail.renameSave')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                accessibilityLabel="이름 변경 취소"
+                accessibilityLabel={t('voiceDetail.a11yRenameCancel')}
+                accessibilityRole="button"
                 onPress={() => {
                   setIsEditingName(false);
                   setDraftName('');
                 }}
                 style={styles.renameCancelBtn}
               >
-                <Text style={styles.renameCancelText}>취소</Text>
+                <Text style={styles.renameCancelText}>{t('voiceDetail.renameCancel')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <>
               <Text style={styles.profileName}>{profile.name}</Text>
               <TouchableOpacity
-                accessibilityLabel="음성 이름 변경"
+                accessibilityLabel={t('voiceDetail.a11yRename')}
+                accessibilityRole="button"
                 onPress={() => beginEdit(profile.name)}
                 style={styles.renameBtn}
               >
-                <Text style={styles.renameText}>이름 변경</Text>
+                <Text style={styles.renameText}>{t('voiceDetail.rename')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -142,11 +145,11 @@ export default function VoiceDetailScreen() {
             {new Date(profile.created_at).toLocaleDateString('ko-KR')}
           </Text>
           <View style={styles.statsRow}>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityLabel={t('voiceDetail.a11yStat', { label: t('voiceDetail.messages'), count: voiceMessages.length })}>
               <Text style={styles.statValue}>{voiceMessages.length}</Text>
               <Text style={styles.statLabel}>{t('voiceDetail.messages')}</Text>
             </View>
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityLabel={t('voiceDetail.a11yStat', { label: t('voiceDetail.alarms'), count: voiceAlarms.length })}>
               <Text style={styles.statValue}>{voiceAlarms.length}</Text>
               <Text style={styles.statLabel}>{t('voiceDetail.alarms')}</Text>
             </View>
@@ -155,6 +158,8 @@ export default function VoiceDetailScreen() {
             <TouchableOpacity
               style={styles.createMessageBtn}
               onPress={() => router.push(`/message/create?voice_id=${id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={t('voiceDetail.a11yCreateMessage')}
             >
               <Text style={styles.createMessageText}>{t('voiceDetail.createMessage')}</Text>
             </TouchableOpacity>

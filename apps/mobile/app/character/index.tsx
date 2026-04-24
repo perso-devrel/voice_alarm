@@ -42,7 +42,10 @@ export default function CharacterScreen() {
   function StatBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
     const pct = Math.min((value / Math.max(max, 1)) * 100, 100);
     return (
-      <View style={dynStyles.statBarRow}>
+      <View
+        style={dynStyles.statBarRow}
+        accessibilityLabel={t('character.a11yStat', { name: label, value })}
+      >
         <Text style={dynStyles.statBarLabel}>{label}</Text>
         <View style={dynStyles.statBarTrack}>
           <View style={[dynStyles.statBarFill, { width: `${pct}%`, backgroundColor: color }]} />
@@ -55,7 +58,13 @@ export default function CharacterScreen() {
   function MilestoneBadge({ milestone, achieved }: { milestone: number; achieved: boolean }) {
     const emoji = milestone === 7 ? '🌱' : milestone === 30 ? '🌳' : '🌸';
     return (
-      <View style={[dynStyles.milestoneBadge, achieved && dynStyles.milestoneBadgeAchieved]}>
+      <View
+        style={[dynStyles.milestoneBadge, achieved && dynStyles.milestoneBadgeAchieved]}
+        accessibilityLabel={t('character.a11yMilestone', {
+          days: milestone,
+          status: achieved ? t('character.a11yMilestoneAchieved') : t('character.a11yMilestoneNotYet'),
+        })}
+      >
         <Text style={dynStyles.milestoneEmoji}>{emoji}</Text>
         <Text style={[dynStyles.milestoneDay, achieved && dynStyles.milestoneDayAchieved]}>
           {milestone}
@@ -165,7 +174,10 @@ export default function CharacterScreen() {
         </Pressable>
 
         {/* Streak badge */}
-        <View style={dynStyles.streakCard}>
+        <View
+          style={dynStyles.streakCard}
+          accessibilityLabel={t('character.a11yStreak', { count: streak.current, longest: streak.longest })}
+        >
           <View style={dynStyles.streakMain}>
             <Text style={dynStyles.streakFire}>🔥</Text>
             <Text style={dynStyles.streakCount}>{streak.current}</Text>
@@ -187,7 +199,7 @@ export default function CharacterScreen() {
         {/* Growth progress */}
         <View style={dynStyles.section}>
           <View style={dynStyles.progressHeader}>
-            <Text style={dynStyles.sectionTitle}>{t('character.growthProgress')}</Text>
+            <Text style={dynStyles.sectionTitle} accessibilityRole="header">{t('character.growthProgress')}</Text>
             <Text style={dynStyles.progressText}>{formatProgress(progress)}</Text>
           </View>
           <View
@@ -203,15 +215,15 @@ export default function CharacterScreen() {
             <View style={[dynStyles.progressBarFill, { width: `${barWidth}%` }]} />
           </View>
           <View style={dynStyles.xpStatsRow}>
-            <View style={dynStyles.xpStatItem}>
+            <View style={dynStyles.xpStatItem} accessibilityLabel={t('character.a11yXpStat', { label: t('character.totalXp'), value: character.xp })}>
               <Text style={dynStyles.xpStatLabel}>{t('character.totalXp')}</Text>
               <Text style={dynStyles.xpStatValue}>{character.xp}</Text>
             </View>
-            <View style={dynStyles.xpStatItem}>
+            <View style={dynStyles.xpStatItem} accessibilityLabel={t('character.a11yXpStat', { label: t('character.affection'), value: character.affection })}>
               <Text style={dynStyles.xpStatLabel}>{t('character.affection')}</Text>
               <Text style={dynStyles.xpStatValue}>💗 {character.affection}</Text>
             </View>
-            <View style={dynStyles.xpStatItem}>
+            <View style={dynStyles.xpStatItem} accessibilityLabel={t('character.a11yXpStat', { label: t('character.todayXp'), value: `${character.daily_xp}/200` })}>
               <Text style={dynStyles.xpStatLabel}>{t('character.todayXp')}</Text>
               <Text style={dynStyles.xpStatValue}>{character.daily_xp} / 200</Text>
             </View>
@@ -220,7 +232,7 @@ export default function CharacterScreen() {
 
         {/* Character stats */}
         <View style={dynStyles.section}>
-          <Text style={dynStyles.sectionTitle}>{t('character.statsTitle')}</Text>
+          <Text style={dynStyles.sectionTitle} accessibilityRole="header">{t('character.statsTitle')}</Text>
           <View style={dynStyles.statBarsContainer}>
             <StatBar
               label={t('character.statDiligence')}
