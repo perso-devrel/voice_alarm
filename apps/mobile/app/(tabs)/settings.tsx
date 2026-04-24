@@ -130,6 +130,9 @@ export default function SettingsScreen() {
                       borderRadius: BorderRadius.md,
                       backgroundColor: defaultSnoozeMinutes === m ? colors.primary : colors.surfaceVariant,
                     }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: defaultSnoozeMinutes === m }}
+                    accessibilityLabel={`${m}${t('settings.minutes')}`}
                   >
                     <Text style={{
                       fontSize: FontSize.sm,
@@ -200,13 +203,20 @@ export default function SettingsScreen() {
 
         {isAuthenticated && (
           <>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.logout')}
+            >
               <Text style={styles.logoutText}>{t('common.logout')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.deleteAccountButton}
               onPress={() => setShowDeleteDialog(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('settings.deleteAccount')}
             >
               <Text style={styles.deleteAccountText}>{t('settings.deleteAccount')}</Text>
             </TouchableOpacity>
@@ -234,6 +244,8 @@ export default function SettingsScreen() {
                   setDeleteConfirmText('');
                 }}
                 disabled={deleting}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.cancel')}
               >
                 <Text style={styles.deleteDialogCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
@@ -244,6 +256,8 @@ export default function SettingsScreen() {
                 ]}
                 onPress={handleDeleteAccount}
                 disabled={deleteConfirmText !== t('settings.deleteAccountConfirmWord') || deleting}
+                accessibilityRole="button"
+                accessibilityLabel={t('settings.deleteAccount')}
               >
                 {deleting ? (
                   <ActivityIndicator color={colors.surface} size="small" />
@@ -286,6 +300,7 @@ function SettingRow({
         borderBottomColor: colors.border,
       }}
       onPress={onPress}
+      {...(onPress ? { accessibilityRole: 'button' as const, accessibilityLabel: label } : { accessible: true, accessibilityLabel: `${label} ${value ?? ''}` })}
     >
       <Text style={{ fontSize: FontSize.md, color: colors.text }}>{label}</Text>
       {trailing || (

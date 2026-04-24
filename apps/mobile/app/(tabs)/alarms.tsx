@@ -271,6 +271,8 @@ export default function AlarmsScreen() {
           onPress={() => router.push({ pathname: '/alarm/edit', params: { id: item.id } })}
           onLongPress={() => handleDelete(item.id)}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`${t('alarms.title')} ${item.time} ${item.voice_name}`}
         >
           <View style={styles.alarmLeft}>
             <Text style={[styles.alarmTime, !item.is_active && styles.timeInactive]}>
@@ -336,7 +338,12 @@ export default function AlarmsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('alarms.title')}</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/alarm/create')}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push('/alarm/create')}
+          accessibilityRole="button"
+          accessibilityLabel={t('alarms.add')}
+        >
           <Text style={styles.addButtonText}>{t('alarms.add')}</Text>
         </TouchableOpacity>
       </View>
@@ -377,7 +384,12 @@ export default function AlarmsScreen() {
           <Text style={styles.emptyEmoji}>⏰</Text>
           <Text style={styles.emptyTitle}>{t('alarms.emptyTitle')}</Text>
           <Text style={styles.emptyDesc}>{t('alarms.emptyDesc')}</Text>
-          <TouchableOpacity style={styles.emptyButton} onPress={() => router.push('/alarm/create')}>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={() => router.push('/alarm/create')}
+            accessibilityRole="button"
+            accessibilityLabel={t('alarms.emptyButton')}
+          >
             <Text style={styles.emptyButtonText}>{t('alarms.emptyButton')}</Text>
           </TouchableOpacity>
         </View>

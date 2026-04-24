@@ -174,7 +174,7 @@
   - [x] Batch 4-B: 나머지 스택 화면 6개 (voice/record, voice/picker, message/[id], onboarding, voice/upload, player)
 - [x] 카드 컴포넌트 스타일 일관성 — shadow 토큰 6개 카드에 추가, marginBottom Spacing.sm→md 통일, settings.tsx 매직넘버→토큰 치환
 - [x] 알람 시간 설정 UI 개선 — AM/PM 표시, 남은시간 헬퍼, i18n 17키, 터치타겟 44px, 접근성 라벨
-- [ ] 홈 화면 레이아웃 정리 — 위젯 간 간격, 섹션 구분선, 시각적 위계 정비
+- [x] 홈 화면 레이아웃 정리 — 위젯 간 간격, 섹션 구분선, 시각적 위계 정비 + 접근성 라벨 11개
 
 ### 소규모 기능 구현
 - [ ] 앱 스플래시 스크린 설정 — `app.json`의 splash 설정, 코랄 배경 + 앱 로고 텍스트
@@ -186,7 +186,8 @@
 - [x] 초대 코드 공유 시 클립보드 복사 + "복사됨" 토스트 (P1 초대코드 UI에서 완료)
 
 ### 접근성 + 국제화 보강
-- [ ] 모든 터치 요소에 `accessibilityLabel` 누락 점검 (버튼, 아이콘, 카드)
+- [x] 탭 화면 접근성 일괄 추가 (alarms, voices, people, settings, LoginButtons — ~30개 라벨)
+- [ ] 스택 화면 접근성 추가 (alarm/create, voice/record 등 ~15개 파일)
 - [ ] 이모지가 단독으로 정보를 전달하는 곳에 텍스트 라벨 병기 확인
 - [ ] 한국어/영어 전환 시 레이아웃 깨짐 없는지 점검 (영어가 한국어보다 길어서 줄바꿈 발생 가능)
 

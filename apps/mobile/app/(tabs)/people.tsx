@@ -213,6 +213,8 @@ export default function PeopleScreen() {
       style={styles.personCard}
       onPress={() => router.push(`/friend/${item.id}`)}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={item.friend_name || item.friend_email}
     >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>
@@ -269,6 +271,8 @@ export default function PeopleScreen() {
           onPress={() => createInviteMutation.mutate()}
           disabled={createInviteMutation.isPending}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('people.generateInvite')}
         >
           <Text style={styles.familyAlarmBtnText}>
             {createInviteMutation.isPending ? t('people.generating') : t('people.generateInvite')}
@@ -354,6 +358,8 @@ export default function PeopleScreen() {
               style={styles.familyAlarmBtn}
               onPress={() => router.push('/family-alarm/create')}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('people.sendFamilyAlarm')}
             >
               <Text style={styles.familyAlarmBtnText}>⏰ {t('people.sendFamilyAlarm')}</Text>
             </TouchableOpacity>
@@ -438,6 +444,8 @@ export default function PeopleScreen() {
             style={[styles.addBtn, !email.trim() && styles.addBtnDisabled]}
             onPress={handleSend}
             disabled={!email.trim() || sendMutation.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.add')}
           >
             <Text style={styles.addBtnText}>{t('common.add')}</Text>
           </TouchableOpacity>
@@ -450,6 +458,9 @@ export default function PeopleScreen() {
             key={seg.key}
             style={[styles.segment, activeSegment === seg.key && styles.segmentActive]}
             onPress={() => setActiveSegment(seg.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeSegment === seg.key }}
+            accessibilityLabel={seg.label}
           >
             <Text style={[styles.segmentText, activeSegment === seg.key && styles.segmentTextActive]}>
               {seg.label}

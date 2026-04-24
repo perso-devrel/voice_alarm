@@ -195,17 +195,29 @@ export default function HomeScreen() {
         )}
         {isAuthenticated && stats && (
           <View style={styles.statsRow}>
-            <View style={styles.statItem}>
+            <View
+              style={styles.statItem}
+              accessible
+              accessibilityLabel={`${t('home.activeAlarms', '활성 알람')} ${stats.alarms.active}`}
+            >
               <Text style={styles.statCount}>{stats.alarms.active}</Text>
               <Text style={styles.statLabel}>{t('home.activeAlarms', '활성 알람')}</Text>
               {stats.trends && <TrendBadge trend={stats.trends.alarms} colors={colors} />}
             </View>
-            <View style={styles.statItem}>
+            <View
+              style={styles.statItem}
+              accessible
+              accessibilityLabel={`${t('home.messages', '메시지')} ${stats.messages.total}`}
+            >
               <Text style={styles.statCount}>{stats.messages.total}</Text>
               <Text style={styles.statLabel}>{t('home.messages', '메시지')}</Text>
               {stats.trends && <TrendBadge trend={stats.trends.messages} colors={colors} />}
             </View>
-            <View style={styles.statItem}>
+            <View
+              style={styles.statItem}
+              accessible
+              accessibilityLabel={`${t('home.friends', '친구')} ${stats.friends.total}`}
+            >
               <Text style={styles.statCount}>{stats.friends.total}</Text>
               <Text style={styles.statLabel}>{t('home.friends', '친구')}</Text>
               {stats.trends && <TrendBadge trend={stats.trends.friends} colors={colors} />}
@@ -270,6 +282,8 @@ export default function HomeScreen() {
               : router.push('/alarm/create')
           }
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={nextAlarm ? `${t('home.nextAlarm')} ${nextAlarm.time}` : t('home.noAlarm')}
         >
           <View style={styles.nextAlarmGradient}>
             <Text style={styles.nextAlarmLabel}>{t('home.nextAlarm')}</Text>
@@ -295,6 +309,8 @@ export default function HomeScreen() {
             style={styles.cheerCard}
             onPress={() => handlePlayMessage(latestMessage.id)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('home.todayMessage')} ${latestMessage.voice_name}`}
           >
             <View style={styles.cheerHeader}>
               <Text style={styles.cheerEmoji}>💌</Text>
@@ -311,6 +327,9 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
         )}
+
+        {/* 섹션 구분선 */}
+        {isAuthenticated && <View style={styles.sectionDivider} />}
 
         {/* 최근 메시지 */}
         {isAuthenticated && (
@@ -358,6 +377,9 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* 섹션 구분선 */}
+        {isAuthenticated && <View style={styles.sectionDivider} />}
+
         {/* 빠른 액션 */}
         <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>{t('home.quickStart')}</Text>
@@ -365,6 +387,8 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/voice/record')}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.recordVoice')}
             >
               <Text style={styles.actionEmoji}>🎙️</Text>
               <Text style={styles.actionLabel}>{t('home.recordVoice')}</Text>
@@ -372,6 +396,8 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/voice/upload')}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.uploadFile')}
             >
               <Text style={styles.actionEmoji}>📁</Text>
               <Text style={styles.actionLabel}>{t('home.uploadFile')}</Text>
@@ -379,6 +405,8 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/message/create')}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.writeMessage')}
             >
               <Text style={styles.actionEmoji}>✏️</Text>
               <Text style={styles.actionLabel}>{t('home.writeMessage')}</Text>
@@ -386,6 +414,8 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/alarm/create')}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.addAlarm')}
             >
               <Text style={styles.actionEmoji}>⏰</Text>
               <Text style={styles.actionLabel}>{t('home.addAlarm')}</Text>
@@ -393,6 +423,8 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/gift/received')}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.receivedGifts')}
             >
               <Text style={styles.actionEmoji}>🎁</Text>
               <Text style={styles.actionLabel}>{t('home.receivedGifts')}</Text>
@@ -400,6 +432,8 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/(tabs)/people')}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.manageFriends')}
             >
               <Text style={styles.actionEmoji}>👥</Text>
               <Text style={styles.actionLabel}>{t('home.manageFriends')}</Text>
@@ -438,7 +472,7 @@ function createStyles(colors: ThemeColors) {
       paddingBottom: 120,
     },
     header: {
-      marginBottom: Spacing.lg,
+      marginBottom: Spacing.xl,
     },
     statsRow: {
       flexDirection: 'row',
@@ -476,7 +510,7 @@ function createStyles(colors: ThemeColors) {
     nextAlarmCard: {
       borderRadius: BorderRadius.xl,
       overflow: 'hidden',
-      marginBottom: Spacing.lg,
+      marginBottom: Spacing.md,
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.2,
@@ -648,7 +682,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       borderRadius: BorderRadius.lg,
       padding: Spacing.md,
-      marginBottom: Spacing.lg,
+      marginBottom: Spacing.md,
       shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 1,
@@ -698,6 +732,11 @@ function createStyles(colors: ThemeColors) {
       fontSize: FontSize.xl,
       color: colors.textTertiary,
       marginLeft: Spacing.sm,
+    },
+    sectionDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: Spacing.sm,
     },
     recentSection: {
       marginBottom: Spacing.lg,

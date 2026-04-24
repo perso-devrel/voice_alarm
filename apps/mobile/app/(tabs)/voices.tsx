@@ -137,6 +137,8 @@ export default function VoicesScreen() {
           style={styles.profileCard}
           activeOpacity={0.7}
           onPress={() => router.push({ pathname: '/voice/[id]', params: { id: item.id } })}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.name} ${badge.label}`}
         >
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
@@ -154,6 +156,8 @@ export default function VoicesScreen() {
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => handleDelete(item.id, item.name)}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('common.delete')} ${item.name}`}
           >
             <Text style={styles.deleteText}>{t('common.delete')}</Text>
           </TouchableOpacity>
@@ -175,7 +179,12 @@ export default function VoicesScreen() {
       </View>
 
       <View style={styles.addSection}>
-        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/record')}>
+        <TouchableOpacity
+          style={styles.addCard}
+          onPress={() => router.push('/voice/record')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.record')}
+        >
           <Text style={styles.addEmoji}>🎙️</Text>
           <View>
             <Text style={styles.addTitle}>{t('voices.record')}</Text>
@@ -183,7 +192,12 @@ export default function VoicesScreen() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/upload')}>
+        <TouchableOpacity
+          style={styles.addCard}
+          onPress={() => router.push('/voice/upload')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.upload')}
+        >
           <Text style={styles.addEmoji}>📁</Text>
           <View>
             <Text style={styles.addTitle}>{t('voices.upload')}</Text>
@@ -194,6 +208,8 @@ export default function VoicesScreen() {
         <TouchableOpacity
           style={[styles.addCard, styles.addCardHighlight]}
           onPress={() => router.push('/voice/diarize')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.callRecord')}
         >
           <Text style={styles.addEmoji}>📞</Text>
           <View>
@@ -204,7 +220,12 @@ export default function VoicesScreen() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.addCard} onPress={() => router.push('/voice/picker')}>
+        <TouchableOpacity
+          style={styles.addCard}
+          onPress={() => router.push('/voice/picker')}
+          accessibilityRole="button"
+          accessibilityLabel={t('voices.speakerDetect', '화자 감지')}
+        >
           <Text style={styles.addEmoji}>🧩</Text>
           <View>
             <Text style={styles.addTitle}>화자 감지 (mock)</Text>

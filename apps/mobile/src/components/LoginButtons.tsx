@@ -80,13 +80,21 @@ export default function LoginButtons() {
         style={[styles.googleButton, loading && styles.disabledButton]}
         onPress={handleGoogleLogin}
         disabled={!request || loading}
+        accessibilityRole="button"
+        accessibilityLabel={t('login.google')}
       >
         <Text style={styles.googleIcon}>G</Text>
         <Text style={styles.googleText}>{t('login.google')}</Text>
       </TouchableOpacity>
 
       {isAppleAuthAvailable() && (
-        <TouchableOpacity style={[styles.appleButton, loading && styles.disabledButton]} onPress={handleAppleLogin} disabled={loading}>
+        <TouchableOpacity
+          style={[styles.appleButton, loading && styles.disabledButton]}
+          onPress={handleAppleLogin}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel={t('login.apple')}
+        >
           <Text style={styles.appleIcon}></Text>
           <Text style={styles.appleText}>{t('login.apple')}</Text>
         </TouchableOpacity>
