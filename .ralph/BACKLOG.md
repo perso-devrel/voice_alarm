@@ -259,6 +259,12 @@
 - [x] GET /dub/:id processing 분기 테스트 4건 (진행중 + 실패보고 + 폴링에러 + 다운로드불가)
 - [x] PersoClient mock 재작성 (arrow→function, ENV 바인딩)
 
+## P10 — 모바일 유틸 테스트 커버리지 확장 ✅ (2026-04-24)
+
+- [x] `formatLastSeen.test.ts` 신규 — 15 tests (null/미래/justNow/minutes/hours/days/longAgo 경계)
+- [x] `offlineCache.test.ts` 신규 — 15 tests (alarms/messages/library/voices 캐시 CRUD + 격리 + 덮어쓰기)
+- [x] 모바일 전체 168/168 통과, 백엔드 553/553 통과
+
 ## 자가 생성 가능 풀 (BACKLOG 고갈 시)
 
 - 모바일 E2E 테스트 (Detox 또는 Maestro)
