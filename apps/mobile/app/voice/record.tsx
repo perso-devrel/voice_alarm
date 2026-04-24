@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,15 @@ import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { requestMicPermission, startRecording, stopRecording } from '../../src/services/audio';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 
-const LEVEL_BAR_COUNT = 20;
+const _LEVEL_BAR_COUNT = 20;
 const LEVEL_HISTORY_SIZE = 20;
 
 function dbToNormalized(db: number): number {
@@ -33,6 +34,8 @@ export default function RecordScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const guideSentences = t('voiceRecord.sentences', { returnObjects: true }) as string[];
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -44,7 +47,7 @@ export default function RecordScreen() {
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useMemo(() => new Animated.Value(1), []);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const meteringRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -151,9 +154,9 @@ export default function RecordScreen() {
     <View style={styles.container}>
       {/* 가이드 문장 */}
       <View style={styles.guideSection}>
-        <Text style={styles.guideTitle}>{t('voiceRecord.guideTitle')}</Text>
+        <Text style={styles.guideTitle} accessibilityRole="header">{t('voiceRecord.guideTitle')}</Text>
         {guideSentences.map((sentence, i) => (
-          <View key={i} style={styles.guideSentence}>
+          <View key={i} style={styles.guideSentence} accessibilityLabel={`${i + 1}. ${sentence}`}>
             <Text style={styles.guideNumber}>{i + 1}</Text>
             <Text style={styles.guideText}>{sentence}</Text>
           </View>
@@ -163,12 +166,14 @@ export default function RecordScreen() {
 
       {/* 녹음 컨트롤 */}
       <View style={styles.recordSection}>
-        <Text style={styles.timer}>{formatTime(duration)}</Text>
+        <Text style={styles.timer} accessibilityLabel={t('voiceRecord.a11yDuration', { time: formatTime(duration) })} accessibilityRole="timer">{formatTime(duration)}</Text>
 
         <Animated.View style={[styles.recordButtonOuter, { transform: [{ scale: pulseAnim }] }]}>
           <TouchableOpacity
             style={[styles.recordButton, isRecording && styles.recordButtonActive]}
             onPress={isRecording ? handleStopRecording : handleStartRecording}
+            accessibilityLabel={isRecording ? t('voiceRecord.a11yStopRecording') : t('voiceRecord.a11yStartRecording')}
+            accessibilityRole="button"
           >
             {isRecording ? (
               <View style={styles.stopIcon} />
@@ -181,7 +186,7 @@ export default function RecordScreen() {
         </Animated.View>
 
         {isRecording && (
-          <View style={styles.levelContainer}>
+          <View style={styles.levelContainer} accessibilityLabel={t('voiceRecord.a11yAudioLevel')}>
             {levelHistory.map((level, i) => (
               <View
                 key={i}
@@ -191,10 +196,10 @@ export default function RecordScreen() {
                     height: Math.max(3, level * 40),
                     backgroundColor:
                       level > 0.7
-                        ? Colors.light.primary
+                        ? colors.primary
                         : level > 0.3
-                          ? Colors.light.primaryLight
-                          : Colors.light.border,
+                          ? colors.primaryLight
+                          : colors.border,
                   },
                 ]}
               />
@@ -219,13 +224,17 @@ export default function RecordScreen() {
             placeholder={t('voiceRecord.namePlaceholder')}
             value={name}
             onChangeText={setName}
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
+            accessibilityLabel={t('voiceRecord.namePlaceholder')}
           />
 
           <TouchableOpacity
             style={[styles.submitButton, cloneMutation.isPending && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={cloneMutation.isPending}
+            accessibilityLabel={t('voiceRecord.submit')}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: cloneMutation.isPending, busy: cloneMutation.isPending }}
           >
             {cloneMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
@@ -240,10 +249,10 @@ export default function RecordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
@@ -253,7 +262,7 @@ const styles = StyleSheet.create({
   },
   permissionText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -262,8 +271,8 @@ const styles = StyleSheet.create({
   },
   guideTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.light.text,
+    fontFamily: FontFamily.bold,
+    color: colors.text,
     marginBottom: Spacing.md,
   },
   guideSentence: {
@@ -275,23 +284,23 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.light.primaryLight,
-    color: Colors.light.primaryDark,
+    backgroundColor: colors.primaryLight,
+    color: colors.primaryDark,
     textAlign: 'center',
     lineHeight: 24,
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     marginRight: Spacing.sm,
   },
   guideText: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     lineHeight: 22,
   },
   guideTip: {
     fontSize: FontSize.sm,
-    color: Colors.light.primary,
+    color: colors.primary,
     marginTop: Spacing.md,
   },
   recordSection: {
@@ -300,8 +309,8 @@ const styles = StyleSheet.create({
   },
   timer: {
     fontSize: 48,
-    fontWeight: '200',
-    color: Colors.light.text,
+    fontFamily: FontFamily.regular,
+    color: colors.text,
     marginBottom: Spacing.lg,
   },
   recordButtonOuter: {
@@ -311,17 +320,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.light.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
   },
   recordButtonActive: {
-    backgroundColor: Colors.light.error,
+    backgroundColor: colors.error,
   },
   stopIcon: {
     width: 24,
@@ -349,30 +358,30 @@ const styles = StyleSheet.create({
   },
   recordHint: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
   },
   resultSection: {
     padding: Spacing.lg,
   },
   resultTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
-    color: Colors.light.success,
+    fontFamily: FontFamily.semibold,
+    color: colors.success,
     marginBottom: Spacing.md,
     textAlign: 'center',
   },
   nameInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     marginBottom: Spacing.md,
   },
   submitButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',
@@ -383,6 +392,6 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

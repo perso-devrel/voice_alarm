@@ -7,6 +7,7 @@ export interface Env {
   JWT_SECRET: string;
   PASSWORD_PEPPER: string;
   ENVIRONMENT: string;
+  VOICE_BUCKET?: R2Bucket;
 }
 
 export type AuthVariables = {

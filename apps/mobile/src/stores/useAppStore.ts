@@ -67,6 +67,7 @@ interface AppState {
 
   // Preferences
   defaultSnoozeMinutes: number;
+  darkMode: boolean;
 
   // Actions
   setAuth: (token: string, userId: string) => void;
@@ -79,6 +80,7 @@ interface AppState {
   completeOnboarding: () => void;
   incrementTtsCount: () => void;
   setDefaultSnoozeMinutes: (minutes: number) => void;
+  setDarkMode: (enabled: boolean) => void;
   loadPersistedState: () => Promise<void>;
 }
 
@@ -94,6 +96,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
   hasCompletedOnboarding: false,
   stateLoaded: false,
   defaultSnoozeMinutes: 5,
+  darkMode: false,
 
   setAuth: async (token, userId) => {
     await AsyncStorage.setItem('auth_token', token);
@@ -133,11 +136,17 @@ export const useAppStore = create<AppState>((set, _get) => ({
     set({ defaultSnoozeMinutes: minutes });
   },
 
+  setDarkMode: async (enabled) => {
+    await AsyncStorage.setItem('dark_mode', enabled ? 'true' : 'false');
+    set({ darkMode: enabled });
+  },
+
   loadPersistedState: async () => {
     const token = await AsyncStorage.getItem('auth_token');
     const userId = await AsyncStorage.getItem('user_id');
     const onboarding = await AsyncStorage.getItem('onboarding_complete');
     const snooze = await AsyncStorage.getItem('default_snooze_minutes');
+    const dark = await AsyncStorage.getItem('dark_mode');
 
     set({
       firebaseToken: token,
@@ -145,6 +154,7 @@ export const useAppStore = create<AppState>((set, _get) => ({
       isAuthenticated: !!token,
       hasCompletedOnboarding: onboarding === 'true',
       defaultSnoozeMinutes: snooze ? parseInt(snooze, 10) : 5,
+      darkMode: dark === 'true',
       stateLoaded: true,
     });
   },

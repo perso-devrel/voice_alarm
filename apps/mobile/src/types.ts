@@ -23,6 +23,7 @@ export interface Message {
 }
 
 export type AlarmMode = 'tts' | 'sound-only';
+export type VibrationPattern = 'default' | 'strong' | 'none';
 
 export interface Alarm {
   id: string;
@@ -37,6 +38,7 @@ export interface Alarm {
   created_at: string;
   updated_at: string;
   mode?: AlarmMode;
+  vibration_pattern?: VibrationPattern;
   voice_profile_id?: string | null;
   speaker_id?: string | null;
   message_text?: string;
@@ -58,6 +60,7 @@ export interface Friend {
   friend_email?: string;
   friend_name?: string;
   friend_picture?: string;
+  friend_last_active_at?: string;
 }
 
 export interface PendingFriendRequest {

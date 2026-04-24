@@ -10,7 +10,6 @@
 graph TB
     subgraph Client
         Mobile["📱 Mobile App<br/>React Native + Expo"]
-        Web["🌐 Web Dashboard<br/>React + Vite + Tailwind"]
     end
 
     subgraph Backend
@@ -33,7 +32,6 @@ graph TB
     end
 
     Mobile --> API
-    Web --> API
     API --> DB
     API --> Voice
     Cron --> API
@@ -42,7 +40,6 @@ graph TB
     API -.-> PG
     Cron -.-> FCM
     Mobile --> UI
-    Web --> UI
     API --> Shared
 ```
 
@@ -54,7 +51,6 @@ voice_alarm/
 │   └── mobile/        React Native (Expo) 앱
 ├── packages/
 │   ├── backend/       Cloudflare Workers + Hono API
-│   ├── web/           React + Vite + Tailwind 웹 대시보드
 │   ├── shared/        공용 타입 + zod 스키마
 │   ├── voice/         음성 어댑터 (VoiceProvider + Mock)
 │   └── ui/            디자인 토큰 + 접근성 유틸
@@ -66,7 +62,6 @@ voice_alarm/
 | 영역 | 기술 |
 |------|------|
 | 모바일 | React Native, Expo, expo-router |
-| 웹 | React, TypeScript, Vite, Tailwind CSS |
 | 백엔드 | Cloudflare Workers, Hono, Turso (LibSQL) |
 | 음성 AI | Perso.ai (1차), ElevenLabs (보조) |
 | 인증 | Google OAuth, Apple Sign-In |
@@ -100,9 +95,6 @@ npm install
 # 백엔드 (Wrangler dev server, localhost:8787)
 npm run backend
 
-# 웹 대시보드
-npm run web
-
 # 모바일 앱 (Expo)
 npm run app
 ```
@@ -111,14 +103,7 @@ npm run app
 
 ```bash
 cd packages/backend && npx tsc --noEmit
-cd packages/web && npx tsc --noEmit
 cd apps/mobile && npx tsc --noEmit
-```
-
-### 웹 빌드
-
-```bash
-cd packages/web && npm run build
 ```
 
 ## 배포
@@ -128,7 +113,6 @@ GitHub Actions가 `develop` / `main` 브랜치 push 시 자동 배포한다.
 | 대상 | 트리거 경로 | 배포 위치 |
 |------|-----------|----------|
 | 백엔드 | `packages/backend/**` | Cloudflare Workers |
-| 웹 | `packages/web/**` | Cloudflare Pages |
 | CI (typecheck) | 전체 | ubuntu-latest matrix |
 
 배포 후 DB 초기화가 필요하면 `GET /api/init-db` 를 호출한다.
@@ -136,7 +120,6 @@ GitHub Actions가 `develop` / `main` 브랜치 push 시 자동 배포한다.
 ### 배포 URL
 
 - 백엔드 API: `https://voice-alarm-api.voicealarm.workers.dev`
-- 웹 대시보드: 미배포 (Cloudflare Pages)
 - 모바일 앱: 미배포 (EAS Build)
 
 ## API 엔드포인트

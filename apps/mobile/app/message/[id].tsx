@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getMessages } from '../../src/services/api';
 import { playAudio, isAudioCached, getLocalAudioPath } from '../../src/services/audio';
 import { useAppStore } from '../../src/stores/useAppStore';
@@ -16,6 +17,8 @@ export default function MessageDetailScreen() {
   const router = useRouter();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [currentSound, setCurrentSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [cached, setCached] = useState<boolean | null>(null);
@@ -135,10 +138,10 @@ export default function MessageDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -152,9 +155,9 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
-    color: Colors.light.primary,
-    backgroundColor: Colors.light.primaryLight,
+    fontFamily: FontFamily.semibold,
+    color: colors.primary,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: BorderRadius.sm,
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
   },
   voiceBadge: {
     flexDirection: 'row',
@@ -174,22 +177,22 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.light.primaryLight,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   voiceAvatarText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.light.primaryDark,
+    fontFamily: FontFamily.bold,
+    color: colors.primaryDark,
   },
   voiceName: {
     fontSize: FontSize.md,
-    fontWeight: '600',
-    color: Colors.light.primary,
+    fontFamily: FontFamily.semibold,
+    color: colors.primary,
   },
   textBox: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
@@ -197,14 +200,14 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: FontSize.lg,
-    color: Colors.light.text,
+    color: colors.text,
     lineHeight: 28,
   },
   actions: {
     gap: Spacing.sm,
   },
   playButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
@@ -212,33 +215,33 @@ const styles = StyleSheet.create({
   playButtonText: {
     color: '#fff',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   alarmButton: {
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.light.primary,
+    borderColor: colors.primary,
   },
   alarmButtonText: {
-    color: Colors.light.primary,
+    color: colors.primary,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   translateButton: {
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.light.textTertiary,
+    borderColor: colors.textTertiary,
   },
   translateButtonText: {
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   giftButton: {
     paddingVertical: Spacing.md,
@@ -246,9 +249,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   giftButtonText: {
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontSize: FontSize.md,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   empty: {
     flex: 1,
@@ -257,6 +260,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
   },
 });

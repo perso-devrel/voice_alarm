@@ -277,6 +277,7 @@ export async function createAlarm(params: {
   snooze_minutes?: number;
   target_user_id?: string;
   mode?: 'tts' | 'sound-only';
+  vibration_pattern?: 'default' | 'strong' | 'none';
   voice_profile_id?: string;
   speaker_id?: string;
 }) {
@@ -293,6 +294,7 @@ export async function updateAlarm(
     snooze_minutes?: number;
     message_id?: string;
     mode?: 'tts' | 'sound-only';
+    vibration_pattern?: 'default' | 'strong' | 'none';
     voice_profile_id?: string | null;
     speaker_id?: string | null;
   },
@@ -531,6 +533,33 @@ export interface FamilyAlarmCreateResponse {
   message: { id: string; text: string; category: string };
 }
 
+// ===== Family Invites API =====
+
+export interface FamilyInvite {
+  id: string;
+  plan_group_id: string;
+  code: string;
+  status: 'pending' | 'used' | 'expired' | 'revoked';
+  created_at: string;
+  expires_at: string;
+  deep_link: string;
+  web_url: string;
+}
+
+export async function createFamilyInvite() {
+  const data = await post<{ invite: FamilyInvite }>('/family/invites', {});
+  return data.invite;
+}
+
+export async function getFamilyInvites() {
+  const data = await get<{ invites: FamilyInvite[] }>('/family/invites');
+  return data.invites;
+}
+
+export async function revokeFamilyInvite(code: string) {
+  return post<{ success: boolean }>(`/family/invites/${code}/revoke`, {});
+}
+
 // ===== Character API =====
 
 export type CharacterStage = 'seed' | 'sprout' | 'tree' | 'bloom';
@@ -540,7 +569,10 @@ export type XpEvent =
   | 'alarm_snoozed'
   | 'alarm_dismissed'
   | 'family_alarm_received'
-  | 'friend_invited';
+  | 'friend_invited'
+  | 'streak_bonus_7'
+  | 'streak_bonus_30'
+  | 'streak_bonus_90';
 
 export interface CharacterPayload {
   id: string;
@@ -563,9 +595,30 @@ export interface CharacterProgress {
   progress_ratio: number;
 }
 
+export interface CharacterStreak {
+  current: number;
+  longest: number;
+  last_wakeup_date: string | null;
+}
+
+export interface CharacterStats {
+  diligence: number;
+  health: number;
+  consistency: number;
+}
+
+export interface StreakAchievement {
+  milestone: number;
+  bonus_xp: number;
+  achieved_at: string;
+}
+
 export interface CharacterResponse {
   character: CharacterPayload;
   progress: CharacterProgress;
+  streak: CharacterStreak;
+  stats: CharacterStats;
+  achievements: StreakAchievement[];
 }
 
 export interface CharacterGrantResponse extends CharacterResponse {
@@ -576,6 +629,7 @@ export interface CharacterGrantResponse extends CharacterResponse {
     capped: boolean;
     remaining_cap: number;
     duplicated: boolean;
+    milestone_grants?: Array<{ event: XpEvent; xp: number }>;
   };
 }
 
@@ -586,6 +640,7 @@ export async function getCharacterMe(): Promise<CharacterResponse> {
 export async function grantCharacterXp(payload: {
   event: XpEvent;
   client_nonce?: string;
+  local_date?: string;
 }): Promise<CharacterGrantResponse> {
   return post<CharacterGrantResponse>('/characters/xp', payload);
 }
@@ -598,4 +653,14 @@ export async function getFamilyGroupCurrent() {
 
 export async function createFamilyAlarmText(payload: FamilyAlarmCreatePayload) {
   return post<FamilyAlarmCreateResponse>('/family/alarms', payload);
+}
+
+// ===== Push Token API =====
+
+export async function registerPushToken(token: string, platform: 'ios' | 'android' | 'web') {
+  return post<{ success: boolean }>('/push/token', { token, platform });
+}
+
+export async function unregisterPushToken(token: string) {
+  return request<{ success: boolean }>({ method: 'DELETE', path: '/push/token', body: { token } });
 }

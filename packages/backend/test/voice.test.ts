@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import type { AppEnv } from '../src/types';
-import { createMockDB, fakeAuthMiddleware, jsonReq, ID } from './helpers';
+import { createMockDB, fakeAuthMiddleware, jsonReq } from './helpers';
 import { resetSharedInMemoryVoiceStorage } from '@voice-alarm/voice';
 
 const V1 = '40000000-0000-4000-8000-000000000001';
