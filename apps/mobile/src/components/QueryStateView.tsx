@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, FontSize, BorderRadius } from '../constants/theme';
+import { Colors, Spacing, FontSize, BorderRadius, FontFamily } from '../constants/theme';
 
 export function LoadingView() {
   return (
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.lg,
     color: Colors.light.text,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     textAlign: 'center',
   },
   subtitle: {
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
 });

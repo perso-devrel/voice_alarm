@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { Colors, FontSize, Spacing } from '../constants/theme';
+import { Colors, FontSize, Spacing, FontFamily } from '../constants/theme';
 
 export function OfflineBanner() {
   const isConnected = useNetworkStatus();
@@ -26,6 +26,6 @@ const styles = StyleSheet.create({
   text: {
     color: '#FFFFFF',
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

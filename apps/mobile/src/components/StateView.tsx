@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { resolveStateView, type StateViewVariant } from '../lib/stateView';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../constants/theme';
 
 interface StateViewProps {
   variant: StateViewVariant;
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
     marginBottom: Spacing.xs,
     textAlign: 'center',
@@ -78,6 +78,6 @@ const styles = StyleSheet.create({
   actionText: {
     color: '#FFFFFF',
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

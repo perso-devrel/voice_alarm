@@ -1,8 +1,8 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P3 배포 설정 정비 완료
-- 현재 Phase: **P3 완료 — P4/P5 대기**
+- 마지막 루프: 2026-04-24 — P0 Phase 1-B-2 fontWeight→fontFamily 마이그레이션 Batch 1 완료
+- 현재 Phase: **P0 Phase 1-B-2 진행 중 (10/29 파일 완료, 19개 남음)**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
@@ -37,11 +37,12 @@
 
 ## 다음 루프 지시
 
-**P0 Phase 1-B-2 (fontWeight→fontFamily 마이그레이션)로 진행하라.**
-P3가 완료되었으므로, 낮은 우선순위로 미뤄둔 fontWeight→fontFamily 변환(28개 파일)을 진행.
-1. 각 파일의 `fontWeight: 'bold'/'600'/'500'` → `fontFamily: FontFamily.bold/semibold/medium` 변환
-2. 한 번에 최대 10개 파일만 변경 (메가 커밋 방지)
-3. typecheck 통과 확인
+**P0 Phase 1-B-2 Batch 2로 진행하라.**
+Batch 1(컴포넌트+소형 화면 10개)은 완료됨. 남은 19개 파일 중 다음 10개를 진행:
+1. `app/(tabs)/index.tsx`, `app/(tabs)/people.tsx`, `app/(tabs)/voices.tsx`, `app/(tabs)/alarms.tsx`, `app/(tabs)/settings.tsx`
+2. `app/family-alarm/create.tsx`, `app/library/index.tsx`, `app/player.tsx`, `app/friend/[id].tsx`, `app/message/[id].tsx`
+3. '200'/'300' fontWeight → FontFamily.regular로 대체 (Pretendard에 light/thin 없음)
+4. typecheck 통과 확인
 
 ## 알려진 이슈
 - [blocked] Perso API 404

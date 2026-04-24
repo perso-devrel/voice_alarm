@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { FamilyGroupMember } from '../services/api';
 import { buildMemberDisplayName } from '../lib/familyAlarmForm';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../constants/theme';
 
 interface Props {
   member: FamilyGroupMember;
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primaryDark,
   },
   info: {
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   email: {
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   roleBadgeText: {
     fontSize: FontSize.xs - 1,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.textSecondary,
   },
   alarmAllowed: {

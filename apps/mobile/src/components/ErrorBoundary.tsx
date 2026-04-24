@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../constants/theme';
 
 interface Props {
   children: ReactNode;
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
   },
@@ -91,6 +91,6 @@ const styles = StyleSheet.create({
   retryText: {
     color: '#FFFFFF',
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { useAppStore } from '../stores/useAppStore';
-import { BorderRadius, Colors, FontSize, Spacing } from '../constants/theme';
+import { BorderRadius, Colors, FontSize, Spacing, FontFamily } from '../constants/theme';
 import { validateEmailPasswordForm, type AuthMode } from '../lib/authFormValidation';
 
 export type Mode = AuthMode;
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   field: {
     gap: 4,
@@ -207,6 +207,6 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFFFFF',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

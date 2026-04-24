@@ -1,5 +1,5 @@
 import { Animated, Text, StyleSheet } from 'react-native';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../constants/theme';
 
 interface ToastProps {
   message: string | null;
@@ -30,6 +30,6 @@ const styles = StyleSheet.create({
   toastText: {
     color: '#fff',
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
 });

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../constants/theme';
 import {
   useGoogleAuth,
   signInWithApple,
@@ -113,12 +113,12 @@ const styles = StyleSheet.create({
   },
   googleIcon: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: '#4285F4',
   },
   googleText: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: '#3C4043',
   },
   appleButton: {
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   appleText: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: '#FFFFFF',
   },
   disabledButton: {

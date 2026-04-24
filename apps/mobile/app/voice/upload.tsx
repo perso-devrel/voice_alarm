@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   pickText: {
     fontSize: FontSize.md,
     color: Colors.light.textSecondary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   fileInfo: {
     backgroundColor: Colors.light.surfaceVariant,
@@ -183,6 +183,6 @@ const styles = StyleSheet.create({
   submitText: {
     color: '#FFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

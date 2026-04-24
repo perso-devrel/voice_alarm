@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../src/constants/theme';
 import { useAppStore } from '../src/stores/useAppStore';
 
 const { width } = Dimensions.get('window');
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.hero,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     textAlign: 'center',
     lineHeight: 42,
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   },
   nextText: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: '#FFF',
   },
 });
