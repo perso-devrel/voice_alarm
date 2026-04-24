@@ -121,22 +121,6 @@ export const FontFamily = {
   mono: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
 } as const;
 
-export function fontForWeight(weight?: string): string {
-  switch (weight) {
-    case '700':
-    case 'bold':
-      return FontFamily.bold;
-    case '600':
-    case 'semibold':
-      return FontFamily.semibold;
-    case '500':
-    case 'medium':
-      return FontFamily.medium;
-    default:
-      return FontFamily.regular;
-  }
-}
-
 export function getColors(mode: 'light' | 'dark') {
   return mode === 'dark' ? DarkColors : LightColors;
 }

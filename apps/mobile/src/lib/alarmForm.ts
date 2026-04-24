@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+
 export type AlarmMode = 'tts' | 'sound-only';
 export type VibrationPattern = 'default' | 'strong' | 'none';
 
@@ -29,21 +31,18 @@ export type ValidationResult =
   | { ok: true; payload: AlarmCreatePayload }
   | { ok: false; error: string };
 
-export function validateAlarmForm(input: AlarmFormInput): ValidationResult {
+export function validateAlarmForm(input: AlarmFormInput, t: TFunction): ValidationResult {
   if (!input.messageId) {
-    return { ok: false, error: '메시지를 선택해주세요.' };
+    return { ok: false, error: t('alarmValidation.messageRequired') };
   }
   if (!/^\d{2}:\d{2}$/.test(input.time)) {
-    return { ok: false, error: '시간 형식이 올바르지 않습니다.' };
+    return { ok: false, error: t('alarmValidation.invalidTime') };
   }
   if (input.mode !== 'tts' && input.mode !== 'sound-only') {
-    return { ok: false, error: '재생 모드가 올바르지 않습니다.' };
+    return { ok: false, error: t('alarmValidation.invalidMode') };
   }
   if (input.mode === 'sound-only' && !input.voiceProfileId) {
-    return {
-      ok: false,
-      error: '원본 재생 모드에서는 음성 프로필을 지정해야 합니다.',
-    };
+    return { ok: false, error: t('alarmValidation.voiceProfileRequired') };
   }
   return { ok: true, payload: buildCreatePayload(input) };
 }

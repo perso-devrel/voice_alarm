@@ -129,7 +129,7 @@ export default function EditAlarmScreen() {
       vibrationPattern,
       voiceProfileId,
       snoozeMinutes: snooze,
-    });
+    }, t);
     if (!validated.ok) {
       toast.show(validated.error);
       return;

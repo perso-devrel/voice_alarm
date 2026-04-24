@@ -135,7 +135,7 @@ export default function CreateAlarmScreen() {
       voiceProfileId,
       snoozeMinutes: snooze,
       targetUserId,
-    });
+    }, t);
     if (!validated.ok) {
       toast.show(validated.error);
       return;

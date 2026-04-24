@@ -7,7 +7,6 @@ export {
   FontSize,
   FontWeight,
   FontFamily,
-  fontForWeight,
   getColors,
 } from './tokens';
 

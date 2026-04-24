@@ -246,6 +246,12 @@
 ### Batch 3: R2 스토리지 테스트 ✅ (2026-04-24)
 - [x] `test/r2-storage.test.ts` — R2VoiceStorage 10 tests (store 4 + get 3 + delete 2 + name 1, R2Bucket mock)
 
+## P8 — 코드 정리 (알려진 이슈 해결) ✅ (2026-04-24)
+
+- [x] `alarmForm.ts` 검증 에러 메시지 i18n 전환 (TFunction 주입, 4키 ko/en 추가)
+- [x] `fontForWeight` 미사용 함수 삭제 (tokens.ts, index.ts, theme.ts)
+- [x] `alarmForm.test.ts` mock t 함수 + 검증 업데이트 (17/17 통과)
+
 ## 자가 생성 가능 풀 (BACKLOG 고갈 시)
 
 - 모바일 E2E 테스트 (Detox 또는 Maestro)
@@ -253,3 +259,4 @@
 - Sentry 에러 모니터링 연동
 - 앱 아이콘 + 스플래시 스크린 디자인
 - App Store / Google Play 스토어 등록 준비 (메타데이터, 스크린샷)
+- 문서화 (README, ARCHITECTURE, ADR)

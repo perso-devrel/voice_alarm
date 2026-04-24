@@ -285,6 +285,12 @@
     "vibrationStrong": "Strong",
     "vibrationNone": "None"
   },
+  "alarmValidation": {
+    "messageRequired": "Please select a message.",
+    "invalidTime": "Invalid time format.",
+    "invalidMode": "Invalid play mode.",
+    "voiceProfileRequired": "Voice profile is required for original play mode."
+  },
   "alarmEdit": {
     "title": "Edit Alarm",
     "save": "✓ Save Changes",

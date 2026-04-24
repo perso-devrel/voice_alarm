@@ -285,6 +285,12 @@
     "vibrationStrong": "강하게",
     "vibrationNone": "없음"
   },
+  "alarmValidation": {
+    "messageRequired": "메시지를 선택해주세요.",
+    "invalidTime": "시간 형식이 올바르지 않습니다.",
+    "invalidMode": "재생 모드가 올바르지 않습니다.",
+    "voiceProfileRequired": "원본 재생 모드에서는 음성 프로필을 지정해야 합니다."
+  },
   "alarmEdit": {
     "title": "알람 편집",
     "save": "✓ 변경사항 저장",
