@@ -80,13 +80,10 @@
   - `character_stats` 테이블 신규 (diligence, health, consistency)
   - `streak_achievements` 테이블 신규 (milestone: 7/30/90, achieved_at)
 
-### 백엔드: 스트릭 로직
-- [ ] `packages/backend/src/lib/streak.ts` 신규 — 연속 기상 판정 로직:
-  - `computeStreak(lastWakeupDate, todayDate, currentStreak)` → `{ newStreak, milestoneReached }`
-  - 어제=streak+1, 오늘=변경없음, 2일+=리셋(1)
-  - 7/30/90일 마일스톤 도달 시 streak_achievements 기록
-- [ ] `packages/backend/src/lib/xpRules.ts` — streak_bonus_7(100XP), streak_bonus_30(500XP), streak_bonus_90(2000XP) 이벤트 추가 (일일캡 면제)
-- [ ] `packages/backend/src/lib/character.ts` — 능력치 계산 함수 추가 (diligence=알람완료횟수, health=루틴완료, consistency=활동일수)
+### 백엔드: 스트릭 로직 ✅ (2026-04-24)
+- [x] `packages/backend/src/lib/streak.ts` 신규 — computeStreak + MILESTONE_BONUS_XP
+- [x] `packages/backend/src/lib/xpRules.ts` — streak_bonus_7/30/90 이벤트 + isCapExempt (일일캡 면제)
+- [x] `packages/backend/src/lib/character.ts` — CharacterStats 타입 + computeStats 함수
 
 ### 백엔드: API 확장
 - [ ] `packages/backend/src/routes/character.ts` — GET /characters/me 응답에 streak, stats, achievements 필드 추가
