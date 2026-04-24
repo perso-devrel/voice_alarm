@@ -11,7 +11,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../src/constants/theme';
+import { useTheme, type ThemeColors } from '../src/hooks/useTheme';
 import { playAudio, getLocalAudioPath } from '../src/services/audio';
 import { useAppStore } from '../src/stores/useAppStore';
 import { generateWaveform, formatTime } from '../src/utils/waveform';
@@ -34,6 +35,7 @@ function WaveformBar({
   isNearPlayhead: boolean;
   isPlaying: boolean;
 }) {
+  const { colors } = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -61,10 +63,10 @@ function WaveformBar({
   return (
     <Animated.View
       style={[
-        styles.waveformBar,
+        { width: WAVEFORM_BAR_WIDTH, borderRadius: WAVEFORM_BAR_WIDTH / 2 },
         {
           height: height * WAVEFORM_HEIGHT,
-          backgroundColor: played ? Colors.light.primary : Colors.light.primaryLight,
+          backgroundColor: played ? colors.primary : colors.primaryLight,
           transform: [{ scaleY: pulseAnim }],
         },
       ]}
@@ -82,6 +84,8 @@ export default function PlayerScreen() {
   }>();
 
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { setPlaying } = useAppStore();
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -179,7 +183,7 @@ export default function PlayerScreen() {
       evening: ['#FFE8E0', '#FFC4B3'],
       night: ['#E8E0FF', '#C4B3FF'],
     };
-    return map[params.category]?.[0] || Colors.light.background;
+    return map[params.category]?.[0] || colors.background;
   };
 
   const getEmoji = () => {
@@ -312,7 +316,7 @@ export default function PlayerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -330,7 +334,7 @@ const styles = StyleSheet.create({
   },
   closeText: {
     fontSize: 18,
-    color: Colors.light.text,
+    color: colors.text,
   },
   content: {
     flex: 1,
@@ -350,11 +354,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.md,
-    shadowColor: Colors.light.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -368,12 +372,12 @@ const styles = StyleSheet.create({
   voiceName: {
     fontSize: FontSize.xl,
     fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
+    color: colors.text,
   },
   messageText: {
     fontSize: FontSize.xxl,
     fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
+    color: colors.text,
     textAlign: 'center',
     lineHeight: 38,
     marginBottom: Spacing.xxl,
@@ -406,7 +410,7 @@ const styles = StyleSheet.create({
     top: -2,
     width: 2,
     height: WAVEFORM_HEIGHT + 4,
-    backgroundColor: Colors.light.primaryDark,
+    backgroundColor: colors.primaryDark,
     borderRadius: 1,
   },
   timeRow: {
@@ -416,7 +420,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: FontSize.xs,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontVariant: ['tabular-nums'],
   },
   playButton: {
@@ -437,7 +441,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   reactionButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
@@ -449,7 +453,7 @@ const styles = StyleSheet.create({
   },
   reactedText: {
     fontSize: FontSize.md,
-    color: Colors.light.primary,
+    color: colors.primary,
     fontFamily: FontFamily.semibold,
   },
 });

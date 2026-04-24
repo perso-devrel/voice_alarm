@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,44 +12,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../src/constants/theme';
+import { useTheme, type ThemeColors } from '../src/hooks/useTheme';
 import { useAppStore } from '../src/stores/useAppStore';
 import { getCharacterMe } from '../src/services/api';
 
 const { width } = Dimensions.get('window');
-
-const ONBOARDING_PAGES = [
-  {
-    emoji: '🎙️',
-    titleKey: 'onboarding.page1Title',
-    descKey: 'onboarding.page1Desc',
-    bgColor: Colors.light.background,
-  },
-  {
-    emoji: '💌',
-    titleKey: 'onboarding.page2Title',
-    descKey: 'onboarding.page2Desc',
-    bgColor: Colors.light.surfaceVariant,
-  },
-  {
-    emoji: '⏰',
-    titleKey: 'onboarding.page3Title',
-    descKey: 'onboarding.page3Desc',
-    bgColor: Colors.light.surfaceVariant,
-  },
-  {
-    emoji: '🌱',
-    titleKey: 'onboarding.page4Title',
-    descKey: 'onboarding.page4Desc',
-    bgColor: Colors.light.background,
-  },
-];
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
+  const ONBOARDING_PAGES = useMemo(() => [
+    { emoji: '🎙️', titleKey: 'onboarding.page1Title', descKey: 'onboarding.page1Desc', bgColor: colors.background },
+    { emoji: '💌', titleKey: 'onboarding.page2Title', descKey: 'onboarding.page2Desc', bgColor: colors.surfaceVariant },
+    { emoji: '⏰', titleKey: 'onboarding.page3Title', descKey: 'onboarding.page3Desc', bgColor: colors.surfaceVariant },
+    { emoji: '🌱', titleKey: 'onboarding.page4Title', descKey: 'onboarding.page4Desc', bgColor: colors.background },
+  ], [colors]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -138,10 +121,10 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   skipButton: {
     position: 'absolute',
@@ -157,7 +140,7 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.medium,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
   },
   page: {
     flex: 1,
@@ -172,7 +155,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.hero,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
     textAlign: 'center',
     lineHeight: 42,
     marginBottom: Spacing.lg,
@@ -180,7 +163,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.regular,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 26,
   },
@@ -194,10 +177,10 @@ const styles = StyleSheet.create({
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
   },
   nextButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     marginHorizontal: Spacing.xl,
     marginBottom: Spacing.lg,
     paddingVertical: Spacing.md,
@@ -205,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 52,
     justifyContent: 'center',
-    shadowColor: Colors.light.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -214,6 +197,6 @@ const styles = StyleSheet.create({
   nextText: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
-    color: Colors.light.surface,
+    color: colors.surface,
   },
 });

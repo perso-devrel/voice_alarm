@@ -12,7 +12,8 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
@@ -23,6 +24,8 @@ export default function UploadScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [name, setName] = useState('');
 
@@ -94,7 +97,7 @@ export default function UploadScreen() {
           placeholder={t('voiceUpload.namePlaceholder')}
           value={name}
           onChangeText={setName}
-          placeholderTextColor={Colors.light.textTertiary}
+          placeholderTextColor={colors.textTertiary}
         />
 
         {/* 제출 */}
@@ -118,27 +121,27 @@ export default function UploadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   content: {
     padding: Spacing.lg,
   },
   description: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
     marginBottom: Spacing.lg,
   },
   pickButton: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.xl,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     borderStyle: 'dashed',
     marginBottom: Spacing.md,
   },
@@ -148,31 +151,31 @@ const styles = StyleSheet.create({
   },
   pickText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontFamily: FontFamily.semibold,
   },
   fileInfo: {
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginBottom: Spacing.lg,
   },
   fileInfoText: {
     fontSize: FontSize.sm,
-    color: Colors.light.text,
+    color: colors.text,
   },
   nameInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     marginBottom: Spacing.md,
   },
   submitButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',

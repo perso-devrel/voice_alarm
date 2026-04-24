@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
-import { BorderRadius, Colors, FontFamily, FontSize, Spacing } from '../../src/constants/theme';
+import { BorderRadius, FontFamily, FontSize, Spacing } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import {
   listSpeakers,
   renameSpeaker,
@@ -26,6 +27,8 @@ import {
 
 export default function SpeakerPickerScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [state, dispatch] = useReducer(speakerPickerReducer, INITIAL_STATE);
 
   const pickFile = useCallback(async () => {
@@ -117,7 +120,7 @@ export default function SpeakerPickerScreen() {
 
       {(state.phase === 'uploading' || state.phase === 'separating') && (
         <View style={styles.statusRow}>
-          <ActivityIndicator color={Colors.light.primary} />
+          <ActivityIndicator color={colors.primary} />
           <Text style={styles.statusText}>
             {state.phase === 'uploading' ? '업로드 중…' : '화자 분리 중…'}
           </Text>
@@ -189,31 +192,31 @@ export default function SpeakerPickerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: Spacing.lg, paddingBottom: 120 },
   header: { marginBottom: Spacing.lg },
   title: {
     fontSize: FontSize.xxl,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.sm,
   },
-  desc: { fontSize: FontSize.md, color: Colors.light.textSecondary, lineHeight: 22 },
+  desc: { fontSize: FontSize.md, color: colors.textSecondary, lineHeight: 22 },
   pickButton: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.xl,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.light.primary,
+    borderColor: colors.primary,
     borderStyle: 'dashed',
     marginBottom: Spacing.lg,
   },
   pickEmoji: { fontSize: 48, marginBottom: Spacing.sm },
-  pickText: { fontSize: FontSize.md, color: Colors.light.primary, fontFamily: FontFamily.semibold },
+  pickText: { fontSize: FontSize.md, color: colors.primary, fontFamily: FontFamily.semibold },
   primaryButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',
@@ -226,16 +229,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.md,
   },
-  secondaryText: { color: Colors.light.textSecondary, fontSize: FontSize.md },
+  secondaryText: { color: colors.textSecondary, fontSize: FontSize.md },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.xl,
   },
-  statusText: { marginLeft: Spacing.sm, color: Colors.light.textSecondary },
+  statusText: { marginLeft: Spacing.sm, color: colors.textSecondary },
   errorCard: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderColor: '#F87171',
     borderWidth: 1,
     borderRadius: BorderRadius.md,
@@ -245,39 +248,39 @@ const styles = StyleSheet.create({
   errorText: { color: '#B91C1C', fontSize: FontSize.md },
   emptyText: {
     textAlign: 'center',
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     padding: Spacing.xl,
   },
   speakerCard: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  speakerCardSelected: { borderColor: Colors.light.primary },
+  speakerCardSelected: { borderColor: colors.primary },
   speakerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  labelText: { fontSize: FontSize.lg, fontFamily: FontFamily.semibold, color: Colors.light.text },
+  labelText: { fontSize: FontSize.lg, fontFamily: FontFamily.semibold, color: colors.text },
   labelInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     marginRight: Spacing.sm,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
   },
-  renameText: { color: Colors.light.primary, fontSize: FontSize.sm, fontFamily: FontFamily.semibold },
+  renameText: { color: colors.primary, fontSize: FontSize.sm, fontFamily: FontFamily.semibold },
   metaText: {
     marginTop: Spacing.sm,
     fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
   },
 });

@@ -24,7 +24,8 @@ import {
   validateFamilyAlarmForm,
   buildMemberDisplayName,
 } from '../../src/lib/familyAlarmForm';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { useToast } from '../../src/hooks/useToast';
@@ -36,6 +37,8 @@ export default function FamilyAlarmCreateScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const isConnected = useNetworkStatus();
 
@@ -97,7 +100,7 @@ export default function FamilyAlarmCreateScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
   }
@@ -151,7 +154,7 @@ export default function FamilyAlarmCreateScreen() {
           value={wakeAt}
           onChangeText={setWakeAt}
           placeholder="07:00"
-          placeholderTextColor={Colors.light.textTertiary}
+          placeholderTextColor={colors.textTertiary}
           keyboardType="numbers-and-punctuation"
           maxLength={5}
         />
@@ -162,7 +165,7 @@ export default function FamilyAlarmCreateScreen() {
           value={messageText}
           onChangeText={setMessageText}
           placeholder={t('familyAlarm.messagePlaceholder')}
-          placeholderTextColor={Colors.light.textTertiary}
+          placeholderTextColor={colors.textTertiary}
           multiline
           maxLength={500}
           textAlignVertical="top"
@@ -203,10 +206,10 @@ export default function FamilyAlarmCreateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   content: {
     padding: Spacing.lg,
@@ -215,7 +218,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.sm,
     marginTop: Spacing.lg,
   },
@@ -228,51 +231,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     minHeight: 44,
     justifyContent: 'center',
   },
   recipientChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   recipientText: {
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
   },
   recipientTextActive: {
     color: '#FFF',
     fontFamily: FontFamily.semibold,
   },
   timeInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     fontSize: FontSize.xl,
-    color: Colors.light.text,
+    color: colors.text,
     textAlign: 'center',
     minHeight: 56,
   },
   messageInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     minHeight: 100,
     lineHeight: 22,
   },
   charCount: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     textAlign: 'right',
     marginTop: Spacing.xs,
   },
@@ -285,19 +288,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     minHeight: 44,
     justifyContent: 'center',
   },
   dayChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayText: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontFamily: FontFamily.medium,
   },
   dayTextActive: {
@@ -306,11 +309,11 @@ const styles = StyleSheet.create({
   },
   repeatHint: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     marginTop: Spacing.xs,
   },
   submitBtn: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.md,
     alignItems: 'center',
@@ -338,7 +341,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 });

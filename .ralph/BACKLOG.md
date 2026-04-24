@@ -163,14 +163,15 @@
 - [ ] 커플 뷰(family 2인 그룹): 서로가 보이는 간결한 카드 레이아웃 (현재 border 강조 → 전용 2인 뷰로 개선)
 - [x] 모든 탭 화면에 `SafeAreaView` + 하단 패딩(100px) 일관 적용 검증 (alarms, voices 수정)
 - [x] 빈 상태 UI 일관성 점검 — voices/library에 CTA 추가, 홈 최근메시지 빈 상태 추가
-- [ ] 다크모드 전체 화면 검증 — DarkColors 토큰만 사용하고 있는지, 하드코딩 컬러 제거
+- [x] 다크모드 전체 화면 검증 — DarkColors 토큰만 사용하고 있는지, 하드코딩 컬러 제거
   - [x] 인프라: ThemeColorScheme 인터페이스, useTheme 훅, useAppStore darkMode persist, Settings 토글 연결
   - [x] root _layout.tsx + tabs _layout.tsx 테마 적용
   - [x] settings.tsx createStyles 패턴 전체 재작성
   - [x] Batch 1: 탭 화면 4개 (index, alarms, voices, people)
   - [x] Batch 2: 스택 화면 (character, library, alarm/create, alarm/edit)
   - [x] Batch 3: 컴포넌트 9개 (Toast, OfflineBanner, ErrorBoundary, FamilyMemberRow, EmailPasswordForm, PeopleSkeletonCard, StateView, QueryStateView, MiniWaveformPlayer) — LoginButtons는 브랜드 색상만 사용하여 스킵
-  - [ ] Batch 4: 나머지 스택 화면 (player, message, voice, dub, gift 등)
+  - [x] Batch 4-A: 큰 스택 화면 6개 (message/create, dub/translate, family-alarm/create, voice/diarize, voice/[id], gift/received)
+  - [x] Batch 4-B: 나머지 스택 화면 6개 (voice/record, voice/picker, message/[id], onboarding, voice/upload, player)
 - [ ] 카드 컴포넌트 스타일 일관성 — `BorderRadius.lg`, `shadow` 토큰, `Spacing.md` 간격 통일
 - [ ] 알람 시간 설정 UI 개선 — 시간 피커가 직관적인지, iOS/Android 모두 동작 확인
 - [ ] 홈 화면 레이아웃 정리 — 위젯 간 간격, 섹션 구분선, 시각적 위계 정비

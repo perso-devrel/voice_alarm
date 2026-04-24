@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { requestMicPermission, startRecording, stopRecording } from '../../src/services/audio';
 import { createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
@@ -33,6 +34,8 @@ export default function RecordScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const guideSentences = t('voiceRecord.sentences', { returnObjects: true }) as string[];
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -191,10 +194,10 @@ export default function RecordScreen() {
                     height: Math.max(3, level * 40),
                     backgroundColor:
                       level > 0.7
-                        ? Colors.light.primary
+                        ? colors.primary
                         : level > 0.3
-                          ? Colors.light.primaryLight
-                          : Colors.light.border,
+                          ? colors.primaryLight
+                          : colors.border,
                   },
                 ]}
               />
@@ -219,7 +222,7 @@ export default function RecordScreen() {
             placeholder={t('voiceRecord.namePlaceholder')}
             value={name}
             onChangeText={setName}
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
           />
 
           <TouchableOpacity
@@ -240,10 +243,10 @@ export default function RecordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
@@ -253,7 +256,7 @@ const styles = StyleSheet.create({
   },
   permissionText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
   guideTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.md,
   },
   guideSentence: {
@@ -275,8 +278,8 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.light.primaryLight,
-    color: Colors.light.primaryDark,
+    backgroundColor: colors.primaryLight,
+    color: colors.primaryDark,
     textAlign: 'center',
     lineHeight: 24,
     fontSize: FontSize.sm,
@@ -286,12 +289,12 @@ const styles = StyleSheet.create({
   guideText: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     lineHeight: 22,
   },
   guideTip: {
     fontSize: FontSize.sm,
-    color: Colors.light.primary,
+    color: colors.primary,
     marginTop: Spacing.md,
   },
   recordSection: {
@@ -301,7 +304,7 @@ const styles = StyleSheet.create({
   timer: {
     fontSize: 48,
     fontFamily: FontFamily.regular,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.lg,
   },
   recordButtonOuter: {
@@ -311,17 +314,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.light.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
   },
   recordButtonActive: {
-    backgroundColor: Colors.light.error,
+    backgroundColor: colors.error,
   },
   stopIcon: {
     width: 24,
@@ -349,7 +352,7 @@ const styles = StyleSheet.create({
   },
   recordHint: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
   },
   resultSection: {
     padding: Spacing.lg,
@@ -357,22 +360,22 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.semibold,
-    color: Colors.light.success,
+    color: colors.success,
     marginBottom: Spacing.md,
     textAlign: 'center',
   },
   nameInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     marginBottom: Spacing.md,
   },
   submitButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',

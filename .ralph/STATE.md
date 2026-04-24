@@ -1,8 +1,8 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P5 다크모드 Batch 3 완료 (컴포넌트 9개)
-- 현재 Phase: **P5 UI 폴리시 진행 중. 다음: 다크모드 Batch 4 (나머지 스택 화면)**
+- 마지막 루프: 2026-04-24 — P5 다크모드 Batch 4-B 완료 (나머지 스택 화면 6개, 93개 참조 제거). **다크모드 마이그레이션 전체 완료** (561개+ Colors.light 참조 제거, 0개 잔존)
+- 현재 Phase: **P5 UI 폴리시 진행 중. 다음: 커플 뷰 개선 / 카드 스타일 일관성 / 접근성 점검**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
@@ -34,25 +34,26 @@
 - **P5 다크모드 Batch 1**: 5개 탭 화면(index, alarms, voices, people, settings) 모두 createStyles(colors) 패턴 적용 완료. ~110개 Colors.light 참조 제거.
 - **P5 다크모드 Batch 2**: 4개 스택 화면(character, library, alarm/create, alarm/edit) createStyles(colors) 패턴 적용 완료. ~135개 Colors.light 참조 제거.
 - **P5 다크모드 Batch 3**: 9개 컴포넌트(Toast, OfflineBanner, ErrorBoundary, FamilyMemberRow, EmailPasswordForm, PeopleSkeletonCard, StateView, QueryStateView, MiniWaveformPlayer) createStyles(colors) 패턴 적용 완료. ~47개 Colors.light 참조 제거.
+- **P5 다크모드 Batch 4-A**: 6개 큰 스택 화면(message/create, dub/translate, family-alarm/create, voice/diarize, voice/[id], gift/received) createStyles(colors) 패턴 적용 완료. ~176개 Colors.light 참조 제거. gift/received의 SkeletonGiftCard에 dynStyles prop 패턴 적용.
+- **P5 다크모드 Batch 4-B**: 6개 나머지 스택 화면(voice/record, voice/picker, message/[id], onboarding, voice/upload, player) 완료. ~93개 참조 제거. onboarding PAGES→useMemo 이동, player WaveformBar useTheme+인라인 스타일.
 
 ## 남은 리팩토링 목표
 
-1. P5: 다크모드 나머지 스택 화면 마이그레이션 (Batch 4, 13개 파일, ~271개 참조)
-2. P5: 커플 뷰 개선 + 카드 스타일 일관성 + 알람 시간 설정 UI
+1. P5: 커플 뷰 개선 + 카드 스타일 일관성 + 알람 시간 설정 UI
+2. P5: 접근성 점검 (accessibilityLabel 누락, 이모지 라벨 병기)
+3. P5: 소규모 기능 구현 (스플래시 스크린, 진동 패턴, 앱 정보 등)
 
 ## GitHub 이슈 매핑
 - P0: #172, P1: #173, P2: #174, P3: #175, P4: #176
 
 ## 다음 루프 지시
 
-**P5 다크모드 Batch 4 (나머지 스택 화면)으로 진행하라.**
-- 13개 파일, ~271개 Colors.light 참조
-- 한 iteration에 처리하기에 많을 수 있음 — 6-7개씩 2배치로 나눌 것
-- Batch 4-A 대상 (큰 파일 우선): message/create (53), dub/translate (30), family-alarm/create (25), voice/diarize (23), voice/[id] (23), gift/received (22)
-- Batch 4-B 대상: voice/record (21), voice/picker (19), message/[id] (18), onboarding (12), voice/upload (12), player (11), friend/[id] (2)
+**P5 커플 뷰 개선 또는 카드 스타일 일관성 작업으로 진행하라.**
+- 다크모드 마이그레이션 완료. Colors.light 참조 0개.
+- 다음 우선순위: BACKLOG P5 "디자인 폴리시" 또는 "소규모 기능 구현" 항목 중 선택
 
 ## 알려진 이슈
 - [blocked] Perso API 404
 - [blocked] ElevenLabs 통합 테스트
 - FontFamily/fontForWeight 중복 (fontForWeight는 남아 있으나 현재 사용처 없음 — 추후 정리)
-- 다크모드 미적용 화면 13개 (나머지 스택 화면, Colors.light 직접 참조 ~271개)
+- 다크모드 마이그레이션 완료 (Colors.light 참조 0개, 전체 앱 createStyles(colors) 패턴 적용)

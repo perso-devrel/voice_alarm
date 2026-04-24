@@ -13,7 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getVoiceProfiles, getMessages, getAlarms, updateVoiceProfile } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { sanitizeVoiceName } from '../../src/lib/voiceName';
@@ -25,6 +26,8 @@ export default function VoiceDetailScreen() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   const { data: profiles } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -160,7 +163,7 @@ export default function VoiceDetailScreen() {
       )}
 
       {isLoading ? (
-        <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={[
@@ -219,22 +222,22 @@ export default function VoiceDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   profileHeader: {
     alignItems: 'center',
     paddingVertical: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomColor: colors.border,
   },
   avatarLarge: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: Colors.light.primaryLight,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.sm,
@@ -242,16 +245,16 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 32,
     fontFamily: FontFamily.bold,
-    color: Colors.light.primaryDark,
+    color: colors.primaryDark,
   },
   profileName: {
     fontSize: FontSize.xxl,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
   },
   profileDate: {
     fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     marginTop: Spacing.xs,
   },
   renameBtn: {
@@ -261,7 +264,7 @@ const styles = StyleSheet.create({
   },
   renameText: {
     fontSize: FontSize.sm,
-    color: Colors.light.primary,
+    color: colors.primary,
     fontFamily: FontFamily.semibold,
   },
   renameRow: {
@@ -274,17 +277,17 @@ const styles = StyleSheet.create({
   renameInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
   },
   renameSaveBtn: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.sm,
   },
   renameSaveText: {
@@ -297,7 +300,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   renameCancelText: {
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontSize: FontSize.sm,
   },
   statsRow: {
@@ -311,11 +314,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: FontSize.xxl,
     fontFamily: FontFamily.bold,
-    color: Colors.light.primary,
+    color: colors.primary,
   },
   statLabel: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   list: {
@@ -324,44 +327,44 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.sm,
     marginTop: Spacing.md,
   },
   itemCard: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
   },
   itemCategory: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   itemText: {
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     lineHeight: 22,
   },
   itemDate: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     marginTop: 4,
   },
   alarmTime: {
     fontSize: FontSize.xl,
     fontFamily: FontFamily.regular,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: 4,
   },
   inactive: {
-    color: Colors.light.error,
+    color: colors.error,
   },
   createMessageBtn: {
     marginTop: Spacing.md,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.lg,
@@ -377,6 +380,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
   },
 });

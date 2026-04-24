@@ -14,7 +14,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { PRESET_CATEGORIES } from '../../src/constants/presets';
 import { getVoiceProfiles, generateTTS, getFriendList, sendGift } from '../../src/services/api';
 import { saveAudioLocally, playAudio } from '../../src/services/audio';
@@ -43,6 +44,8 @@ export default function CreateMessageScreen() {
   const [giftNote, setGiftNote] = useState('');
   const [giftSending, setGiftSending] = useState(false);
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   const { data: voiceProfiles } = useQuery({
     queryKey: ['voiceProfiles'],
@@ -236,7 +239,7 @@ export default function CreateMessageScreen() {
             multiline
             numberOfLines={4}
             textAlignVertical="top"
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
           />
           <Text style={styles.charCount}>{customText.length}/200</Text>
         </View>
@@ -313,7 +316,7 @@ export default function CreateMessageScreen() {
             <TextInput
               style={styles.giftNoteInput}
               placeholder={t('messageCreate.giftNotePlaceholder')}
-              placeholderTextColor={Colors.light.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={giftNote}
               onChangeText={(v) => v.length <= 200 && setGiftNote(v)}
               maxLength={200}
@@ -370,10 +373,10 @@ export default function CreateMessageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   content: {
     padding: Spacing.lg,
@@ -382,18 +385,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSize.xl,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.md,
   },
   emptyVoice: {
-    backgroundColor: Colors.light.surfaceVariant,
+    backgroundColor: colors.surfaceVariant,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     alignItems: 'center',
     marginBottom: Spacing.lg,
   },
   emptyVoiceText: {
-    color: Colors.light.primary,
+    color: colors.primary,
     fontFamily: FontFamily.semibold,
   },
   voiceRow: {
@@ -401,7 +404,7 @@ const styles = StyleSheet.create({
   },
   voiceChip: {
     alignItems: 'center',
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginRight: Spacing.sm,
@@ -410,26 +413,26 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   voiceChipSelected: {
-    borderColor: Colors.light.primary,
-    backgroundColor: Colors.light.surfaceVariant,
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceVariant,
   },
   voiceChipAvatar: {
     fontSize: 24,
     fontFamily: FontFamily.bold,
-    color: Colors.light.primary,
+    color: colors.primary,
     marginBottom: 4,
   },
   voiceChipName: {
     fontSize: FontSize.sm,
-    color: Colors.light.text,
+    color: colors.text,
     fontFamily: FontFamily.semibold,
   },
   voiceChipNameSelected: {
-    color: Colors.light.primary,
+    color: colors.primary,
   },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: 4,
     marginBottom: Spacing.lg,
@@ -441,11 +444,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabActive: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
   },
   tabText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontFamily: FontFamily.semibold,
   },
   tabTextActive: {
@@ -457,17 +460,17 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     marginRight: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
   },
   categoryChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   categoryEmoji: {
     fontSize: 16,
@@ -475,7 +478,7 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontSize: FontSize.sm,
-    color: Colors.light.text,
+    color: colors.text,
     fontFamily: FontFamily.semibold,
   },
   categoryLabelActive: {
@@ -488,51 +491,51 @@ const styles = StyleSheet.create({
   presetItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
   },
   presetItemSelected: {
-    borderColor: Colors.light.primary,
-    backgroundColor: Colors.light.surfaceVariant,
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceVariant,
   },
   presetText: {
     flex: 1,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
   },
   presetTextSelected: {
-    color: Colors.light.primary,
+    color: colors.primary,
     fontFamily: FontFamily.semibold,
   },
   checkmark: {
     fontSize: FontSize.lg,
-    color: Colors.light.primary,
+    color: colors.primary,
     fontFamily: FontFamily.bold,
   },
   customSection: {
     marginBottom: Spacing.lg,
   },
   customInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     minHeight: 120,
   },
   charCount: {
     textAlign: 'right',
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     marginTop: Spacing.xs,
   },
   generateButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',
@@ -551,21 +554,21 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bold,
   },
   resultCard: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.light.success + '40',
+    borderColor: colors.success + '40',
   },
   resultTitle: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
-    color: Colors.light.success,
+    color: colors.success,
     marginBottom: Spacing.sm,
   },
   resultMessage: {
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.md,
   },
   resultActions: {
@@ -576,18 +579,18 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.light.primary,
+    borderColor: colors.primary,
     padding: Spacing.sm,
     alignItems: 'center',
   },
   previewText: {
-    color: Colors.light.primary,
+    color: colors.primary,
     fontFamily: FontFamily.semibold,
   },
   useButton: {
     flex: 1,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     padding: Spacing.sm,
     alignItems: 'center',
   },
@@ -598,13 +601,13 @@ const styles = StyleSheet.create({
   giftButton: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.light.accent,
+    borderColor: colors.accent,
     padding: Spacing.sm + 2,
     alignItems: 'center',
     marginTop: Spacing.sm,
   },
   giftText: {
-    color: Colors.light.accent,
+    color: colors.accent,
     fontFamily: FontFamily.semibold,
     fontSize: FontSize.md,
   },
@@ -614,7 +617,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     padding: Spacing.lg,
@@ -623,23 +626,23 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: FontSize.xl,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.xs,
   },
   modalSubtitle: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     marginBottom: Spacing.md,
   },
   giftNoteInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     fontSize: FontSize.md,
-    color: Colors.light.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     marginBottom: Spacing.md,
   },
   friendList: {
@@ -650,21 +653,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     marginBottom: Spacing.sm,
   },
   friendAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.light.primaryLight,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   friendAvatarText: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
-    color: Colors.light.primaryDark,
+    color: colors.primaryDark,
   },
   friendInfo: {
     marginLeft: Spacing.md,
@@ -673,11 +676,11 @@ const styles = StyleSheet.create({
   friendName: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
+    color: colors.text,
   },
   friendEmail: {
     fontSize: FontSize.sm,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
   },
   modalCancel: {
     alignItems: 'center',
@@ -686,7 +689,7 @@ const styles = StyleSheet.create({
   },
   modalCancelText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     fontFamily: FontFamily.semibold,
   },
 });

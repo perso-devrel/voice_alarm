@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { diarizeAudio, createVoiceClone } from '../../src/services/api';
 import { getApiErrorMessage } from '../../src/types';
 import type { Speaker } from '../../src/types';
@@ -25,6 +26,8 @@ export default function DiarizeScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [selectedSpeaker, setSelectedSpeaker] = useState<string | null>(null);
@@ -202,7 +205,7 @@ export default function DiarizeScreen() {
             placeholder={t('voiceDiarize.namePlaceholder')}
             value={name}
             onChangeText={setName}
-            placeholderTextColor={Colors.light.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             autoFocus
           />
 
@@ -228,10 +231,10 @@ export default function DiarizeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: colors.background,
   },
   content: {
     padding: Spacing.lg,
@@ -243,8 +246,8 @@ const styles = StyleSheet.create({
   stepBadge: {
     fontSize: FontSize.xs,
     fontFamily: FontFamily.bold,
-    color: Colors.light.primary,
-    backgroundColor: Colors.light.primaryLight + '40',
+    color: colors.primary,
+    backgroundColor: colors.primaryLight + '40',
     alignSelf: 'flex-start',
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
@@ -254,21 +257,21 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: FontSize.xxl,
     fontFamily: FontFamily.bold,
-    color: Colors.light.text,
+    color: colors.text,
     marginBottom: Spacing.sm,
   },
   stepDesc: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
   },
   pickButton: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.xl,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.light.primary,
+    borderColor: colors.primary,
     borderStyle: 'dashed',
     marginBottom: Spacing.lg,
   },
@@ -278,11 +281,11 @@ const styles = StyleSheet.create({
   },
   pickText: {
     fontSize: FontSize.md,
-    color: Colors.light.primary,
+    color: colors.primary,
     fontFamily: FontFamily.semibold,
   },
   analyzeButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',
@@ -299,7 +302,7 @@ const styles = StyleSheet.create({
   speakerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
@@ -307,13 +310,13 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   speakerCardSelected: {
-    borderColor: Colors.light.primary,
+    borderColor: colors.primary,
   },
   speakerAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.light.primaryLight,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
@@ -321,7 +324,7 @@ const styles = StyleSheet.create({
   speakerAvatarText: {
     fontSize: FontSize.xl,
     fontFamily: FontFamily.bold,
-    color: Colors.light.primaryDark,
+    color: colors.primaryDark,
   },
   speakerInfo: {
     flex: 1,
@@ -329,34 +332,34 @@ const styles = StyleSheet.create({
   speakerLabel: {
     fontSize: FontSize.lg,
     fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
+    color: colors.text,
   },
   speakerDuration: {
     fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   speakerSegments: {
     fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
+    color: colors.textTertiary,
     marginTop: 2,
   },
   speakerPlay: {
     fontSize: FontSize.sm,
-    color: Colors.light.primary,
+    color: colors.primary,
   },
   nameInput: {
-    backgroundColor: Colors.light.surface,
+    backgroundColor: colors.surface,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     fontSize: FontSize.lg,
-    color: Colors.light.text,
+    color: colors.text,
     borderWidth: 1,
-    borderColor: Colors.light.border,
+    borderColor: colors.border,
     marginBottom: Spacing.lg,
   },
   submitButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: colors.primary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',
@@ -376,6 +379,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
+    color: colors.textSecondary,
   },
 });
