@@ -169,7 +169,7 @@
   - [x] settings.tsx createStyles 패턴 전체 재작성
   - [x] Batch 1: 탭 화면 4개 (index, alarms, voices, people)
   - [x] Batch 2: 스택 화면 (character, library, alarm/create, alarm/edit)
-  - [ ] Batch 3: 컴포넌트 (Toast, OfflineBanner, ErrorBoundary, LoginButtons 등)
+  - [x] Batch 3: 컴포넌트 9개 (Toast, OfflineBanner, ErrorBoundary, FamilyMemberRow, EmailPasswordForm, PeopleSkeletonCard, StateView, QueryStateView, MiniWaveformPlayer) — LoginButtons는 브랜드 색상만 사용하여 스킵
   - [ ] Batch 4: 나머지 스택 화면 (player, message, voice, dub, gift 등)
 - [ ] 카드 컴포넌트 스타일 일관성 — `BorderRadius.lg`, `shadow` 토큰, `Spacing.md` 간격 통일
 - [ ] 알람 시간 설정 UI 개선 — 시간 피커가 직관적인지, iOS/Android 모두 동작 확인

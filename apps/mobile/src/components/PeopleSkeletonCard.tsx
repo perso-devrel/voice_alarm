@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../constants/theme';
+import { Spacing, BorderRadius } from '../constants/theme';
+import { useTheme, type ThemeColors } from '../hooks/useTheme';
 
 function usePulse() {
   const opacity = useRef(new Animated.Value(0.3)).current;
@@ -17,16 +18,16 @@ function usePulse() {
   return opacity;
 }
 
-function SkeletonRow() {
+function SkeletonRow({ dynStyles }: { dynStyles: ReturnType<typeof createStyles> }) {
   const opacity = usePulse();
   return (
-    <View style={styles.card}>
-      <Animated.View style={[styles.avatar, { opacity }]} />
-      <View style={styles.info}>
-        <Animated.View style={[styles.namePlaceholder, { opacity }]} />
-        <Animated.View style={[styles.emailPlaceholder, { opacity }]} />
+    <View style={dynStyles.card}>
+      <Animated.View style={[dynStyles.avatar, { opacity }]} />
+      <View style={dynStyles.info}>
+        <Animated.View style={[dynStyles.namePlaceholder, { opacity }]} />
+        <Animated.View style={[dynStyles.emailPlaceholder, { opacity }]} />
       </View>
-      <Animated.View style={[styles.actionPlaceholder, { opacity }]} />
+      <Animated.View style={[dynStyles.actionPlaceholder, { opacity }]} />
     </View>
   );
 }
@@ -36,55 +37,59 @@ interface Props {
 }
 
 export function PeopleSkeletonCard({ count = 3 }: Props) {
+  const { colors } = useTheme();
+  const dynStyles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <View style={styles.container}>
+    <View style={dynStyles.container}>
       {Array.from({ length: count }, (_, i) => (
-        <SkeletonRow key={i} />
+        <SkeletonRow key={i} dynStyles={dynStyles} />
       ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.surfaceVariant,
-    marginRight: Spacing.md,
-  },
-  info: {
-    flex: 1,
-    gap: Spacing.xs + 2,
-  },
-  namePlaceholder: {
-    width: 100,
-    height: 14,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-  emailPlaceholder: {
-    width: 150,
-    height: 12,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-  actionPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      paddingHorizontal: Spacing.lg,
+      paddingTop: Spacing.md,
+    },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    avatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.surfaceVariant,
+      marginRight: Spacing.md,
+    },
+    info: {
+      flex: 1,
+      gap: Spacing.xs + 2,
+    },
+    namePlaceholder: {
+      width: 100,
+      height: 14,
+      borderRadius: BorderRadius.sm,
+      backgroundColor: colors.surfaceVariant,
+    },
+    emailPlaceholder: {
+      width: 150,
+      height: 12,
+      borderRadius: BorderRadius.sm,
+      backgroundColor: colors.surfaceVariant,
+    },
+    actionPlaceholder: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceVariant,
+    },
+  });
+}
