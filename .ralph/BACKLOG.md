@@ -231,9 +231,23 @@
 - [x] `unknown` 타입 검토: 모두 입력 검증 경계면에서 올바르게 사용 중 — 변경 불필요
 - [x] `@ts-expect-error` 검토: test 파일 2건 — 의도적 잘못된 입력 테스트, 정상
 
+## P7 — 백엔드 테스트 커버리지 확장
+
+### Batch 1: 미테스트 모듈 커버리지 ✅ (2026-04-24)
+- [x] `test/push.test.ts` — push route 14 tests (POST/DELETE validation + 정상 케이스)
+- [x] `test/streak.test.ts` — streak lib 17 tests (computeStreak 엣지케이스 + MILESTONE_BONUS_XP)
+- [x] `test/fcm.test.ts` — fcm lib 11 tests (getTokensForUser + sendPushNotifications + sendAlarmPush)
+
+### Batch 2: 기존 실패 테스트 수정 ✅ (2026-04-24)
+- [x] `test/character.xp.test.ts` 4건 — baseCharacter에 streak 필드 추가 + mock 시퀀스 보강
+- [x] `test/voice.e2e.test.ts` 2건 — `getStorage` 방어 코드 (env optional chaining)
+- [x] `test/voice.test.ts` 1건 — 동일 수정으로 해결
+
+### Batch 3: R2 스토리지 테스트 ✅ (2026-04-24)
+- [x] `test/r2-storage.test.ts` — R2VoiceStorage 10 tests (store 4 + get 3 + delete 2 + name 1, R2Bucket mock)
+
 ## 자가 생성 가능 풀 (BACKLOG 고갈 시)
 
-- 백엔드 테스트 커버리지 확장 (character, family, billing, dub 라우트)
 - 모바일 E2E 테스트 (Detox 또는 Maestro)
 - 성능 프로파일링 + 최적화
 - Sentry 에러 모니터링 연동

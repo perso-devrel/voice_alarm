@@ -8,8 +8,8 @@ import { R2VoiceStorage } from '../lib/r2-storage';
 
 import { UUID_RE } from '../lib/validate';
 
-function getStorage(env: { VOICE_BUCKET?: R2Bucket }): VoiceStorage {
-  if (env.VOICE_BUCKET) return new R2VoiceStorage(env.VOICE_BUCKET);
+function getStorage(env?: { VOICE_BUCKET?: R2Bucket }): VoiceStorage {
+  if (env?.VOICE_BUCKET) return new R2VoiceStorage(env.VOICE_BUCKET);
   return getSharedInMemoryVoiceStorage();
 }
 
