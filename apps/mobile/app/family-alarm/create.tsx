@@ -108,8 +108,8 @@ export default function FamilyAlarmCreateScreen() {
   if (!familyData?.group) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyEmoji}>👨‍👩‍👧</Text>
+        <View style={styles.emptyContainer} accessibilityLabel={t('people.noGroup')}>
+          <Text style={styles.emptyEmoji} accessibilityElementsHidden>👨‍👩‍👧</Text>
           <Text style={styles.emptyText}>{t('people.noGroup')}</Text>
         </View>
       </SafeAreaView>
@@ -119,8 +119,8 @@ export default function FamilyAlarmCreateScreen() {
   if (allowedRecipients.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyEmoji}>🔇</Text>
+        <View style={styles.emptyContainer} accessibilityLabel={t('familyAlarm.noRecipients')}>
+          <Text style={styles.emptyEmoji} accessibilityElementsHidden>🔇</Text>
           <Text style={styles.emptyText}>{t('familyAlarm.noRecipients')}</Text>
         </View>
       </SafeAreaView>
@@ -130,7 +130,7 @@ export default function FamilyAlarmCreateScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionLabel}>{t('familyAlarm.recipient')}</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">{t('familyAlarm.recipient')}</Text>
         <View style={styles.recipientRow}>
           {allowedRecipients.map((m: FamilyGroupMember) => {
             const selected = selectedRecipient === m.user_id;
@@ -139,6 +139,9 @@ export default function FamilyAlarmCreateScreen() {
                 key={m.id}
                 style={[styles.recipientChip, selected && styles.recipientChipActive]}
                 onPress={() => setSelectedRecipient(m.user_id)}
+                accessibilityLabel={t('familyAlarm.a11yRecipient', { name: buildMemberDisplayName(m) })}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
               >
                 <Text style={[styles.recipientText, selected && styles.recipientTextActive]}>
                   {buildMemberDisplayName(m)}
@@ -148,7 +151,7 @@ export default function FamilyAlarmCreateScreen() {
           })}
         </View>
 
-        <Text style={styles.sectionLabel}>{t('familyAlarm.wakeTime')}</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">{t('familyAlarm.wakeTime')}</Text>
         <TextInput
           style={styles.timeInput}
           value={wakeAt}
@@ -157,9 +160,10 @@ export default function FamilyAlarmCreateScreen() {
           placeholderTextColor={colors.textTertiary}
           keyboardType="numbers-and-punctuation"
           maxLength={5}
+          accessibilityLabel={t('familyAlarm.wakeTime')}
         />
 
-        <Text style={styles.sectionLabel}>{t('familyAlarm.message')}</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">{t('familyAlarm.message')}</Text>
         <TextInput
           style={styles.messageInput}
           value={messageText}
@@ -169,10 +173,11 @@ export default function FamilyAlarmCreateScreen() {
           multiline
           maxLength={500}
           textAlignVertical="top"
+          accessibilityLabel={t('familyAlarm.messagePlaceholder')}
         />
         <Text style={styles.charCount}>{messageText.length}/500</Text>
 
-        <Text style={styles.sectionLabel}>{t('familyAlarm.repeat')}</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">{t('familyAlarm.repeat')}</Text>
         <View style={styles.daysRow}>
           {DAY_LABELS.map((label, idx) => {
             const active = repeatDays.includes(idx);
@@ -181,6 +186,9 @@ export default function FamilyAlarmCreateScreen() {
                 key={idx}
                 style={[styles.dayChip, active && styles.dayChipActive]}
                 onPress={() => toggleDay(idx)}
+                accessibilityLabel={t('familyAlarm.a11yDay', { day: label })}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: active }}
               >
                 <Text style={[styles.dayText, active && styles.dayTextActive]}>{label}</Text>
               </TouchableOpacity>
@@ -195,6 +203,9 @@ export default function FamilyAlarmCreateScreen() {
           style={[styles.submitBtn, createMutation.isPending && styles.submitBtnDisabled]}
           onPress={handleSubmit}
           disabled={createMutation.isPending}
+          accessibilityLabel={createMutation.isPending ? t('familyAlarm.sending') : t('familyAlarm.submit')}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: createMutation.isPending, busy: createMutation.isPending }}
         >
           <Text style={styles.submitBtnText}>
             {createMutation.isPending ? t('familyAlarm.sending') : t('familyAlarm.submit')}

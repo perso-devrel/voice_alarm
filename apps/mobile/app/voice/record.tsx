@@ -154,9 +154,9 @@ export default function RecordScreen() {
     <View style={styles.container}>
       {/* 가이드 문장 */}
       <View style={styles.guideSection}>
-        <Text style={styles.guideTitle}>{t('voiceRecord.guideTitle')}</Text>
+        <Text style={styles.guideTitle} accessibilityRole="header">{t('voiceRecord.guideTitle')}</Text>
         {guideSentences.map((sentence, i) => (
-          <View key={i} style={styles.guideSentence}>
+          <View key={i} style={styles.guideSentence} accessibilityLabel={`${i + 1}. ${sentence}`}>
             <Text style={styles.guideNumber}>{i + 1}</Text>
             <Text style={styles.guideText}>{sentence}</Text>
           </View>
@@ -166,12 +166,14 @@ export default function RecordScreen() {
 
       {/* 녹음 컨트롤 */}
       <View style={styles.recordSection}>
-        <Text style={styles.timer}>{formatTime(duration)}</Text>
+        <Text style={styles.timer} accessibilityLabel={t('voiceRecord.a11yDuration', { time: formatTime(duration) })} accessibilityRole="timer">{formatTime(duration)}</Text>
 
         <Animated.View style={[styles.recordButtonOuter, { transform: [{ scale: pulseAnim }] }]}>
           <TouchableOpacity
             style={[styles.recordButton, isRecording && styles.recordButtonActive]}
             onPress={isRecording ? handleStopRecording : handleStartRecording}
+            accessibilityLabel={isRecording ? t('voiceRecord.a11yStopRecording') : t('voiceRecord.a11yStartRecording')}
+            accessibilityRole="button"
           >
             {isRecording ? (
               <View style={styles.stopIcon} />
@@ -184,7 +186,7 @@ export default function RecordScreen() {
         </Animated.View>
 
         {isRecording && (
-          <View style={styles.levelContainer}>
+          <View style={styles.levelContainer} accessibilityLabel={t('voiceRecord.a11yAudioLevel')}>
             {levelHistory.map((level, i) => (
               <View
                 key={i}
@@ -223,12 +225,16 @@ export default function RecordScreen() {
             value={name}
             onChangeText={setName}
             placeholderTextColor={colors.textTertiary}
+            accessibilityLabel={t('voiceRecord.namePlaceholder')}
           />
 
           <TouchableOpacity
             style={[styles.submitButton, cloneMutation.isPending && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={cloneMutation.isPending}
+            accessibilityLabel={t('voiceRecord.submit')}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: cloneMutation.isPending, busy: cloneMutation.isPending }}
           >
             {cloneMutation.isPending ? (
               <ActivityIndicator color="#FFF" />

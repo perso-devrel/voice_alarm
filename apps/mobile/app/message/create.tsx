@@ -129,9 +129,9 @@ export default function CreateMessageScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* 음성 프로필 선택 */}
-      <Text style={styles.sectionTitle}>{t('messageCreate.whoseVoice')}</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">{t('messageCreate.whoseVoice')}</Text>
       {readyProfiles.length === 0 ? (
-        <TouchableOpacity style={styles.emptyVoice} onPress={() => router.push('/voice/record')}>
+        <TouchableOpacity style={styles.emptyVoice} onPress={() => router.push('/voice/record')} accessibilityRole="button" accessibilityLabel={t('messageCreate.emptyVoice')}>
           <Text style={styles.emptyVoiceText}>{t('messageCreate.emptyVoice')}</Text>
         </TouchableOpacity>
       ) : (
@@ -141,6 +141,9 @@ export default function CreateMessageScreen() {
               key={profile.id}
               style={[styles.voiceChip, selectedVoiceId === profile.id && styles.voiceChipSelected]}
               onPress={() => setSelectedVoiceId(profile.id)}
+              accessibilityLabel={t('messageCreate.a11yVoiceProfile', { name: profile.name })}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedVoiceId === profile.id }}
             >
               <Text style={styles.voiceChipAvatar}>{profile.name.charAt(0)}</Text>
               <Text
@@ -157,10 +160,13 @@ export default function CreateMessageScreen() {
       )}
 
       {/* 탭 선택 */}
-      <View style={styles.tabRow}>
+      <View style={styles.tabRow} accessibilityRole="tablist">
         <TouchableOpacity
           style={[styles.tab, tab === 'preset' && styles.tabActive]}
           onPress={() => setTab('preset')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: tab === 'preset' }}
+          accessibilityLabel={t('messageCreate.presetTab')}
         >
           <Text style={[styles.tabText, tab === 'preset' && styles.tabTextActive]}>
             {t('messageCreate.presetTab')}
@@ -169,6 +175,9 @@ export default function CreateMessageScreen() {
         <TouchableOpacity
           style={[styles.tab, tab === 'custom' && styles.tabActive]}
           onPress={() => setTab('custom')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: tab === 'custom' }}
+          accessibilityLabel={t('messageCreate.customTab')}
         >
           <Text style={[styles.tabText, tab === 'custom' && styles.tabTextActive]}>
             {t('messageCreate.customTab')}
@@ -192,6 +201,9 @@ export default function CreateMessageScreen() {
                   setSelectedCategory(cat.key);
                   setSelectedPreset(null);
                 }}
+                accessibilityLabel={t('messageCreate.a11yCategory', { label: cat.label })}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedCategory === cat.key }}
               >
                 <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
                 <Text
@@ -214,6 +226,9 @@ export default function CreateMessageScreen() {
                   key={i}
                   style={[styles.presetItem, selectedPreset === msg && styles.presetItemSelected]}
                   onPress={() => setSelectedPreset(msg)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: selectedPreset === msg }}
+                  accessibilityLabel={msg}
                 >
                   <Text
                     style={[styles.presetText, selectedPreset === msg && styles.presetTextSelected]}
@@ -240,6 +255,7 @@ export default function CreateMessageScreen() {
             numberOfLines={4}
             textAlignVertical="top"
             placeholderTextColor={colors.textTertiary}
+            accessibilityLabel={t('messageCreate.customPlaceholder')}
           />
           <Text style={styles.charCount}>{customText.length}/200</Text>
         </View>
@@ -253,6 +269,9 @@ export default function CreateMessageScreen() {
         ]}
         onPress={handleGenerate}
         disabled={!messageText || !selectedVoiceId || ttsMutation.isPending}
+        accessibilityLabel={ttsMutation.isPending ? t('messageCreate.generating') : t('messageCreate.generate')}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !messageText || !selectedVoiceId || ttsMutation.isPending, busy: ttsMutation.isPending }}
       >
         {ttsMutation.isPending ? (
           <View style={styles.loadingRow}>
@@ -270,7 +289,7 @@ export default function CreateMessageScreen() {
           <Text style={styles.resultTitle}>{t('messageCreate.resultTitle')}</Text>
           <Text style={styles.resultMessage}>"{messageText}"</Text>
           <View style={styles.resultActions}>
-            <TouchableOpacity style={styles.previewButton} onPress={handlePreview}>
+            <TouchableOpacity style={styles.previewButton} onPress={handlePreview} accessibilityRole="button" accessibilityLabel={currentSound ? t('messageCreate.stop') : t('messageCreate.preview')}>
               <Text style={styles.previewText}>
                 {currentSound ? t('messageCreate.stop') : t('messageCreate.preview')}
               </Text>
@@ -278,12 +297,16 @@ export default function CreateMessageScreen() {
             <TouchableOpacity
               style={styles.useButton}
               onPress={() => router.push(`/alarm/create?message_id=${generatedAudioId}`)}
+              accessibilityRole="button"
+              accessibilityLabel={t('messageCreate.useForAlarm')}
             >
               <Text style={styles.useText}>{t('messageCreate.useForAlarm')}</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity
             style={styles.giftButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('messageCreate.gift')}
             onPress={async () => {
               try {
                 const friends = await getFriendList();
@@ -320,6 +343,7 @@ export default function CreateMessageScreen() {
               value={giftNote}
               onChangeText={(v) => v.length <= 200 && setGiftNote(v)}
               maxLength={200}
+              accessibilityLabel={t('messageCreate.giftNotePlaceholder')}
             />
             <ScrollView style={styles.friendList}>
               {giftFriends.map((f) => (
@@ -327,6 +351,9 @@ export default function CreateMessageScreen() {
                   key={f.id}
                   style={styles.friendItem}
                   disabled={giftSending}
+                  accessibilityLabel={t('messageCreate.a11ySendGiftTo', { name: f.friend_name || f.friend_email })}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: giftSending }}
                   onPress={async () => {
                     setGiftSending(true);
                     try {
@@ -362,6 +389,8 @@ export default function CreateMessageScreen() {
             <TouchableOpacity
               style={styles.modalCancel}
               onPress={() => setGiftModalVisible(false)}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.cancel')}
             >
               <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>

@@ -306,7 +306,10 @@
     "giftSent": "Gift sent to {{name}}!",
     "giftSentTitle": "Sent",
     "giftError": "Failed to send gift.",
-    "friendListError": "Could not load friends list."
+    "friendListError": "Could not load friends list.",
+    "a11yVoiceProfile": "Voice profile: {{name}}",
+    "a11yCategory": "Category: {{label}}",
+    "a11ySendGiftTo": "Send gift to {{name}}"
   },
   "giftReceived": {
     "emptyText": "No gifts received",
@@ -339,6 +342,10 @@
     "tooShort": "Please record at least 10 seconds.",
     "tooShortTitle": "Recording too short",
     "permissionRequired": "Microphone permission is required.\nPlease allow microphone access in settings.",
+    "a11yStartRecording": "Start recording",
+    "a11yStopRecording": "Stop recording",
+    "a11yDuration": "Recording duration {{time}}",
+    "a11yAudioLevel": "Audio input level",
     "sentences": [
       "Hello, have a great day today.",
       "Don't forget to eat lunch, keep going this afternoon.",
@@ -428,7 +435,9 @@
     "successTitle": "Alarm sent!",
     "successDesc": "A warm alarm has been delivered to your family.",
     "createError": "Failed to send alarm.",
-    "noRecipients": "No family members have allowed alarms"
+    "noRecipients": "No family members have allowed alarms",
+    "a11yRecipient": "Recipient: {{name}}",
+    "a11yDay": "{{day}}"
   },
   "character": {
     "loadError": "Could not load character",
@@ -476,6 +485,9 @@
     "noAudio": "No audio file available to play",
     "sameLanguage": "Please select a different language",
     "jobs": "Translation history",
-    "noJobs": "No translation history yet"
+    "noJobs": "No translation history yet",
+    "a11ySourceLang": "Source language: {{name}}",
+    "a11yTargetLang": "Target language: {{name}}",
+    "a11yProgress": "Translating, {{progress}}% complete"
   }
 }

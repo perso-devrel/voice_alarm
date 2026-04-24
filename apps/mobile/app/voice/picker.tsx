@@ -94,7 +94,7 @@ export default function SpeakerPickerScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>화자 감지 (mock)</Text>
+        <Text style={styles.title} accessibilityRole="header">화자 감지 (mock)</Text>
         <Text style={styles.desc}>
           오디오를 업로드하면 모의 분리 알고리즘이 화자를 나눕니다. 감지된 화자 중에서 선택하고
           라벨을 편집할 수 있어요.
@@ -103,15 +103,15 @@ export default function SpeakerPickerScreen() {
 
       {state.phase === 'idle' && (
         <>
-          <TouchableOpacity style={styles.pickButton} onPress={pickFile}>
-            <Text style={styles.pickEmoji}>📁</Text>
+          <TouchableOpacity style={styles.pickButton} onPress={pickFile} accessibilityRole="button" accessibilityLabel={state.file ? state.file.name : '오디오 파일 선택'}>
+            <Text style={styles.pickEmoji} accessibilityElementsHidden>📁</Text>
             <Text style={styles.pickText}>
               {state.file ? state.file.name : '오디오 파일 선택'}
             </Text>
           </TouchableOpacity>
 
           {state.file && (
-            <TouchableOpacity style={styles.primaryButton} onPress={runFlow}>
+            <TouchableOpacity style={styles.primaryButton} onPress={runFlow} accessibilityRole="button" accessibilityLabel="업로드 후 화자 감지">
               <Text style={styles.primaryText}>업로드 후 화자 감지</Text>
             </TouchableOpacity>
           )}
@@ -119,7 +119,7 @@ export default function SpeakerPickerScreen() {
       )}
 
       {(state.phase === 'uploading' || state.phase === 'separating') && (
-        <View style={styles.statusRow}>
+        <View style={styles.statusRow} accessibilityLiveRegion="polite" accessibilityLabel={state.phase === 'uploading' ? '업로드 중' : '화자 분리 중'}>
           <ActivityIndicator color={colors.primary} />
           <Text style={styles.statusText}>
             {state.phase === 'uploading' ? '업로드 중…' : '화자 분리 중…'}
@@ -133,6 +133,8 @@ export default function SpeakerPickerScreen() {
           <TouchableOpacity
             style={styles.secondaryButton}
             onPress={() => dispatch({ type: 'RESET' })}
+            accessibilityRole="button"
+            accessibilityLabel="다시 시도"
           >
             <Text style={styles.secondaryText}>다시 시도</Text>
           </TouchableOpacity>
@@ -153,6 +155,9 @@ export default function SpeakerPickerScreen() {
                   key={sp.id}
                   style={[styles.speakerCard, isSelected && styles.speakerCardSelected]}
                   onPress={() => dispatch({ type: 'SELECT', speakerId: sp.id })}
+                  accessibilityLabel={`${sp.label}, ${durationSec.toFixed(1)}초, 신뢰도 ${(sp.confidence * 100).toFixed(0)}%`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
                 >
                   <View style={styles.speakerRow}>
                     {isEditing ? (
@@ -163,6 +168,7 @@ export default function SpeakerPickerScreen() {
                         onBlur={() => void commitEdit(sp)}
                         onSubmitEditing={() => void commitEdit(sp)}
                         style={styles.labelInput}
+                        accessibilityLabel={`${sp.label} 이름 편집`}
                       />
                     ) : (
                       <Text style={styles.labelText}>{sp.label}</Text>
@@ -171,6 +177,8 @@ export default function SpeakerPickerScreen() {
                       onPress={() =>
                         dispatch({ type: 'EDIT_BEGIN', speakerId: sp.id, label: sp.label })
                       }
+                      accessibilityRole="button"
+                      accessibilityLabel={`${sp.label} 이름 변경`}
                     >
                       <Text style={styles.renameText}>이름 변경</Text>
                     </TouchableOpacity>
@@ -183,7 +191,7 @@ export default function SpeakerPickerScreen() {
             })
           )}
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="닫기">
             <Text style={styles.secondaryText}>닫기</Text>
           </TouchableOpacity>
         </>

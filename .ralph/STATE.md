@@ -1,8 +1,8 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P5 알람 정렬 + 라이브러리 즐겨찾기 고정 + 접근성 Batch 1 (7파일)
-- 현재 Phase: **P5 접근성 Batch 2 진행 예정 (voice/record, message/create, dub/translate 등)**
+- 마지막 루프: 2026-04-24 — P5 접근성 Batch 2 완료 (7파일, ~62 라벨)
+- 현재 Phase: **P5 접근성 Batch 3 진행 예정 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id])**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
@@ -24,19 +24,19 @@
 - **P5 진동 패턴 선택**: DB 마이그레이션 15 + 백엔드 API + create/edit 화면 UI + expo-haptics 미리보기 + i18n
 - **P5 친구 마지막 접속 시간**: DB 마이그레이션 16 + last_active_at 갱신 + friend list 응답 + formatLastSeen 유틸 + People 탭 UI + i18n
 - **P5 알람 정렬 + 즐겨찾기 + 접근성 Batch 1**: 알람 시간순 정렬 + 라이브러리 즐겨찾기 상단 고정 + alarm/create·edit·library 접근성 ~46개 라벨
+- **P5 접근성 Batch 2**: voice/record, message/create, dub/translate, family-alarm/create, voice/picker — ~62개 라벨 + i18n 13키
 
 ## 남은 리팩토링 목표
 
-1. P5: 스택 화면 접근성 Batch 2 (voice/record, message/create, dub/translate, family-alarm/create, voice/picker)
-2. P5: 스택 화면 접근성 Batch 3 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id])
-3. P5: 이모지 단독 정보 전달 점검 (텍스트 라벨 병기)
+1. P5: 스택 화면 접근성 Batch 3 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id])
+2. P5: 이모지 단독 정보 전달 점검 (텍스트 라벨 병기)
 
 ## GitHub 이슈 매핑
 - P0: #172, P1: #173, P2: #174, P3: #175, P4: #176
 
 ## 다음 루프 지시
 
-**P5 스택 화면 접근성 Batch 2 (voice/record, message/create, dub/translate, family-alarm/create, voice/picker)로 진행하라.**
+**P5 스택 화면 접근성 Batch 3 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id])로 진행하라.**
 
 ## 알려진 이슈
 - [blocked] Perso API 404

@@ -181,6 +181,9 @@ export default function TranslateScreen() {
     <TouchableOpacity
       style={[styles.langItem, targetLanguage === item.code && styles.langItemActive]}
       onPress={() => setTargetLanguage(item.code)}
+      accessibilityLabel={t('dub.a11yTargetLang', { name: item.name })}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: targetLanguage === item.code }}
     >
       <Text style={[styles.langText, targetLanguage === item.code && styles.langTextActive]}>
         {item.name}
@@ -197,13 +200,13 @@ export default function TranslateScreen() {
         <Text style={styles.description}>{t('dub.description')}</Text>
 
         {message && (
-          <View style={styles.messagePreview}>
+          <View style={styles.messagePreview} accessibilityLabel={`${message.voice_name || ''}: ${message.text}`}>
             <Text style={styles.messagePreviewLabel}>{message.voice_name || ''}</Text>
             <Text style={styles.messagePreviewText}>"{message.text}"</Text>
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>{t('dub.sourceLanguage')}</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">{t('dub.sourceLanguage')}</Text>
         <View style={styles.sourceRow}>
           {[
             { code: 'ko', name: '한국어' },
@@ -216,6 +219,9 @@ export default function TranslateScreen() {
               style={[styles.sourceChip, sourceLanguage === lang.code && styles.sourceChipActive]}
               onPress={() => setSourceLanguage(lang.code)}
               disabled={isProcessing}
+              accessibilityLabel={t('dub.a11ySourceLang', { name: lang.name })}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: sourceLanguage === lang.code, disabled: isProcessing }}
             >
               <Text style={[styles.sourceChipText, sourceLanguage === lang.code && styles.sourceChipTextActive]}>
                 {lang.name}
@@ -224,7 +230,7 @@ export default function TranslateScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>{t('dub.targetLanguage')}</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">{t('dub.targetLanguage')}</Text>
         {languagesLoading ? (
           <ActivityIndicator style={styles.loader} color={colors.primary} />
         ) : (
@@ -239,7 +245,7 @@ export default function TranslateScreen() {
         )}
 
         {dubStatus === 'processing' && (
-          <View style={styles.progressSection}>
+          <View style={styles.progressSection} accessibilityLiveRegion="polite" accessibilityLabel={t('dub.a11yProgress', { progress: dubProgress })}>
             <ActivityIndicator color={colors.primary} />
             <Text style={styles.progressText}>{t('dub.progress', { progress: dubProgress })}</Text>
             {remainingMinutes != null && (
@@ -253,7 +259,7 @@ export default function TranslateScreen() {
             <Text style={styles.completeText}>{t('dub.complete')}</Text>
             {resultAudioSaved && (
               <>
-                <TouchableOpacity style={styles.playResultButton} onPress={handlePlayResult}>
+                <TouchableOpacity style={styles.playResultButton} onPress={handlePlayResult} accessibilityRole="button" accessibilityLabel={isPlaying ? t('messageDetail.stop') : t('dub.playResult')}>
                   <Text style={styles.playResultText}>
                     {isPlaying ? t('messageDetail.stop') : t('dub.playResult')}
                   </Text>
@@ -267,7 +273,7 @@ export default function TranslateScreen() {
         {dubStatus === 'failed' && (
           <View style={styles.resultSection}>
             <Text style={styles.failedText}>{t('dub.failed')}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={handleStart}>
+            <TouchableOpacity style={styles.retryButton} onPress={handleStart} accessibilityRole="button" accessibilityLabel={t('dub.retry')}>
               <Text style={styles.retryText}>{t('dub.retry')}</Text>
             </TouchableOpacity>
           </View>
@@ -280,6 +286,9 @@ export default function TranslateScreen() {
             style={[styles.startButton, (!targetLanguage || isProcessing) && styles.startButtonDisabled]}
             onPress={handleStart}
             disabled={!targetLanguage || isProcessing}
+            accessibilityLabel={dubMutation.isPending ? t('dub.processing') : t('dub.start')}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !targetLanguage || isProcessing, busy: dubMutation.isPending }}
           >
             {dubMutation.isPending ? (
               <ActivityIndicator color="#FFF" />
