@@ -164,6 +164,9 @@ export default function CreateAlarmScreen() {
                 setTargetUserId(null);
                 setTargetName(null);
               }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: !targetUserId }}
+              accessibilityLabel={t('alarmCreate.forMe')}
             >
               <Text style={[dynStyles.targetText, !targetUserId && dynStyles.targetTextActive]}>
                 {t('alarmCreate.forMe')}
@@ -180,6 +183,9 @@ export default function CreateAlarmScreen() {
                     setTargetUserId(isSelected ? null : friendId);
                     setTargetName(isSelected ? null : f.friend_name || f.friend_email || null);
                   }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={f.friend_name || f.friend_email?.split('@')[0] || '?'}
                 >
                   <Text style={[dynStyles.targetText, isSelected && dynStyles.targetTextActive]}>
                     {f.friend_name || f.friend_email?.split('@')[0] || '?'}
@@ -263,6 +269,9 @@ export default function CreateAlarmScreen() {
             key={index}
             style={[dynStyles.dayChip, repeatDays.includes(index) && dynStyles.dayChipActive]}
             onPress={() => toggleDay(index)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: repeatDays.includes(index) }}
+            accessibilityLabel={day}
           >
             <Text style={[dynStyles.dayText, repeatDays.includes(index) && dynStyles.dayTextActive]}>
               {day}
@@ -271,13 +280,13 @@ export default function CreateAlarmScreen() {
         ))}
       </View>
       <View style={dynStyles.quickDays}>
-        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('daily')}>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('daily')} accessibilityRole="button" accessibilityLabel={t('alarms.daily')}>
           <Text style={dynStyles.quickText}>{t('alarms.daily')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekday')}>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekday')} accessibilityRole="button" accessibilityLabel={t('alarms.weekday')}>
           <Text style={dynStyles.quickText}>{t('alarms.weekday')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekend')}>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekend')} accessibilityRole="button" accessibilityLabel={t('alarms.weekend')}>
           <Text style={dynStyles.quickText}>{t('alarms.weekend')}</Text>
         </TouchableOpacity>
       </View>
@@ -329,6 +338,9 @@ export default function CreateAlarmScreen() {
                     key={v.id}
                     style={[dynStyles.voiceChip, selected && dynStyles.voiceChipActive]}
                     onPress={() => setVoiceProfileId(selected ? null : v.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={v.name}
                   >
                     <Text style={[dynStyles.voiceText, selected && dynStyles.voiceTextActive]}>
                       {v.name}
@@ -354,6 +366,9 @@ export default function CreateAlarmScreen() {
             key={min}
             style={[dynStyles.snoozeChip, snooze === min && dynStyles.snoozeChipActive]}
             onPress={() => setSnooze(min)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: snooze === min }}
+            accessibilityLabel={t('alarmCreate.snoozeMin', { min })}
           >
             <Text style={[dynStyles.snoozeText, snooze === min && dynStyles.snoozeTextActive]}>
               {t('alarmCreate.snoozeMin', { min })}
@@ -393,6 +408,9 @@ export default function CreateAlarmScreen() {
                 selectedMessageId === msg.id && dynStyles.messageItemSelected,
               ]}
               onPress={() => setSelectedMessageId(msg.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedMessageId === msg.id }}
+              accessibilityLabel={`${msg.voice_name}: ${msg.text}`}
             >
               <View style={dynStyles.messageInfo}>
                 <Text style={dynStyles.messageVoice}>🗣️ {msg.voice_name}</Text>
@@ -413,6 +431,8 @@ export default function CreateAlarmScreen() {
             <TouchableOpacity
               style={dynStyles.emptyMessageBtn}
               onPress={() => router.push('/message/create')}
+              accessibilityRole="button"
+              accessibilityLabel={t('alarmCreate.goCreate')}
             >
               <Text style={dynStyles.emptyMessageBtnText}>{t('alarmCreate.goCreate')}</Text>
             </TouchableOpacity>
@@ -424,6 +444,9 @@ export default function CreateAlarmScreen() {
       <TouchableOpacity
         style={dynStyles.presetToggle}
         onPress={() => setShowPreset((v) => !v)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showPreset }}
+        accessibilityLabel={t('alarmCreate.quickCreate')}
       >
         <Text style={dynStyles.presetToggleText}>
           {showPreset ? '▲' : '▼'} {t('alarmCreate.quickCreate')}
@@ -438,6 +461,8 @@ export default function CreateAlarmScreen() {
             <TouchableOpacity
               style={dynStyles.emptyMessage}
               onPress={() => router.push('/voice/record')}
+              accessibilityRole="button"
+              accessibilityLabel={t('alarmCreate.emptyVoice')}
             >
               <Text style={dynStyles.emptyMessageText}>{t('alarmCreate.emptyVoice')}</Text>
             </TouchableOpacity>
@@ -448,6 +473,9 @@ export default function CreateAlarmScreen() {
                   key={v.id}
                   style={[dynStyles.targetChip, presetVoiceId === v.id && dynStyles.targetChipActive]}
                   onPress={() => setPresetVoiceId(v.id)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: presetVoiceId === v.id }}
+                  accessibilityLabel={v.name}
                 >
                   <Text style={[dynStyles.targetText, presetVoiceId === v.id && dynStyles.targetTextActive]}>
                     {v.name}
@@ -468,6 +496,9 @@ export default function CreateAlarmScreen() {
                   setPresetCategory(cat.key);
                   setPresetText(null);
                 }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: presetCategory === cat.key }}
+                accessibilityLabel={cat.label}
               >
                 <Text style={[dynStyles.targetText, presetCategory === cat.key && dynStyles.targetTextActive]}>
                   {cat.emoji} {cat.label}
@@ -483,6 +514,9 @@ export default function CreateAlarmScreen() {
                 key={i}
                 style={[dynStyles.messageItem, presetText === msg && dynStyles.messageItemSelected]}
                 onPress={() => setPresetText(msg)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: presetText === msg }}
+                accessibilityLabel={msg}
               >
                 <View style={dynStyles.messageInfo}>
                   <Text style={dynStyles.messageText} numberOfLines={2}>"{msg}"</Text>
@@ -500,6 +534,9 @@ export default function CreateAlarmScreen() {
             ]}
             onPress={handlePresetGenerate}
             disabled={!presetVoiceId || !presetText || ttsMutation.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={t('alarmCreate.generatePreset')}
+            accessibilityState={{ disabled: !presetVoiceId || !presetText || ttsMutation.isPending }}
           >
             {ttsMutation.isPending ? (
               <ActivityIndicator color="#FFF" size="small" />
@@ -518,6 +555,9 @@ export default function CreateAlarmScreen() {
         ]}
         onPress={handleSubmit}
         disabled={!selectedMessageId || soundOnlyInvalid || createMutation.isPending}
+        accessibilityRole="button"
+        accessibilityLabel={t('alarmCreate.submit')}
+        accessibilityState={{ disabled: !selectedMessageId || soundOnlyInvalid || createMutation.isPending }}
       >
         {createMutation.isPending ? (
           <ActivityIndicator color="#FFF" />

@@ -83,9 +83,17 @@ export default function LibraryScreen() {
   }, [items, filter]);
 
   const baseItems = items ?? (filter === 'all' ? cachedItems : null);
-  const displayItems = categoryFilter === 'all'
-    ? baseItems
-    : baseItems?.filter((item: LibraryItem) => item.category === categoryFilter) ?? null;
+  const displayItems = useMemo(() => {
+    const filtered = categoryFilter === 'all'
+      ? baseItems
+      : baseItems?.filter((item: LibraryItem) => item.category === categoryFilter) ?? null;
+    if (!filtered) return filtered;
+    return [...filtered].sort((a, b) => {
+      if (a.is_favorite && !b.is_favorite) return -1;
+      if (!a.is_favorite && b.is_favorite) return 1;
+      return new Date(b.received_at).getTime() - new Date(a.received_at).getTime();
+    });
+  }, [baseItems, categoryFilter]);
   const showingCached = !items && !!cachedItems && !isConnected && filter === 'all';
 
   const favoriteMutation = useMutation({
@@ -177,6 +185,8 @@ export default function LibraryScreen() {
           style={dynStyles.messageCard}
           onPress={() => router.push(`/message/${item.message_id}`)}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.voice_name}: ${item.text}`}
         >
           <View style={dynStyles.messageLeft}>
             <View style={dynStyles.avatarSmall}>
@@ -213,6 +223,8 @@ export default function LibraryScreen() {
             <TouchableOpacity
               onPress={() => favoriteMutation.mutate(item.id)}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={item.is_favorite ? t('library.removeFavorite') : t('library.addFavorite')}
             >
               <Text style={dynStyles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
             </TouchableOpacity>
@@ -228,6 +240,9 @@ export default function LibraryScreen() {
         <TouchableOpacity
           style={[dynStyles.filterChip, filter === 'all' && dynStyles.filterChipActive]}
           onPress={() => setFilter('all')}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: filter === 'all' }}
+          accessibilityLabel={t('library.all')}
         >
           <Text style={[dynStyles.filterText, filter === 'all' && dynStyles.filterTextActive]}>
             {t('library.all')}
@@ -236,6 +251,9 @@ export default function LibraryScreen() {
         <TouchableOpacity
           style={[dynStyles.filterChip, filter === 'favorite' && dynStyles.filterChipActive]}
           onPress={() => setFilter('favorite')}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: filter === 'favorite' }}
+          accessibilityLabel={t('library.favorites')}
         >
           <Text style={[dynStyles.filterText, filter === 'favorite' && dynStyles.filterTextActive]}>
             ❤️ {t('library.favorites')}
@@ -253,6 +271,9 @@ export default function LibraryScreen() {
           <TouchableOpacity
             style={[dynStyles.categoryChip, categoryFilter === cat.key && dynStyles.categoryChipActive]}
             onPress={() => setCategoryFilter(cat.key)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: categoryFilter === cat.key }}
+            accessibilityLabel={cat.key === 'all' ? t('library.all') : cat.key}
           >
             <Text style={dynStyles.categoryChipText}>
               {cat.emoji} {cat.key === 'all' ? t('library.all') : cat.key}

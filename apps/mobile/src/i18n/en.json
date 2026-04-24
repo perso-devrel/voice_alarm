@@ -74,7 +74,10 @@
     "weekday": "Weekdays",
     "weekend": "Weekends",
     "nextIn": "Next alarm in",
-    "searchPlaceholder": "Search by time, voice, message"
+    "searchPlaceholder": "Search by time, voice, message",
+    "countdownDaysHours": "{{days}}d {{hours}}h",
+    "countdownHoursMinutes": "{{hours}}h {{minutes}}m",
+    "countdownMinutes": "{{minutes}}m"
   },
   "voices": {
     "title": "Voice Profiles",
@@ -159,7 +162,9 @@
     "deleteTitle": "Delete message",
     "deleteConfirm": "Remove this message from your library?",
     "deleteError": "Failed to delete message.",
-    "createMessage": "Create message"
+    "createMessage": "Create message",
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites"
   },
   "settings": {
     "title": "Settings",

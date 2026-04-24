@@ -68,17 +68,30 @@ function getNextFireMs(alarm: Alarm): number | null {
   return null;
 }
 
-function formatCountdown(ms: number): string {
+function formatCountdown(ms: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
   const totalSec = Math.floor(ms / 1000);
   const hours = Math.floor(totalSec / 3600);
   const mins = Math.floor((totalSec % 3600) / 60);
   if (hours >= 24) {
     const days = Math.floor(hours / 24);
     const remHours = hours % 24;
-    return `${days}일 ${remHours}시간`;
+    return t('alarms.countdownDaysHours', { days, hours: remHours });
   }
-  if (hours > 0) return `${hours}시간 ${mins}분`;
-  return `${mins}분`;
+  if (hours > 0) return t('alarms.countdownHoursMinutes', { hours, minutes: mins });
+  return t('alarms.countdownMinutes', { minutes: mins });
+}
+
+function compareAlarms(a: Alarm, b: Alarm): number {
+  if (a.is_active && !b.is_active) return -1;
+  if (!a.is_active && b.is_active) return 1;
+  if (a.is_active && b.is_active) {
+    const aMs = getNextFireMs(a);
+    const bMs = getNextFireMs(b);
+    if (aMs !== null && bMs !== null) return aMs - bMs;
+    if (aMs !== null) return -1;
+    if (bMs !== null) return 1;
+  }
+  return a.time.localeCompare(b.time);
 }
 
 export default function AlarmsScreen() {
@@ -155,8 +168,8 @@ export default function AlarmsScreen() {
       const ms = getNextFireMs(a);
       if (ms !== null && ms < nearest) nearest = ms;
     }
-    setCountdownText(nearest < Infinity ? formatCountdown(nearest) : null);
-  }, [alarms, cachedAlarms]);
+    setCountdownText(nearest < Infinity ? formatCountdown(nearest, t) : null);
+  }, [alarms, cachedAlarms, t]);
 
   useEffect(() => {
     computeCountdown();
@@ -181,13 +194,15 @@ export default function AlarmsScreen() {
   const filteredAlarms = useMemo(() => {
     if (!displayAlarms) return displayAlarms;
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return displayAlarms;
-    return displayAlarms.filter((a) =>
-      a.time.includes(q) ||
-      (a.voice_name && a.voice_name.toLowerCase().includes(q)) ||
-      (a.message_text && a.message_text.toLowerCase().includes(q))
-    );
-  }, [displayAlarms, searchQuery]);
+    const filtered = q
+      ? displayAlarms.filter((a) =>
+          a.time.includes(q) ||
+          (a.voice_name && a.voice_name.toLowerCase().includes(q)) ||
+          (a.message_text && a.message_text.toLowerCase().includes(q))
+        )
+      : [...displayAlarms];
+    return filtered.sort(compareAlarms);
+  }, [displayAlarms, searchQuery, tick]);
 
   const resyncNotifications = async () => {
     const fresh = await queryClient.fetchQuery({ queryKey: ['alarms'], queryFn: getAlarms });
@@ -259,7 +274,7 @@ export default function AlarmsScreen() {
     const repeatDays = parseRepeatDays(item.repeat_days);
     void tick;
     const nextFireMs = getNextFireMs(item);
-    const perAlarmCountdown = nextFireMs !== null ? formatCountdown(nextFireMs) : null;
+    const perAlarmCountdown = nextFireMs !== null ? formatCountdown(nextFireMs, t) : null;
     return (
       <Swipeable
         renderRightActions={renderDeleteAction}

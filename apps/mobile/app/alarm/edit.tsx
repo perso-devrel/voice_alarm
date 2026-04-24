@@ -233,6 +233,9 @@ export default function EditAlarmScreen() {
             key={index}
             style={[dynStyles.dayChip, repeatDays.includes(index) && dynStyles.dayChipActive]}
             onPress={() => toggleDay(index)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: repeatDays.includes(index) }}
+            accessibilityLabel={day}
           >
             <Text style={[dynStyles.dayText, repeatDays.includes(index) && dynStyles.dayTextActive]}>
               {day}
@@ -241,13 +244,13 @@ export default function EditAlarmScreen() {
         ))}
       </View>
       <View style={dynStyles.quickDays}>
-        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('daily')}>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('daily')} accessibilityRole="button" accessibilityLabel={t('alarms.daily')}>
           <Text style={dynStyles.quickText}>{t('alarms.daily')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekday')}>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekday')} accessibilityRole="button" accessibilityLabel={t('alarms.weekday')}>
           <Text style={dynStyles.quickText}>{t('alarms.weekday')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekend')}>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekend')} accessibilityRole="button" accessibilityLabel={t('alarms.weekend')}>
           <Text style={dynStyles.quickText}>{t('alarms.weekend')}</Text>
         </TouchableOpacity>
       </View>
@@ -299,6 +302,9 @@ export default function EditAlarmScreen() {
                     key={v.id}
                     style={[dynStyles.voiceChip, selected && dynStyles.voiceChipActive]}
                     onPress={() => setVoiceProfileId(selected ? null : v.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={v.name}
                   >
                     <Text style={[dynStyles.voiceText, selected && dynStyles.voiceTextActive]}>
                       {v.name}
@@ -324,6 +330,9 @@ export default function EditAlarmScreen() {
             key={min}
             style={[dynStyles.snoozeChip, snooze === min && dynStyles.snoozeChipActive]}
             onPress={() => setSnooze(min)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: snooze === min }}
+            accessibilityLabel={t('alarmCreate.snoozeMin', { min })}
           >
             <Text style={[dynStyles.snoozeText, snooze === min && dynStyles.snoozeTextActive]}>
               {t('alarmCreate.snoozeMin', { min })}
@@ -363,6 +372,9 @@ export default function EditAlarmScreen() {
                 selectedMessageId === msg.id && dynStyles.messageItemSelected,
               ]}
               onPress={() => setSelectedMessageId(msg.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedMessageId === msg.id }}
+              accessibilityLabel={`${msg.voice_name}: ${msg.text}`}
             >
               <View style={dynStyles.messageInfo}>
                 <Text style={dynStyles.messageVoice}>🗣️ {msg.voice_name}</Text>
@@ -390,6 +402,9 @@ export default function EditAlarmScreen() {
         ]}
         onPress={handleSubmit}
         disabled={!selectedMessageId || soundOnlyInvalid || editMutation.isPending}
+        accessibilityRole="button"
+        accessibilityLabel={t('alarmEdit.save')}
+        accessibilityState={{ disabled: !selectedMessageId || soundOnlyInvalid || editMutation.isPending }}
       >
         {editMutation.isPending ? (
           <ActivityIndicator color="#FFF" />

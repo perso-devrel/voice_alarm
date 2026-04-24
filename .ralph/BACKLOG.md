@@ -180,14 +180,16 @@
 - [x] 앱 스플래시 스크린 설정 — `app.json`의 splash 설정, 코랄 배경 + 앱 로고 텍스트
 - [x] 알람 생성 시 진동 패턴 선택 (기본/강하게/없음) — `expo-haptics` 활용 (DB migration 15 + 백엔드 + 프론트 create/edit)
 - [x] 친구 프로필에 마지막 접속 시간 표시 ("방금 전", "1시간 전" 등) — DB migration 16 + formatLastSeen + People 탭 UI
-- [ ] 알람 목록 정렬 — 가장 이른 시간순 (현재 생성순이면 변경)
-- [ ] 메시지 라이브러리에서 즐겨찾기 상단 고정
+- [x] 알람 목록 정렬 — 가장 이른 시간순 (활성→비활성, 활성끼리 nextFireMs 오름차순 + formatCountdown i18n)
+- [x] 메시지 라이브러리에서 즐겨찾기 상단 고정 (is_favorite 기준 정렬, 이후 received_at 내림차순)
 - [x] 설정 화면에 "앱 정보" 섹션 (버전, 라이선스, 개인정보 처리방침 링크, 문의하기, 푸터)
 - [x] 초대 코드 공유 시 클립보드 복사 + "복사됨" 토스트 (P1 초대코드 UI에서 완료)
 
 ### 접근성 + 국제화 보강
 - [x] 탭 화면 접근성 일괄 추가 (alarms, voices, people, settings, LoginButtons — ~30개 라벨)
-- [ ] 스택 화면 접근성 추가 (alarm/create, voice/record 등 ~15개 파일)
+- [x] 스택 화면 접근성 Batch 1 (alarm/create ~25, alarm/edit ~15, library/index ~6 = ~46 라벨)
+- [ ] 스택 화면 접근성 Batch 2 (voice/record, message/create, dub/translate, family-alarm/create, voice/picker)
+- [ ] 스택 화면 접근성 Batch 3 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id])
 - [ ] 이모지가 단독으로 정보를 전달하는 곳에 텍스트 라벨 병기 확인
 - [ ] 한국어/영어 전환 시 레이아웃 깨짐 없는지 점검 (영어가 한국어보다 길어서 줄바꿈 발생 가능)
 
