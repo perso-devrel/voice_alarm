@@ -421,6 +421,13 @@ export const migrations: Migration[] = [
          CHECK(vibration_pattern IN ('default','strong','none'))`,
     ],
   },
+  {
+    id: 16,
+    name: 'user-last-active',
+    statements: [
+      `ALTER TABLE users ADD COLUMN last_active_at TEXT DEFAULT (datetime('now'))`,
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

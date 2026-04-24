@@ -60,6 +60,7 @@ export interface Friend {
   friend_email?: string;
   friend_name?: string;
   friend_picture?: string;
+  friend_last_active_at?: string;
 }
 
 export interface PendingFriendRequest {

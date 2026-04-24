@@ -450,6 +450,14 @@
     "devXpTitle": "테스트용 XP 지급",
     "devXpHint": "실제 앱에서는 알람 종료/가족 알람 수신 시 자동으로 호출돼요."
   },
+  "lastSeen": {
+    "justNow": "방금 전",
+    "minutesAgo": "{{count}}분 전",
+    "hoursAgo": "{{count}}시간 전",
+    "daysAgo": "{{count}}일 전",
+    "longAgo": "오래 전",
+    "unknown": "접속 기록 없음"
+  },
   "dub": {
     "title": "음성 번역",
     "description": "원래 목소리를 유지하면서 다른 언어로 번역합니다",

@@ -445,6 +445,14 @@
     "devXpTitle": "Test XP Grant",
     "devXpHint": "In the real app, this is called automatically on alarm completion."
   },
+  "lastSeen": {
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "longAgo": "Long ago",
+    "unknown": "Never seen"
+  },
   "dub": {
     "title": "Voice Translation",
     "description": "Translate to another language while keeping the original voice",

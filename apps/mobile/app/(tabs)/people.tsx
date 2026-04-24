@@ -38,6 +38,7 @@ import { Toast } from '../../src/components/Toast';
 import { FamilyMemberRow } from '../../src/components/FamilyMemberRow';
 import { CoupleView } from '../../src/components/CoupleView';
 import { PeopleSkeletonCard } from '../../src/components/PeopleSkeletonCard';
+import { formatLastSeen } from '../../src/lib/formatLastSeen';
 
 type Segment = 'members' | 'friends' | 'requests';
 
@@ -224,6 +225,7 @@ export default function PeopleScreen() {
       <View style={styles.personInfo}>
         <Text style={styles.personName}>{item.friend_name || t('common.noName')}</Text>
         <Text style={styles.personEmail}>{item.friend_email}</Text>
+        <Text style={styles.lastSeen}>{formatLastSeen(item.friend_last_active_at, t)}</Text>
       </View>
       <TouchableOpacity
         onPress={() => handleRemove(item)}
@@ -595,6 +597,12 @@ function createStyles(colors: ThemeColors) {
     personEmail: {
       fontSize: FontSize.sm,
       color: colors.textSecondary,
+      marginTop: 2,
+    },
+    lastSeen: {
+      fontSize: FontSize.xs,
+      color: colors.textTertiary,
+      fontFamily: FontFamily.regular,
       marginTop: 2,
     },
     familyAlarmBtn: {
