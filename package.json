@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "app": "cd apps/mobile && npx expo start",
-    "web": "cd packages/web && npm run dev",
     "backend": "cd packages/backend && npm run dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

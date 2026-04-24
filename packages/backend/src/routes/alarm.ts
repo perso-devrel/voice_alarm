@@ -5,11 +5,14 @@ import { selectFiringAlarms, type ScheduledAlarm } from '../lib/scheduler';
 import { UUID_RE } from '../lib/validate';
 const ALARM_MODES = ['sound-only', 'tts'] as const;
 type AlarmMode = (typeof ALARM_MODES)[number];
+const VIBRATION_PATTERNS = ['default', 'strong', 'none'] as const;
+type VibrationPattern = (typeof VIBRATION_PATTERNS)[number];
 
 type AlarmRow = Record<string, unknown> & {
   repeat_days?: unknown;
   is_active?: unknown;
   mode?: unknown;
+  vibration_pattern?: unknown;
   voice_profile_id?: unknown;
   speaker_id?: unknown;
   user_id?: unknown;
@@ -35,6 +38,11 @@ function normalizeAlarmRow(row: AlarmRow, viewerUserId?: string | null) {
   const mode: AlarmMode =
     row.mode === 'sound-only' || row.mode === 'tts' ? row.mode : 'tts';
 
+  const vibrationPattern: VibrationPattern =
+    row.vibration_pattern === 'default' || row.vibration_pattern === 'strong' || row.vibration_pattern === 'none'
+      ? row.vibration_pattern
+      : 'default';
+
   const category = typeof row.category === 'string' ? row.category : null;
   const isFamilyAlarm = category === 'family' || category === 'family-voice';
   const senderUserId = typeof row.user_id === 'string' ? row.user_id : null;
@@ -48,6 +56,7 @@ function normalizeAlarmRow(row: AlarmRow, viewerUserId?: string | null) {
     repeat_days: repeatDays,
     is_active: row.is_active === 1 || row.is_active === true,
     mode,
+    vibration_pattern: vibrationPattern,
     voice_profile_id: (row.voice_profile_id ?? null) as string | null,
     speaker_id: (row.speaker_id ?? null) as string | null,
     sender_user_id: senderUserId,
@@ -191,6 +200,7 @@ alarm.post('/', async (c) => {
     snooze_minutes?: number;
     target_user_id?: string;
     mode?: string;
+    vibration_pattern?: string;
     voice_profile_id?: string;
     speaker_id?: string;
   }>();
@@ -209,6 +219,10 @@ alarm.post('/', async (c) => {
 
   if (body.mode !== undefined && !ALARM_MODES.includes(body.mode as AlarmMode)) {
     return c.json({ error: `mode must be one of: ${ALARM_MODES.join(', ')}` }, 400);
+  }
+
+  if (body.vibration_pattern !== undefined && !VIBRATION_PATTERNS.includes(body.vibration_pattern as VibrationPattern)) {
+    return c.json({ error: `vibration_pattern must be one of: ${VIBRATION_PATTERNS.join(', ')}` }, 400);
   }
 
   if (body.voice_profile_id !== undefined && !UUID_RE.test(body.voice_profile_id)) {
@@ -282,11 +296,12 @@ alarm.post('/', async (c) => {
 
   const alarmId = crypto.randomUUID();
   const mode: AlarmMode = (body.mode as AlarmMode | undefined) ?? 'tts';
+  const vibPattern: VibrationPattern = (body.vibration_pattern as VibrationPattern | undefined) ?? 'default';
   await db.execute({
     sql: `INSERT INTO alarms
             (id, user_id, target_user_id, message_id, time, repeat_days, snooze_minutes,
-             mode, voice_profile_id, speaker_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             mode, vibration_pattern, voice_profile_id, speaker_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       alarmId,
       userId,
@@ -296,6 +311,7 @@ alarm.post('/', async (c) => {
       JSON.stringify(body.repeat_days ?? []),
       body.snooze_minutes ?? 5,
       mode,
+      vibPattern,
       body.voice_profile_id ?? null,
       body.speaker_id ?? null,
     ],
@@ -307,6 +323,7 @@ alarm.post('/', async (c) => {
         id: alarmId,
         ...body,
         mode,
+        vibration_pattern: vibPattern,
         voice_profile_id: body.voice_profile_id ?? null,
         speaker_id: body.speaker_id ?? null,
       },
@@ -332,6 +349,7 @@ alarm.patch('/:id', async (c) => {
     snooze_minutes?: number;
     message_id?: string;
     mode?: string;
+    vibration_pattern?: string;
     voice_profile_id?: string | null;
     speaker_id?: string | null;
   }>();
@@ -342,6 +360,10 @@ alarm.patch('/:id', async (c) => {
 
   if (body.mode !== undefined && !ALARM_MODES.includes(body.mode as AlarmMode)) {
     return c.json({ error: `mode must be one of: ${ALARM_MODES.join(', ')}` }, 400);
+  }
+
+  if (body.vibration_pattern !== undefined && !VIBRATION_PATTERNS.includes(body.vibration_pattern as VibrationPattern)) {
+    return c.json({ error: `vibration_pattern must be one of: ${VIBRATION_PATTERNS.join(', ')}` }, 400);
   }
 
   if (
@@ -425,6 +447,10 @@ alarm.patch('/:id', async (c) => {
     updates.push('mode = ?');
     args.push(body.mode);
   }
+  if (body.vibration_pattern !== undefined) {
+    updates.push('vibration_pattern = ?');
+    args.push(body.vibration_pattern);
+  }
   if (body.voice_profile_id !== undefined) {
     updates.push('voice_profile_id = ?');
     args.push(body.voice_profile_id);
@@ -448,8 +474,8 @@ alarm.patch('/:id', async (c) => {
 
   const updated = await db.execute({
     sql: `SELECT id, user_id, target_user_id, message_id, time, repeat_days,
-                 is_active, snooze_minutes, mode, voice_profile_id, speaker_id,
-                 created_at, updated_at
+                 is_active, snooze_minutes, mode, vibration_pattern,
+                 voice_profile_id, speaker_id, created_at, updated_at
           FROM alarms WHERE id = ?`,
     args: [id],
   });

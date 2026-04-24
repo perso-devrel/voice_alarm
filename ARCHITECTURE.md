@@ -3,24 +3,24 @@
 ## System Overview
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌──────────────────┐
-│  Mobile App │     │     Web     │     │  External APIs   │
-│  (Expo RN)  │     │ (React+Vite)│     │                  │
-└──────┬──────┘     └──────┬──────┘     │  - Perso.ai      │
-       │                   │            │  - ElevenLabs    │
-       │   HTTPS + Bearer  │            │  - Google OAuth  │
-       └─────────┬─────────┘            └────────┬─────────┘
-                 │                               │
-         ┌───────▼───────┐                       │
-         │   Cloudflare  │◄──────────────────────┘
-         │   Workers     │   Server-side calls
-         │   (Hono)      │   (API keys never exposed)
-         └───────┬───────┘
-                 │
-         ┌───────▼───────┐
-         │   Turso DB    │
-         │   (SQLite)    │
-         └───────────────┘
+┌─────────────┐     ┌──────────────────┐
+│  Mobile App │     │  External APIs   │
+│  (Expo RN)  │     │                  │
+└──────┬──────┘     │  - Perso.ai      │
+       │            │  - ElevenLabs    │
+       │ HTTPS +    │  - Google OAuth  │
+       │ Bearer     └────────┬─────────┘
+       │                     │
+┌──────▼───────┐             │
+│  Cloudflare  │◄────────────┘
+│  Workers     │   Server-side calls
+│  (Hono)      │   (API keys never exposed)
+└──────┬───────┘
+       │
+┌──────▼───────┐
+│  Turso DB    │
+│  (SQLite)    │
+└──────────────┘
 ```
 
 ## Directory Structure
@@ -63,18 +63,6 @@ packages/backend/               Cloudflare Workers API
 │   └── types.ts                공유 타입 정의
 └── wrangler.toml               Workers 설정
 
-packages/web/                   React 웹 대시보드
-├── src/
-│   ├── pages/                  페이지 컴포넌트
-│   │   ├── AlarmsPage.tsx
-│   │   ├── VoicesPage.tsx
-│   │   ├── MessagesPage.tsx
-│   │   ├── FriendsPage.tsx
-│   │   ├── GiftsPage.tsx
-│   │   └── SettingsPage.tsx
-│   ├── components/             공유 UI 컴포넌트
-│   └── services/               API 클라이언트
-└── vite.config.ts
 ```
 
 ## Database Schema
@@ -220,13 +208,10 @@ Client                    Backend                   Google/Apple
 develop branch push
         │
         ├──► GitHub Actions: ci.yml
-        │    (TypeScript check matrix: backend + web + mobile)
+        │    (TypeScript check matrix: backend + mobile)
         │
-        ├──► deploy-backend.yml
-        │    (packages/backend/** 변경 시 → Cloudflare Workers)
-        │
-        └──► deploy-web.yml
-             (packages/web/** 변경 시 → Cloudflare Pages)
+        └──► deploy-backend.yml
+             (packages/backend/** 변경 시 → Cloudflare Workers)
 ```
 
 - `develop` → 자동 배포 (CI/CD)

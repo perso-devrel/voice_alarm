@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Alarm, Message, LibraryItem } from '../types';
+import type { Alarm, Message, LibraryItem, VoiceProfile } from '../types';
 
 const KEYS = {
   alarms: 'offline_cache_alarms',
   messages: 'offline_cache_messages',
   library: 'offline_cache_library',
+  voices: 'offline_cache_voices',
 } as const;
 
 export async function cacheAlarms(alarms: Alarm[]): Promise<void> {
@@ -35,4 +36,14 @@ export async function getCachedLibrary(): Promise<LibraryItem[] | null> {
   const raw = await AsyncStorage.getItem(KEYS.library);
   if (!raw) return null;
   return JSON.parse(raw) as LibraryItem[];
+}
+
+export async function cacheVoices(voices: VoiceProfile[]): Promise<void> {
+  await AsyncStorage.setItem(KEYS.voices, JSON.stringify(voices));
+}
+
+export async function getCachedVoices(): Promise<VoiceProfile[] | null> {
+  const raw = await AsyncStorage.getItem(KEYS.voices);
+  if (!raw) return null;
+  return JSON.parse(raw) as VoiceProfile[];
 }

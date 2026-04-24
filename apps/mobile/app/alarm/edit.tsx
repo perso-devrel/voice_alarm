@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { DAYS_OF_WEEK } from '../../src/constants/presets';
 import {
   getMessages,
@@ -22,11 +23,12 @@ import {
 } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { syncAlarmNotifications } from '../../src/services/notifications';
-import type { AlarmMode, Message, VoiceProfile } from '../../src/types';
+import type { AlarmMode, VibrationPattern, Message, VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
-import { parseRepeatDays, validateAlarmForm } from '../../src/lib/alarmForm';
+import { parseRepeatDays, validateAlarmForm, getTimeUntilAlarm } from '../../src/lib/alarmForm';
+import * as Haptics from 'expo-haptics';
 
 export default function EditAlarmScreen() {
   const router = useRouter();
@@ -35,6 +37,8 @@ export default function EditAlarmScreen() {
   const { isAuthenticated } = useAppStore();
   const { t } = useTranslation();
   const toast = useToast();
+  const { colors } = useTheme();
+  const dynStyles = useMemo(() => createStyles(colors), [colors]);
 
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
@@ -42,6 +46,7 @@ export default function EditAlarmScreen() {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [snooze, setSnooze] = useState(5);
   const [mode, setMode] = useState<AlarmMode>('tts');
+  const [vibrationPattern, setVibrationPattern] = useState<VibrationPattern>('default');
   const [voiceProfileId, setVoiceProfileId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -66,6 +71,7 @@ export default function EditAlarmScreen() {
   const readyVoices: VoiceProfile[] =
     voices?.filter((v: VoiceProfile) => v.status === 'ready') ?? [];
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (alarm && !loaded) {
       const [h, m] = alarm.time.split(':').map(Number);
@@ -75,10 +81,12 @@ export default function EditAlarmScreen() {
       setSelectedMessageId(alarm.message_id);
       setSnooze(alarm.snooze_minutes);
       setMode(alarm.mode === 'sound-only' ? 'sound-only' : 'tts');
+      setVibrationPattern(alarm.vibration_pattern ?? 'default');
       setVoiceProfileId(alarm.voice_profile_id ?? null);
       setLoaded(true);
     }
   }, [alarm, loaded]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const editMutation = useMutation({
     mutationFn: (params: {
@@ -87,6 +95,7 @@ export default function EditAlarmScreen() {
       snooze_minutes?: number;
       message_id?: string;
       mode?: AlarmMode;
+      vibration_pattern?: VibrationPattern;
       voice_profile_id?: string | null;
     }) => updateAlarm(id!, params),
     onSuccess: async () => {
@@ -106,6 +115,12 @@ export default function EditAlarmScreen() {
     setRepeatDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
+  const selectVibration = (pattern: VibrationPattern) => {
+    setVibrationPattern(pattern);
+    if (pattern === 'default') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    else if (pattern === 'strong') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  };
+
   const handleSubmit = () => {
     const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     const validated = validateAlarmForm({
@@ -113,9 +128,10 @@ export default function EditAlarmScreen() {
       time,
       repeatDays,
       mode,
+      vibrationPattern,
       voiceProfileId,
       snoozeMinutes: snooze,
-    });
+    }, t);
     if (!validated.ok) {
       toast.show(validated.error);
       return;
@@ -127,6 +143,7 @@ export default function EditAlarmScreen() {
       repeat_days: payload.repeat_days,
       snooze_minutes: payload.snooze_minutes,
       mode: payload.mode,
+      vibration_pattern: payload.vibration_pattern,
       voice_profile_id: payload.voice_profile_id ?? null,
     });
   };
@@ -141,129 +158,157 @@ export default function EditAlarmScreen() {
 
   if (!alarm && !loaded) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={Colors.light.primary} size="large" />
+      <View style={dynStyles.loadingContainer}>
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.screenTitle}>{t('alarmEdit.title')}</Text>
+    <ScrollView style={dynStyles.container} contentContainerStyle={dynStyles.content}>
+      <Text style={dynStyles.screenTitle}>{t('alarmEdit.title')}</Text>
 
       {/* 시간 선택 */}
-      <Text style={styles.sectionTitle}>{t('alarmCreate.time')}</Text>
-      <View style={styles.timePickerContainer}>
-        <View style={styles.timePicker}>
-          <View style={styles.timeColumn}>
-            <TouchableOpacity style={styles.timeArrow} onPress={() => setHour((h) => (h + 1) % 24)}>
-              <Text style={styles.arrowText}>▲</Text>
-            </TouchableOpacity>
-            <Text style={styles.timeValue}>{hour.toString().padStart(2, '0')}</Text>
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.time')}</Text>
+      <View style={dynStyles.timePickerContainer}>
+        <Text style={dynStyles.ampmLabel}>
+          {hour < 12 ? t('alarmCreate.am') : t('alarmCreate.pm')}
+        </Text>
+        <View style={dynStyles.timePicker}>
+          <View style={dynStyles.timeColumn}>
             <TouchableOpacity
-              style={styles.timeArrow}
-              onPress={() => setHour((h) => (h - 1 + 24) % 24)}
+              style={dynStyles.timeArrow}
+              onPress={() => setHour((h) => (h + 1) % 24)}
+              accessibilityLabel={t('alarmCreate.hourUp')}
+              accessibilityRole="button"
             >
-              <Text style={styles.arrowText}>▼</Text>
+              <Text style={dynStyles.arrowText}>▲</Text>
+            </TouchableOpacity>
+            <Text style={dynStyles.timeValue}>{hour.toString().padStart(2, '0')}</Text>
+            <TouchableOpacity
+              style={dynStyles.timeArrow}
+              onPress={() => setHour((h) => (h - 1 + 24) % 24)}
+              accessibilityLabel={t('alarmCreate.hourDown')}
+              accessibilityRole="button"
+            >
+              <Text style={dynStyles.arrowText}>▼</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.timeSeparator}>:</Text>
+          <Text style={dynStyles.timeSeparator}>:</Text>
 
-          <View style={styles.timeColumn}>
+          <View style={dynStyles.timeColumn}>
             <TouchableOpacity
-              style={styles.timeArrow}
+              style={dynStyles.timeArrow}
               onPress={() => setMinute((m) => (m + 5) % 60)}
+              accessibilityLabel={t('alarmCreate.minuteUp')}
+              accessibilityRole="button"
             >
-              <Text style={styles.arrowText}>▲</Text>
+              <Text style={dynStyles.arrowText}>▲</Text>
             </TouchableOpacity>
-            <Text style={styles.timeValue}>{minute.toString().padStart(2, '0')}</Text>
+            <Text style={dynStyles.timeValue}>{minute.toString().padStart(2, '0')}</Text>
             <TouchableOpacity
-              style={styles.timeArrow}
+              style={dynStyles.timeArrow}
               onPress={() => setMinute((m) => (m - 5 + 60) % 60)}
+              accessibilityLabel={t('alarmCreate.minuteDown')}
+              accessibilityRole="button"
             >
-              <Text style={styles.arrowText}>▼</Text>
+              <Text style={dynStyles.arrowText}>▼</Text>
             </TouchableOpacity>
           </View>
         </View>
+        <Text style={dynStyles.timeUntil}>
+          {(() => {
+            const { hours: h, minutes: m } = getTimeUntilAlarm(hour, minute);
+            if (h === 0) return t('alarmCreate.alarmInMinutes', { minutes: m });
+            if (m === 0) return t('alarmCreate.alarmInHours', { hours: h });
+            return t('alarmCreate.alarmIn', { hours: h, minutes: m });
+          })()}
+        </Text>
       </View>
 
       {/* 반복 요일 */}
-      <Text style={styles.sectionTitle}>{t('alarmCreate.repeat')}</Text>
-      <View style={styles.daysRow}>
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.repeat')}</Text>
+      <View style={dynStyles.daysRow}>
         {DAYS_OF_WEEK.map((day, index) => (
           <TouchableOpacity
             key={index}
-            style={[styles.dayChip, repeatDays.includes(index) && styles.dayChipActive]}
+            style={[dynStyles.dayChip, repeatDays.includes(index) && dynStyles.dayChipActive]}
             onPress={() => toggleDay(index)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: repeatDays.includes(index) }}
+            accessibilityLabel={day}
           >
-            <Text style={[styles.dayText, repeatDays.includes(index) && styles.dayTextActive]}>
+            <Text style={[dynStyles.dayText, repeatDays.includes(index) && dynStyles.dayTextActive]}>
               {day}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
-      <View style={styles.quickDays}>
-        <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('daily')}>
-          <Text style={styles.quickText}>{t('alarms.daily')}</Text>
+      <View style={dynStyles.quickDays}>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('daily')} accessibilityRole="button" accessibilityLabel={t('alarms.daily')}>
+          <Text style={dynStyles.quickText}>{t('alarms.daily')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('weekday')}>
-          <Text style={styles.quickText}>{t('alarms.weekday')}</Text>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekday')} accessibilityRole="button" accessibilityLabel={t('alarms.weekday')}>
+          <Text style={dynStyles.quickText}>{t('alarms.weekday')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.quickChip} onPress={() => quickSetDays('weekend')}>
-          <Text style={styles.quickText}>{t('alarms.weekend')}</Text>
+        <TouchableOpacity style={dynStyles.quickChip} onPress={() => quickSetDays('weekend')} accessibilityRole="button" accessibilityLabel={t('alarms.weekend')}>
+          <Text style={dynStyles.quickText}>{t('alarms.weekend')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* 재생 모드 */}
-      <Text style={styles.sectionTitle}>재생 모드</Text>
-      <View style={styles.modeRow}>
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.playMode')}</Text>
+      <View style={dynStyles.modeRow}>
         <TouchableOpacity
-          style={[styles.modeChip, mode === 'tts' && styles.modeChipActive]}
+          style={[dynStyles.modeChip, mode === 'tts' && dynStyles.modeChipActive]}
           onPress={() => setMode('tts')}
           accessibilityRole="radio"
           accessibilityState={{ selected: mode === 'tts' }}
         >
-          <Text style={[styles.modeText, mode === 'tts' && styles.modeTextActive]}>
-            🗣️ TTS
+          <Text style={[dynStyles.modeText, mode === 'tts' && dynStyles.modeTextActive]}>
+            🗣️ {t('alarmCreate.ttsMode')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.modeChip, mode === 'sound-only' && styles.modeChipActive]}
+          style={[dynStyles.modeChip, mode === 'sound-only' && dynStyles.modeChipActive]}
           onPress={() => setMode('sound-only')}
           accessibilityRole="radio"
           accessibilityState={{ selected: mode === 'sound-only' }}
         >
-          <Text style={[styles.modeText, mode === 'sound-only' && styles.modeTextActive]}>
-            🔊 원본
+          <Text style={[dynStyles.modeText, mode === 'sound-only' && dynStyles.modeTextActive]}>
+            🔊 {t('alarmCreate.soundOnlyMode')}
           </Text>
         </TouchableOpacity>
       </View>
 
       {mode === 'sound-only' && (
         <>
-          <Text style={styles.sectionTitle}>음성 프로필</Text>
+          <Text style={dynStyles.sectionTitle}>{t('alarmCreate.voiceProfile')}</Text>
           {readyVoices.length === 0 ? (
-            <View style={styles.emptyVoiceBox}>
-              <Text style={styles.emptyVoiceText}>
-                원본 재생 모드는 등록된 음성 프로필이 필요해요.
+            <View style={dynStyles.emptyVoiceBox}>
+              <Text style={dynStyles.emptyVoiceText}>
+                {t('alarmCreate.voiceProfileRequired')}
               </Text>
             </View>
           ) : (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={styles.voiceRow}
+              style={dynStyles.voiceRow}
             >
               {readyVoices.map((v) => {
                 const selected = voiceProfileId === v.id;
                 return (
                   <TouchableOpacity
                     key={v.id}
-                    style={[styles.voiceChip, selected && styles.voiceChipActive]}
+                    style={[dynStyles.voiceChip, selected && dynStyles.voiceChipActive]}
                     onPress={() => setVoiceProfileId(selected ? null : v.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={v.name}
                   >
-                    <Text style={[styles.voiceText, selected && styles.voiceTextActive]}>
+                    <Text style={[dynStyles.voiceText, selected && dynStyles.voiceTextActive]}>
                       {v.name}
                     </Text>
                   </TouchableOpacity>
@@ -272,73 +317,101 @@ export default function EditAlarmScreen() {
             </ScrollView>
           )}
           {soundOnlyInvalid && (
-            <Text style={styles.voiceHint}>
-              원본 재생 모드에서는 음성 프로필을 지정해야 합니다.
+            <Text style={dynStyles.voiceHint}>
+              {t('alarmCreate.voiceProfileHint')}
             </Text>
           )}
         </>
       )}
 
       {/* 스누즈 */}
-      <Text style={styles.sectionTitle}>{t('alarmCreate.snooze')}</Text>
-      <View style={styles.snoozeRow}>
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.snooze')}</Text>
+      <View style={dynStyles.snoozeRow}>
         {[5, 10, 15].map((min) => (
           <TouchableOpacity
             key={min}
-            style={[styles.snoozeChip, snooze === min && styles.snoozeChipActive]}
+            style={[dynStyles.snoozeChip, snooze === min && dynStyles.snoozeChipActive]}
             onPress={() => setSnooze(min)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: snooze === min }}
+            accessibilityLabel={t('alarmCreate.snoozeMin', { min })}
           >
-            <Text style={[styles.snoozeText, snooze === min && styles.snoozeTextActive]}>
+            <Text style={[dynStyles.snoozeText, snooze === min && dynStyles.snoozeTextActive]}>
               {t('alarmCreate.snoozeMin', { min })}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
+      {/* 진동 패턴 */}
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.vibration')}</Text>
+      <View style={dynStyles.snoozeRow}>
+        {(['default', 'strong', 'none'] as const).map((pattern) => (
+          <TouchableOpacity
+            key={pattern}
+            style={[dynStyles.snoozeChip, vibrationPattern === pattern && dynStyles.snoozeChipActive]}
+            onPress={() => selectVibration(pattern)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: vibrationPattern === pattern }}
+            accessibilityLabel={t(`alarmCreate.vibration${pattern.charAt(0).toUpperCase() + pattern.slice(1)}`)}
+          >
+            <Text style={[dynStyles.snoozeText, vibrationPattern === pattern && dynStyles.snoozeTextActive]}>
+              {t(`alarmCreate.vibration${pattern.charAt(0).toUpperCase() + pattern.slice(1)}`)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {/* 메시지 선택 */}
-      <Text style={styles.sectionTitle}>{t('alarmCreate.message')}</Text>
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.message')}</Text>
       {messages && messages.length > 0 ? (
-        <View style={styles.messageList}>
+        <View style={dynStyles.messageList}>
           {messages.map((msg: Message) => (
             <TouchableOpacity
               key={msg.id}
               style={[
-                styles.messageItem,
-                selectedMessageId === msg.id && styles.messageItemSelected,
+                dynStyles.messageItem,
+                selectedMessageId === msg.id && dynStyles.messageItemSelected,
               ]}
               onPress={() => setSelectedMessageId(msg.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedMessageId === msg.id }}
+              accessibilityLabel={`${msg.voice_name}: ${msg.text}`}
             >
-              <View style={styles.messageInfo}>
-                <Text style={styles.messageVoice}>🗣️ {msg.voice_name}</Text>
-                <Text style={styles.messageText} numberOfLines={1}>
+              <View style={dynStyles.messageInfo}>
+                <Text style={dynStyles.messageVoice}>🗣️ {msg.voice_name}</Text>
+                <Text style={dynStyles.messageText} numberOfLines={1}>
                   "{msg.text}"
                 </Text>
               </View>
-              {selectedMessageId === msg.id && <Text style={styles.checkmark}>✓</Text>}
+              {selectedMessageId === msg.id && <Text style={dynStyles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
         </View>
       ) : (
-        <View style={styles.emptyMessageBox}>
-          <Text style={styles.emptyMessageEmoji}>💬</Text>
-          <Text style={styles.emptyMessageTitle}>{t('alarmCreate.noMessages')}</Text>
-          <Text style={styles.emptyMessageDesc}>{t('alarmCreate.noMessagesDesc')}</Text>
+        <View style={dynStyles.emptyMessageBox}>
+          <Text style={dynStyles.emptyMessageEmoji}>💬</Text>
+          <Text style={dynStyles.emptyMessageTitle}>{t('alarmCreate.noMessages')}</Text>
+          <Text style={dynStyles.emptyMessageDesc}>{t('alarmCreate.noMessagesDesc')}</Text>
         </View>
       )}
 
       {/* 저장 버튼 */}
       <TouchableOpacity
         style={[
-          styles.saveButton,
-          (!selectedMessageId || soundOnlyInvalid || editMutation.isPending) && styles.disabled,
+          dynStyles.saveButton,
+          (!selectedMessageId || soundOnlyInvalid || editMutation.isPending) && dynStyles.disabled,
         ]}
         onPress={handleSubmit}
         disabled={!selectedMessageId || soundOnlyInvalid || editMutation.isPending}
+        accessibilityRole="button"
+        accessibilityLabel={t('alarmEdit.save')}
+        accessibilityState={{ disabled: !selectedMessageId || soundOnlyInvalid || editMutation.isPending }}
       >
         {editMutation.isPending ? (
           <ActivityIndicator color="#FFF" />
         ) : (
-          <Text style={styles.saveText}>{t('alarmEdit.save')}</Text>
+          <Text style={dynStyles.saveText}>{t('alarmEdit.save')}</Text>
         )}
       </TouchableOpacity>
       <Toast message={toast.message} opacity={toast.opacity} />
@@ -346,269 +419,288 @@ export default function EditAlarmScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  content: {
-    padding: Spacing.lg,
-    paddingBottom: 120,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.light.background,
-  },
-  screenTitle: {
-    fontSize: FontSize.hero,
-    fontWeight: '700',
-    color: Colors.light.text,
-  },
-  sectionTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  timePickerContainer: {
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-  },
-  timePicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timeColumn: {
-    alignItems: 'center',
-  },
-  timeArrow: {
-    padding: Spacing.sm,
-  },
-  arrowText: {
-    fontSize: 20,
-    color: Colors.light.primary,
-  },
-  timeValue: {
-    fontSize: 56,
-    fontWeight: '200',
-    color: Colors.light.text,
-    width: 80,
-    textAlign: 'center',
-  },
-  timeSeparator: {
-    fontSize: 48,
-    fontWeight: '200',
-    color: Colors.light.text,
-    marginHorizontal: Spacing.sm,
-  },
-  daysRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
-  dayChip: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.light.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  dayChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  dayText: {
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    fontWeight: '600',
-  },
-  dayTextActive: {
-    color: '#FFF',
-  },
-  quickDays: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  quickChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-  quickText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-  },
-  snoozeRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  snoozeChip: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  snoozeChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  snoozeText: {
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    fontWeight: '600',
-  },
-  snoozeTextActive: {
-    color: '#FFF',
-  },
-  messageList: {
-    gap: Spacing.sm,
-  },
-  messageItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  messageItemSelected: {
-    borderColor: Colors.light.primary,
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-  messageInfo: {
-    flex: 1,
-  },
-  messageVoice: {
-    fontSize: FontSize.sm,
-    color: Colors.light.primary,
-    fontWeight: '600',
-  },
-  messageText: {
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    marginTop: 2,
-  },
-  checkmark: {
-    fontSize: FontSize.lg,
-    color: Colors.light.primary,
-    fontWeight: '700',
-  },
-  emptyMessageBox: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderStyle: 'dashed',
-  },
-  emptyMessageEmoji: {
-    fontSize: 40,
-    marginBottom: Spacing.sm,
-  },
-  emptyMessageTitle: {
-    fontSize: FontSize.md,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginBottom: Spacing.xs,
-  },
-  emptyMessageDesc: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  saveButton: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    alignItems: 'center',
-    marginTop: Spacing.xl,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  saveText: {
-    color: '#FFF',
-    fontSize: FontSize.lg,
-    fontWeight: '700',
-  },
-  modeRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  modeChip: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    alignItems: 'center',
-  },
-  modeChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  modeText: {
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    fontWeight: '600',
-  },
-  modeTextActive: {
-    color: '#FFF',
-  },
-  voiceRow: {
-    flexDirection: 'row',
-  },
-  voiceChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    marginRight: Spacing.sm,
-  },
-  voiceChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  voiceText: {
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    fontWeight: '600',
-  },
-  voiceTextActive: {
-    color: '#FFF',
-  },
-  voiceHint: {
-    fontSize: FontSize.sm,
-    color: Colors.light.error,
-    marginTop: Spacing.xs,
-  },
-  emptyVoiceBox: {
-    backgroundColor: Colors.light.surface,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderStyle: 'dashed',
-  },
-  emptyVoiceText: {
-    color: Colors.light.textSecondary,
-    fontSize: FontSize.sm,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      padding: Spacing.lg,
+      paddingBottom: 120,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    screenTitle: {
+      fontSize: FontSize.hero,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+    },
+    sectionTitle: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      marginBottom: Spacing.md,
+      marginTop: Spacing.lg,
+    },
+    timePickerContainer: {
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.xl,
+      padding: Spacing.lg,
+    },
+    ampmLabel: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+      color: colors.textSecondary,
+      marginBottom: Spacing.xs,
+    },
+    timeUntil: {
+      fontSize: FontSize.sm,
+      fontFamily: FontFamily.medium,
+      color: colors.primary,
+      marginTop: Spacing.sm,
+    },
+    timePicker: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    timeColumn: {
+      alignItems: 'center',
+    },
+    timeArrow: {
+      minWidth: 44,
+      minHeight: 44,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      padding: Spacing.sm,
+    },
+    arrowText: {
+      fontSize: 22,
+      color: colors.primary,
+    },
+    timeValue: {
+      fontSize: 56,
+      fontFamily: FontFamily.regular,
+      color: colors.text,
+      width: 80,
+      textAlign: 'center',
+    },
+    timeSeparator: {
+      fontSize: 48,
+      fontFamily: FontFamily.regular,
+      color: colors.text,
+      marginHorizontal: Spacing.sm,
+    },
+    daysRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: Spacing.sm,
+    },
+    dayChip: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dayChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    dayText: {
+      fontSize: FontSize.md,
+      color: colors.text,
+      fontFamily: FontFamily.semibold,
+    },
+    dayTextActive: {
+      color: '#FFF',
+    },
+    quickDays: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing.sm,
+    },
+    quickChip: {
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.surfaceVariant,
+    },
+    quickText: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+    },
+    snoozeRow: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    snoozeChip: {
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    snoozeChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    snoozeText: {
+      fontSize: FontSize.md,
+      color: colors.text,
+      fontFamily: FontFamily.semibold,
+    },
+    snoozeTextActive: {
+      color: '#FFF',
+    },
+    messageList: {
+      gap: Spacing.sm,
+    },
+    messageItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    messageItemSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.surfaceVariant,
+    },
+    messageInfo: {
+      flex: 1,
+    },
+    messageVoice: {
+      fontSize: FontSize.sm,
+      color: colors.primary,
+      fontFamily: FontFamily.semibold,
+    },
+    messageText: {
+      fontSize: FontSize.md,
+      color: colors.text,
+      marginTop: 2,
+    },
+    checkmark: {
+      fontSize: FontSize.lg,
+      color: colors.primary,
+      fontFamily: FontFamily.bold,
+    },
+    emptyMessageBox: {
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.xl,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: 'dashed',
+    },
+    emptyMessageEmoji: {
+      fontSize: 40,
+      marginBottom: Spacing.sm,
+    },
+    emptyMessageTitle: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      marginBottom: Spacing.xs,
+    },
+    emptyMessageDesc: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    saveButton: {
+      backgroundColor: colors.primary,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+      alignItems: 'center',
+      marginTop: Spacing.xl,
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    saveText: {
+      color: '#FFF',
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+    },
+    modeRow: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    modeChip: {
+      flex: 1,
+      paddingVertical: Spacing.md,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+    },
+    modeChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    modeText: {
+      fontSize: FontSize.md,
+      color: colors.text,
+      fontFamily: FontFamily.semibold,
+    },
+    modeTextActive: {
+      color: '#FFF',
+    },
+    voiceRow: {
+      flexDirection: 'row',
+    },
+    voiceChip: {
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginRight: Spacing.sm,
+    },
+    voiceChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    voiceText: {
+      fontSize: FontSize.md,
+      color: colors.text,
+      fontFamily: FontFamily.semibold,
+    },
+    voiceTextActive: {
+      color: '#FFF',
+    },
+    voiceHint: {
+      fontSize: FontSize.sm,
+      color: colors.error,
+      marginTop: Spacing.xs,
+    },
+    emptyVoiceBox: {
+      backgroundColor: colors.surface,
+      padding: Spacing.md,
+      borderRadius: BorderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: 'dashed',
+    },
+    emptyVoiceText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.sm,
+    },
+  });
+}

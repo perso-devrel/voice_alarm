@@ -1,7 +1,9 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import type { Alarm } from '../types';
 import { parseRepeatDays } from '../lib/alarmForm';
+import { registerPushToken } from './api';
 
 const ALARM_CATEGORY = 'alarm';
 const SNOOZE_ACTION = 'snooze';
@@ -51,6 +53,9 @@ Notifications.setNotificationCategoryAsync(ALARM_CATEGORY, [
 export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') return;
+
   const activeAlarms = alarms.filter((a) => a.is_active);
 
   for (const alarm of activeAlarms) {
@@ -67,16 +72,18 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
       snoozeMinutes: alarm.snooze_minutes || 5,
     };
 
+    const content: Notifications.NotificationContentInput = {
+      title,
+      body,
+      sound: 'default',
+      categoryIdentifier: ALARM_CATEGORY,
+      data: notificationData,
+      ...(Platform.OS === 'android' && { channelId: 'alarms' }),
+    };
+
     if (repeatDays.length === 0) {
       await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          sound: 'default',
-          categoryIdentifier: ALARM_CATEGORY,
-          data: notificationData,
-          ...(Platform.OS === 'android' && { channelId: 'alarms' }),
-        },
+        content,
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour,
@@ -87,13 +94,7 @@ export async function syncAlarmNotifications(alarms: Alarm[]): Promise<void> {
       for (const weekday of repeatDays) {
         const expoWeekday = weekday === 0 ? 1 : weekday + 1;
         await Notifications.scheduleNotificationAsync({
-          content: {
-            title,
-            body,
-            sound: 'default',
-            data: notificationData,
-            ...(Platform.OS === 'android' && { channelId: 'alarms' }),
-          },
+          content,
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
             weekday: expoWeekday,
@@ -134,4 +135,18 @@ export function addNotificationResponseListener(
   handler: (response: Notifications.NotificationResponse) => void,
 ): Notifications.EventSubscription {
   return Notifications.addNotificationResponseReceivedListener(handler);
+}
+
+export async function registerPushTokenWithServer(): Promise<string | null> {
+  try {
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) return null;
+
+    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+    const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+    await registerPushToken(token, platform);
+    return token;
+  } catch {
+    return null;
+  }
 }

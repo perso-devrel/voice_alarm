@@ -6,6 +6,7 @@ import {
   shouldShowStageTransition,
   listDialogues,
   pickRandomDialogue,
+  pickStreakAwareDialogue,
   formatProgress,
   progressBarWidthPct,
 } from '../src/lib/character';
@@ -70,9 +71,9 @@ describe('shouldShowStageTransition', () => {
 });
 
 describe('listDialogues', () => {
-  it('returns 4 dialogues per stage', () => {
+  it('returns 7 dialogues per stage', () => {
     for (const s of ['seed', 'sprout', 'tree', 'bloom'] as const) {
-      expect(listDialogues(s)).toHaveLength(4);
+      expect(listDialogues(s)).toHaveLength(7);
     }
   });
 });
@@ -95,6 +96,25 @@ describe('pickRandomDialogue', () => {
   it('clamps negative rng', () => {
     const result = pickRandomDialogue('bloom', () => -1);
     expect(result).toBe(listDialogues('bloom')[0]);
+  });
+});
+
+describe('pickStreakAwareDialogue', () => {
+  it('returns stage dialogue when streak is 0', () => {
+    const result = pickStreakAwareDialogue('seed', 0, () => 0.1);
+    expect(listDialogues('seed')).toContain(result);
+  });
+  it('can return streak dialogue when streak >= 1 and roll < 0.4', () => {
+    const result = pickStreakAwareDialogue('seed', 7, () => 0.1);
+    expect(result).toBeTruthy();
+  });
+  it('returns stage dialogue when roll >= 0.4', () => {
+    const result = pickStreakAwareDialogue('tree', 30, () => 0.5);
+    expect(listDialogues('tree')).toContain(result);
+  });
+  it('handles high streak values', () => {
+    const result = pickStreakAwareDialogue('bloom', 100, () => 0.1);
+    expect(result).toBeTruthy();
   });
 });
 
