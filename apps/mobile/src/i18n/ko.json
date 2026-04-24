@@ -239,7 +239,22 @@
     "ttsError": "음성 생성에 실패했습니다.",
     "noMessages": "아직 음성 메시지가 없어요",
     "noMessagesDesc": "직접 만들거나, 아래 프리셋으로 빠르게 생성해보세요!",
-    "goCreate": "메시지 만들기"
+    "goCreate": "메시지 만들기",
+    "playMode": "재생 모드",
+    "ttsMode": "TTS",
+    "soundOnlyMode": "원본",
+    "voiceProfile": "음성 프로필",
+    "voiceProfileRequired": "원본 재생 모드는 등록된 음성 프로필이 필요해요.",
+    "voiceProfileHint": "원본 재생 모드에서는 음성 프로필을 지정해야 합니다.",
+    "am": "오전",
+    "pm": "오후",
+    "alarmIn": "{{hours}}시간 {{minutes}}분 후에 울려요",
+    "alarmInMinutes": "{{minutes}}분 후에 울려요",
+    "alarmInHours": "{{hours}}시간 후에 울려요",
+    "hourUp": "시간 올리기",
+    "hourDown": "시간 내리기",
+    "minuteUp": "분 올리기",
+    "minuteDown": "분 내리기"
   },
   "alarmEdit": {
     "title": "알람 편집",

@@ -239,7 +239,22 @@
     "ttsError": "Failed to generate voice.",
     "noMessages": "No voice messages yet",
     "noMessagesDesc": "Create one yourself, or use presets below for a quick start!",
-    "goCreate": "Create message"
+    "goCreate": "Create message",
+    "playMode": "Play mode",
+    "ttsMode": "TTS",
+    "soundOnlyMode": "Original",
+    "voiceProfile": "Voice profile",
+    "voiceProfileRequired": "Original mode requires a registered voice profile.",
+    "voiceProfileHint": "Please select a voice profile for original mode.",
+    "am": "AM",
+    "pm": "PM",
+    "alarmIn": "Alarm in {{hours}}h {{minutes}}m",
+    "alarmInMinutes": "Alarm in {{minutes}}m",
+    "alarmInHours": "Alarm in {{hours}}h",
+    "hourUp": "Increase hour",
+    "hourDown": "Decrease hour",
+    "minuteUp": "Increase minute",
+    "minuteDown": "Decrease minute"
   },
   "alarmEdit": {
     "title": "Edit Alarm",

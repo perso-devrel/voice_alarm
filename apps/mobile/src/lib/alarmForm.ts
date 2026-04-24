@@ -59,6 +59,20 @@ export function buildCreatePayload(input: AlarmFormInput): AlarmCreatePayload {
   return payload;
 }
 
+export function getTimeUntilAlarm(hour: number, minute: number): { hours: number; minutes: number } {
+  const now = new Date();
+  const target = new Date();
+  target.setHours(hour, minute, 0, 0);
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 1);
+  }
+  const diff = target.getTime() - now.getTime();
+  return {
+    hours: Math.floor(diff / (1000 * 60 * 60)),
+    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+  };
+}
+
 export function parseRepeatDays(raw: unknown): number[] {
   if (Array.isArray(raw)) {
     return raw.filter((n): n is number => Number.isInteger(n));

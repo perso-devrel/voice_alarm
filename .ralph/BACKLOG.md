@@ -173,7 +173,7 @@
   - [x] Batch 4-A: 큰 스택 화면 6개 (message/create, dub/translate, family-alarm/create, voice/diarize, voice/[id], gift/received)
   - [x] Batch 4-B: 나머지 스택 화면 6개 (voice/record, voice/picker, message/[id], onboarding, voice/upload, player)
 - [x] 카드 컴포넌트 스타일 일관성 — shadow 토큰 6개 카드에 추가, marginBottom Spacing.sm→md 통일, settings.tsx 매직넘버→토큰 치환
-- [ ] 알람 시간 설정 UI 개선 — 시간 피커가 직관적인지, iOS/Android 모두 동작 확인
+- [x] 알람 시간 설정 UI 개선 — AM/PM 표시, 남은시간 헬퍼, i18n 17키, 터치타겟 44px, 접근성 라벨
 - [ ] 홈 화면 레이아웃 정리 — 위젯 간 간격, 섹션 구분선, 시각적 위계 정비
 
 ### 소규모 기능 구현

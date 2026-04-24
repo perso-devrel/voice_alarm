@@ -29,7 +29,7 @@ import type { AlarmMode, Friend, Message, VoiceProfile } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
-import { validateAlarmForm } from '../../src/lib/alarmForm';
+import { validateAlarmForm, getTimeUntilAlarm } from '../../src/lib/alarmForm';
 
 export default function CreateAlarmScreen() {
   const router = useRouter();
@@ -190,16 +190,25 @@ export default function CreateAlarmScreen() {
       {/* 시간 선택 */}
       <Text style={dynStyles.sectionTitle}>{t('alarmCreate.time')}</Text>
       <View style={dynStyles.timePickerContainer}>
+        <Text style={dynStyles.ampmLabel}>
+          {hour < 12 ? t('alarmCreate.am') : t('alarmCreate.pm')}
+        </Text>
         <View style={dynStyles.timePicker}>
-          {/* 시 */}
           <View style={dynStyles.timeColumn}>
-            <TouchableOpacity style={dynStyles.timeArrow} onPress={() => setHour((h) => (h + 1) % 24)}>
+            <TouchableOpacity
+              style={dynStyles.timeArrow}
+              onPress={() => setHour((h) => (h + 1) % 24)}
+              accessibilityLabel={t('alarmCreate.hourUp')}
+              accessibilityRole="button"
+            >
               <Text style={dynStyles.arrowText}>▲</Text>
             </TouchableOpacity>
             <Text style={dynStyles.timeValue}>{hour.toString().padStart(2, '0')}</Text>
             <TouchableOpacity
               style={dynStyles.timeArrow}
               onPress={() => setHour((h) => (h - 1 + 24) % 24)}
+              accessibilityLabel={t('alarmCreate.hourDown')}
+              accessibilityRole="button"
             >
               <Text style={dynStyles.arrowText}>▼</Text>
             </TouchableOpacity>
@@ -207,11 +216,12 @@ export default function CreateAlarmScreen() {
 
           <Text style={dynStyles.timeSeparator}>:</Text>
 
-          {/* 분 */}
           <View style={dynStyles.timeColumn}>
             <TouchableOpacity
               style={dynStyles.timeArrow}
               onPress={() => setMinute((m) => (m + 5) % 60)}
+              accessibilityLabel={t('alarmCreate.minuteUp')}
+              accessibilityRole="button"
             >
               <Text style={dynStyles.arrowText}>▲</Text>
             </TouchableOpacity>
@@ -219,11 +229,21 @@ export default function CreateAlarmScreen() {
             <TouchableOpacity
               style={dynStyles.timeArrow}
               onPress={() => setMinute((m) => (m - 5 + 60) % 60)}
+              accessibilityLabel={t('alarmCreate.minuteDown')}
+              accessibilityRole="button"
             >
               <Text style={dynStyles.arrowText}>▼</Text>
             </TouchableOpacity>
           </View>
         </View>
+        <Text style={dynStyles.timeUntil}>
+          {(() => {
+            const { hours: h, minutes: m } = getTimeUntilAlarm(hour, minute);
+            if (h === 0) return t('alarmCreate.alarmInMinutes', { minutes: m });
+            if (m === 0) return t('alarmCreate.alarmInHours', { hours: h });
+            return t('alarmCreate.alarmIn', { hours: h, minutes: m });
+          })()}
+        </Text>
       </View>
 
       {/* 반복 요일 */}
@@ -254,7 +274,7 @@ export default function CreateAlarmScreen() {
       </View>
 
       {/* 재생 모드 */}
-      <Text style={dynStyles.sectionTitle}>재생 모드</Text>
+      <Text style={dynStyles.sectionTitle}>{t('alarmCreate.playMode')}</Text>
       <View style={dynStyles.modeRow}>
         <TouchableOpacity
           style={[dynStyles.modeChip, mode === 'tts' && dynStyles.modeChipActive]}
@@ -263,7 +283,7 @@ export default function CreateAlarmScreen() {
           accessibilityState={{ selected: mode === 'tts' }}
         >
           <Text style={[dynStyles.modeText, mode === 'tts' && dynStyles.modeTextActive]}>
-            🗣️ TTS
+            🗣️ {t('alarmCreate.ttsMode')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -273,18 +293,18 @@ export default function CreateAlarmScreen() {
           accessibilityState={{ selected: mode === 'sound-only' }}
         >
           <Text style={[dynStyles.modeText, mode === 'sound-only' && dynStyles.modeTextActive]}>
-            🔊 원본
+            🔊 {t('alarmCreate.soundOnlyMode')}
           </Text>
         </TouchableOpacity>
       </View>
 
       {mode === 'sound-only' && (
         <>
-          <Text style={dynStyles.sectionTitle}>음성 프로필</Text>
+          <Text style={dynStyles.sectionTitle}>{t('alarmCreate.voiceProfile')}</Text>
           {readyVoices.length === 0 ? (
             <View style={dynStyles.emptyVoiceBox}>
               <Text style={dynStyles.emptyVoiceText}>
-                원본 재생 모드는 등록된 음성 프로필이 필요해요.
+                {t('alarmCreate.voiceProfileRequired')}
               </Text>
             </View>
           ) : (
@@ -311,7 +331,7 @@ export default function CreateAlarmScreen() {
           )}
           {soundOnlyInvalid && (
             <Text style={dynStyles.voiceHint}>
-              원본 재생 모드에서는 음성 프로필을 지정해야 합니다.
+              {t('alarmCreate.voiceProfileHint')}
             </Text>
           )}
         </>
@@ -505,6 +525,18 @@ function createStyles(colors: ThemeColors) {
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
   },
+  ampmLabel: {
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.semibold,
+    color: colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  timeUntil: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.medium,
+    color: colors.primary,
+    marginTop: Spacing.sm,
+  },
   timePicker: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -513,10 +545,14 @@ function createStyles(colors: ThemeColors) {
     alignItems: 'center',
   },
   timeArrow: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     padding: Spacing.sm,
   },
   arrowText: {
-    fontSize: 20,
+    fontSize: 22,
     color: colors.primary,
   },
   timeValue: {
