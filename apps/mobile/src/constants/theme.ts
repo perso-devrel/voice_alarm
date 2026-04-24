@@ -1,11 +1,30 @@
-export const Colors = {
+export interface ThemeColorScheme {
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  surfaceVariant: string;
+  text: string;
+  textSecondary: string;
+  textTertiary: string;
+  border: string;
+  success: string;
+  warning: string;
+  error: string;
+  shadow: string;
+}
+
+export const Colors: { light: ThemeColorScheme; dark: ThemeColorScheme } = {
   light: {
-    primary: '#FF7F6B', // 코랄
-    primaryLight: '#FFB4A8', // 라이트 코랄
+    primary: '#FF7F6B',
+    primaryLight: '#FFB4A8',
     primaryDark: '#E05A47',
-    secondary: '#FFCBA4', // 피치
-    accent: '#FF6B8A', // 핑크 악센트
-    background: '#FFF5F3', // 따뜻한 배경
+    secondary: '#FFCBA4',
+    accent: '#FF6B8A',
+    background: '#FFF5F3',
     surface: '#FFFFFF',
     surfaceVariant: '#FFF0ED',
     text: '#2D2D2D',
@@ -35,7 +54,7 @@ export const Colors = {
     error: '#FF453A',
     shadow: 'rgba(0, 0, 0, 0.3)',
   },
-} as const;
+};
 
 export const Spacing = {
   xs: 4,

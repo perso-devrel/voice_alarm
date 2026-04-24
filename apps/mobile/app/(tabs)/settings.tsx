@@ -3,18 +3,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getUserProfile, deleteAccount } from '../../src/services/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { getAudioCacheSize } from '../../src/services/audio';
 
 export default function SettingsScreen() {
-  const { plan, isAuthenticated, clearAuth, defaultSnoozeMinutes, setDefaultSnoozeMinutes } = useAppStore();
+  const { plan, isAuthenticated, clearAuth, defaultSnoozeMinutes, setDefaultSnoozeMinutes, darkMode, setDarkMode } = useAppStore();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [cacheSize, setCacheSize] = useState(0);
-  const [darkMode, setDarkMode] = useState(false);
   const [notifStatus, setNotifStatus] = useState<string>('undetermined');
   const { t } = useTranslation();
 
@@ -77,13 +79,13 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
           <View style={styles.card}>
             {profile?.name && (
-              <SettingRow label={t('settings.name', '이름')} value={profile.name} />
+              <SettingRow colors={colors} label={t('settings.name', '이름')} value={profile.name} />
             )}
             {profile?.email && (
-              <SettingRow label={t('settings.email', '이메일')} value={profile.email} />
+              <SettingRow colors={colors} label={t('settings.email', '이메일')} value={profile.email} />
             )}
-            <SettingRow label={t('settings.plan')} value={getPlanLabel()} />
-            <SettingRow label={t('settings.managePlan')} value="→" onPress={() => {}} />
+            <SettingRow colors={colors} label={t('settings.plan')} value={getPlanLabel()} />
+            <SettingRow colors={colors} label={t('settings.managePlan')} value="→" onPress={() => {}} />
           </View>
         </View>
 
@@ -91,9 +93,10 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
           <View style={styles.card}>
             <SettingRow
+              colors={colors}
               label={t('settings.notifPermission', '알림 권한')}
               value={notifStatus === 'granted' ? t('settings.permitted', '허용됨') : t('settings.notPermitted', '허용 안 됨')}
-              valueColor={notifStatus === 'granted' ? Colors.light.primary : Colors.light.error}
+              valueColor={notifStatus === 'granted' ? colors.primary : colors.error}
               onPress={async () => {
                 if (notifStatus !== 'granted') {
                   const { status } = await Notifications.requestPermissionsAsync();
@@ -105,15 +108,17 @@ export default function SettingsScreen() {
               }}
             />
             <SettingRow
+              colors={colors}
               label={t('settings.alarmNotif')}
-              trailing={<Switch value={true} trackColor={{ true: Colors.light.primary }} />}
+              trailing={<Switch value={true} trackColor={{ true: colors.primary }} />}
             />
             <SettingRow
+              colors={colors}
               label={t('settings.messageNotif')}
-              trailing={<Switch value={true} trackColor={{ true: Colors.light.primary }} />}
+              trailing={<Switch value={true} trackColor={{ true: colors.primary }} />}
             />
-            <View style={settingStyles.row}>
-              <Text style={settingStyles.label}>{t('settings.defaultSnooze')}</Text>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>{t('settings.defaultSnooze')}</Text>
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {[5, 10, 15].map((m) => (
                   <TouchableOpacity
@@ -123,13 +128,13 @@ export default function SettingsScreen() {
                       paddingHorizontal: 12,
                       paddingVertical: 4,
                       borderRadius: 12,
-                      backgroundColor: defaultSnoozeMinutes === m ? Colors.light.primary : Colors.light.surfaceVariant,
+                      backgroundColor: defaultSnoozeMinutes === m ? colors.primary : colors.surfaceVariant,
                     }}
                   >
                     <Text style={{
                       fontSize: FontSize.sm,
                       fontFamily: FontFamily.semibold,
-                      color: defaultSnoozeMinutes === m ? '#FFF' : Colors.light.textSecondary,
+                      color: defaultSnoozeMinutes === m ? colors.surface : colors.textSecondary,
                     }}>
                       {m}{t('settings.minutes')}
                     </Text>
@@ -144,14 +149,16 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('settings.voice')}</Text>
           <View style={styles.card}>
             <SettingRow
+              colors={colors}
               label={t('settings.voiceQuality')}
               value={t('settings.voiceQualityHigh')}
               onPress={() => {}}
             />
-            <SettingRow label={t('settings.cacheSize')} value={formatBytes(cacheSize)} />
+            <SettingRow colors={colors} label={t('settings.cacheSize')} value={formatBytes(cacheSize)} />
             <SettingRow
+              colors={colors}
               label={t('settings.clearCache')}
-              valueColor={Colors.light.error}
+              valueColor={colors.error}
               value={t('common.delete')}
               onPress={() => Alert.alert(t('settings.clearCache'), t('settings.clearCacheConfirm'))}
             />
@@ -162,30 +169,32 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t('settings.app')}</Text>
           <View style={styles.card}>
             <SettingRow
+              colors={colors}
               label={t('settings.darkMode')}
               trailing={
                 <Switch
                   value={darkMode}
                   onValueChange={setDarkMode}
-                  trackColor={{ true: Colors.light.primary }}
+                  trackColor={{ true: colors.primary }}
                 />
               }
             />
             <SettingRow
+              colors={colors}
               label={t('settings.language')}
               value={t('settings.languageKorean')}
               onPress={() => {}}
             />
-            <SettingRow label={t('settings.version')} value={appVersion} />
+            <SettingRow colors={colors} label={t('settings.version')} value={appVersion} />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.info')}</Text>
           <View style={styles.card}>
-            <SettingRow label={t('settings.terms')} value="→" onPress={() => {}} />
-            <SettingRow label={t('settings.privacy')} value="→" onPress={() => {}} />
-            <SettingRow label={t('settings.openSource')} value="→" onPress={() => {}} />
+            <SettingRow colors={colors} label={t('settings.terms')} value="→" onPress={() => {}} />
+            <SettingRow colors={colors} label={t('settings.privacy')} value="→" onPress={() => {}} />
+            <SettingRow colors={colors} label={t('settings.openSource')} value="→" onPress={() => {}} />
           </View>
         </View>
 
@@ -237,7 +246,7 @@ export default function SettingsScreen() {
                 disabled={deleteConfirmText !== t('settings.deleteAccountConfirmWord') || deleting}
               >
                 {deleting ? (
-                  <ActivityIndicator color="#FFF" size="small" />
+                  <ActivityIndicator color={colors.surface} size="small" />
                 ) : (
                   <Text style={styles.deleteDialogConfirmText}>{t('settings.deleteAccount')}</Text>
                 )}
@@ -251,12 +260,14 @@ export default function SettingsScreen() {
 }
 
 function SettingRow({
+  colors,
   label,
   value,
   valueColor,
   trailing,
   onPress,
 }: {
+  colors: ThemeColors;
   label: string;
   value?: string;
   valueColor?: string;
@@ -265,10 +276,20 @@ function SettingRow({
 }) {
   const Wrapper = onPress ? TouchableOpacity : View;
   return (
-    <Wrapper style={settingStyles.row} onPress={onPress}>
-      <Text style={settingStyles.label}>{label}</Text>
+    <Wrapper
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: Spacing.md,
+        borderBottomWidth: 0.5,
+        borderBottomColor: colors.border,
+      }}
+      onPress={onPress}
+    >
+      <Text style={{ fontSize: FontSize.md, color: colors.text }}>{label}</Text>
       {trailing || (
-        <Text style={[settingStyles.value, valueColor ? { color: valueColor } : undefined]}>
+        <Text style={{ fontSize: FontSize.md, color: valueColor ?? colors.textSecondary }}>
           {value}
         </Text>
       )}
@@ -276,138 +297,133 @@ function SettingRow({
   );
 }
 
-const settingStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.light.border,
-  },
-  label: {
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-  },
-  value: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-  },
-});
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  content: {
-    padding: Spacing.lg,
-    paddingBottom: 120,
-  },
-  title: {
-    fontSize: FontSize.hero,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.text,
-    marginBottom: Spacing.lg,
-  },
-  section: {
-    marginBottom: Spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.textSecondary,
-    textTransform: 'uppercase',
-    marginBottom: Spacing.sm,
-    marginLeft: Spacing.xs,
-  },
-  card: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.lg,
-  },
-  logoutButton: {
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  logoutText: {
-    fontSize: FontSize.md,
-    color: Colors.light.error,
-    fontFamily: FontFamily.semibold,
-  },
-  deleteAccountButton: {
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  deleteAccountText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-  },
-  deleteDialog: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginTop: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.light.error,
-  },
-  deleteDialogTitle: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.error,
-    marginBottom: Spacing.sm,
-  },
-  deleteDialogWarning: {
-    fontSize: FontSize.sm,
-    color: Colors.light.text,
-    lineHeight: 20,
-    marginBottom: Spacing.md,
-  },
-  deleteDialogPrompt: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    marginBottom: Spacing.sm,
-  },
-  deleteDialogInput: {
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    marginBottom: Spacing.md,
-  },
-  deleteDialogButtons: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  deleteDialogCancel: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-  deleteDialogCancelText: {
-    fontSize: FontSize.md,
-    color: Colors.light.text,
-    fontFamily: FontFamily.semibold,
-  },
-  deleteDialogConfirm: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.light.error,
-  },
-  deleteDialogConfirmText: {
-    fontSize: FontSize.md,
-    color: '#FFF',
-    fontFamily: FontFamily.semibold,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      padding: Spacing.lg,
+      paddingBottom: 120,
+    },
+    title: {
+      fontSize: FontSize.hero,
+      fontFamily: FontFamily.bold,
+      color: colors.text,
+      marginBottom: Spacing.lg,
+    },
+    section: {
+      marginBottom: Spacing.lg,
+    },
+    sectionTitle: {
+      fontSize: FontSize.sm,
+      fontFamily: FontFamily.semibold,
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      marginBottom: Spacing.sm,
+      marginLeft: Spacing.xs,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      paddingHorizontal: Spacing.lg,
+    },
+    settingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: Spacing.md,
+      borderBottomWidth: 0.5,
+      borderBottomColor: colors.border,
+    },
+    settingLabel: {
+      fontSize: FontSize.md,
+      color: colors.text,
+    },
+    logoutButton: {
+      alignItems: 'center',
+      paddingVertical: Spacing.md,
+      marginTop: Spacing.lg,
+    },
+    logoutText: {
+      fontSize: FontSize.md,
+      color: colors.error,
+      fontFamily: FontFamily.semibold,
+    },
+    deleteAccountButton: {
+      alignItems: 'center',
+      paddingVertical: Spacing.sm,
+      marginTop: Spacing.xs,
+    },
+    deleteAccountText: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+    },
+    deleteDialog: {
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.lg,
+      marginTop: Spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.error,
+    },
+    deleteDialogTitle: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+      color: colors.error,
+      marginBottom: Spacing.sm,
+    },
+    deleteDialogWarning: {
+      fontSize: FontSize.sm,
+      color: colors.text,
+      lineHeight: 20,
+      marginBottom: Spacing.md,
+    },
+    deleteDialogPrompt: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      marginBottom: Spacing.sm,
+    },
+    deleteDialogInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.sm,
+      fontSize: FontSize.md,
+      color: colors.text,
+      marginBottom: Spacing.md,
+    },
+    deleteDialogButtons: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+    },
+    deleteDialogCancel: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.surfaceVariant,
+    },
+    deleteDialogCancelText: {
+      fontSize: FontSize.md,
+      color: colors.text,
+      fontFamily: FontFamily.semibold,
+    },
+    deleteDialogConfirm: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.error,
+    },
+    deleteDialogConfirmText: {
+      fontSize: FontSize.md,
+      color: colors.surface,
+      fontFamily: FontFamily.semibold,
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+  });
+}

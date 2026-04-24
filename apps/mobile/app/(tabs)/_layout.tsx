@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors, FontFamily } from '../../src/constants/theme';
+import { FontFamily } from '../../src/constants/theme';
+import { useTheme } from '../../src/hooks/useTheme';
 import { OfflineBanner } from '../../src/components/OfflineBanner';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
@@ -17,6 +18,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.root}>
@@ -24,9 +26,9 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: Colors.light.primary,
-          tabBarInactiveTintColor: Colors.light.textTertiary,
+          tabBarStyle: [styles.tabBar, { backgroundColor: colors.surface, borderTopColor: colors.border }],
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textTertiary,
           tabBarLabelStyle: styles.tabLabel,
         }}
       >
@@ -75,8 +77,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: Colors.light.border,
     borderTopWidth: 1,
     height: 85,
     paddingTop: 8,

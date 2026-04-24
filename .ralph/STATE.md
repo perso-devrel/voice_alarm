@@ -1,8 +1,8 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P5 UI 폴리시 Batch 1 (SafeArea 패딩 + 빈 상태 CTA) 완료
-- 현재 Phase: **P5 UI 폴리시 진행 중. 다음: 다크모드 검증**
+- 마지막 루프: 2026-04-24 — P5 다크모드 인프라 구축 완료
+- 현재 Phase: **P5 UI 폴리시 진행 중. 다음: 다크모드 화면별 마이그레이션 Batch 1**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
@@ -30,23 +30,25 @@
 - **P4 알람 정확도**: 반복 알람 categoryIdentifier 누락 수정, Dismiss 액션 핸들링 추가, 권한 체크 추가.
 - **P4 오프라인 캐싱**: Voices 탭에 오프라인 캐싱 추가, 기존 알람/홈/라이브러리 캐싱 검증 완료.
 - **P5 UI 폴리시 B1**: alarms/voices 하단 패딩 추가, voices/library 빈 상태 CTA, 홈 최근메시지 빈 상태.
+- **P5 다크모드 인프라**: ThemeColorScheme 인터페이스, useTheme 훅, useAppStore darkMode persist, Settings 토글 연결, root/tabs layout 테마 적용.
 
 ## 남은 리팩토링 목표
 
-1. P5: 커플 뷰 개선 + UI 폴리시
+1. P5: 다크모드 화면별 마이그레이션 (5개 탭 + 스택 화면 ~20개)
+2. P5: 커플 뷰 개선 + 카드 스타일 일관성 + 알람 시간 설정 UI
 
 ## GitHub 이슈 매핑
 - P0: #172, P1: #173, P2: #174, P3: #175, P4: #176
 
 ## 다음 루프 지시
 
-**P4 — 알람 정확도 강화로 진행하라.**
-1. ~~온보딩 플로우 점검~~ ✅ 완료
-2. ~~알람 정확도 강화~~ ✅ 완료
-3. ~~오프라인 캐싱 검증~~ ✅ 완료
-4. Notion 기획서 업데이트는 외부 시스템이므로 건너뜀 — 코드 수준 정비에 집중
+**P5 다크모드 화면 마이그레이션 Batch 1로 진행하라.**
+- 대상: `index.tsx`, `alarms.tsx`, `voices.tsx`, `people.tsx` (4개 탭 화면)
+- 패턴: `useTheme()` → `createStyles(colors)` → `Colors.light.*` 제거 → 하드코딩 `#FFF` → `colors.surface`
+- settings.tsx는 이미 완료
 
 ## 알려진 이슈
 - [blocked] Perso API 404
 - [blocked] ElevenLabs 통합 테스트
 - FontFamily/fontForWeight 중복 (fontForWeight는 남아 있으나 현재 사용처 없음 — 추후 정리)
+- 다크모드 미적용 화면 ~25개 (Colors.light 직접 참조 + 하드코딩 #FFF)

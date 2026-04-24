@@ -9,6 +9,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import type * as Notifications from 'expo-notifications';
 import { useAppStore } from '../src/stores/useAppStore';
+import { useTheme } from '../src/hooks/useTheme';
 import { setupAudioSession, ensureAudioDir } from '../src/services/audio';
 import {
   requestNotificationPermissions,
@@ -37,6 +38,7 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const loadPersistedState = useAppStore((s) => s.loadPersistedState);
   const { hasCompletedOnboarding, stateLoaded } = useAppStore();
+  const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
@@ -115,12 +117,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <StatusBar style="dark" />
+          <StatusBar style={isDark ? 'light' : 'dark'} />
           <OfflineBanner />
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: '#FFF5F3' },
+              contentStyle: { backgroundColor: colors.background },
               animation: 'slide_from_right',
             }}
           >
