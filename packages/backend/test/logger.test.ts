@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Hono } from 'hono';
 import { loggerMiddleware } from '../src/middleware/logger';
 
-function buildApp(status = 200) {
+function buildApp(_status = 200) {
   const app = new Hono();
   app.use('*', loggerMiddleware);
   app.get('/ok', (c) => c.json({ ok: true }));
