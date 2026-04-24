@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
+import { useTheme, type ThemeColors } from '../../src/hooks/useTheme';
 import { getLibrary, toggleFavorite, deleteLibraryItem } from '../../src/services/api';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
@@ -54,6 +55,8 @@ export default function LibraryScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const isConnected = useNetworkStatus();
+  const { colors } = useTheme();
+  const dynStyles = useMemo(() => createStyles(colors), [colors]);
   const [cachedItems, setCachedItems] = useState<LibraryItem[] | null>(null);
 
   useEffect(() => {
@@ -126,8 +129,8 @@ export default function LibraryScreen() {
       extrapolate: 'clamp',
     });
     return (
-      <View style={styles.swipeDeleteContainer}>
-        <RNAnimated.Text style={[styles.swipeDeleteText, { transform: [{ scale }] }]}>
+      <View style={dynStyles.swipeDeleteContainer}>
+        <RNAnimated.Text style={[dynStyles.swipeDeleteText, { transform: [{ scale }] }]}>
           {t('common.delete')}
         </RNAnimated.Text>
       </View>
@@ -171,23 +174,23 @@ export default function LibraryScreen() {
         overshootRight={false}
       >
         <TouchableOpacity
-          style={styles.messageCard}
+          style={dynStyles.messageCard}
           onPress={() => router.push(`/message/${item.message_id}`)}
           activeOpacity={0.7}
         >
-          <View style={styles.messageLeft}>
-            <View style={styles.avatarSmall}>
-              <Text style={styles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
+          <View style={dynStyles.messageLeft}>
+            <View style={dynStyles.avatarSmall}>
+              <Text style={dynStyles.avatarLetter}>{item.voice_name?.charAt(0) || '?'}</Text>
             </View>
-            <View style={styles.messageContent}>
-              <View style={styles.messageHeader}>
-                <Text style={styles.voiceName}>{item.voice_name}</Text>
-                <Text style={styles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
+            <View style={dynStyles.messageContent}>
+              <View style={dynStyles.messageHeader}>
+                <Text style={dynStyles.voiceName}>{item.voice_name}</Text>
+                <Text style={dynStyles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
               </View>
-              <Text style={styles.messageText} numberOfLines={2}>
+              <Text style={dynStyles.messageText} numberOfLines={2}>
                 &quot;{item.text}&quot;
               </Text>
-              <View style={styles.miniPlayerRow}>
+              <View style={dynStyles.miniPlayerRow}>
                 <MiniWaveformPlayer
                   messageId={item.message_id}
                   isActive={isActive}
@@ -195,7 +198,7 @@ export default function LibraryScreen() {
                   onStop={handleMiniStop}
                 />
               </View>
-              <Text style={styles.messageDate}>
+              <Text style={dynStyles.messageDate}>
                 {new Date(item.received_at).toLocaleDateString('ko-KR', {
                   month: 'short',
                   day: 'numeric',
@@ -206,12 +209,12 @@ export default function LibraryScreen() {
             </View>
           </View>
 
-          <View style={styles.messageActions}>
+          <View style={dynStyles.messageActions}>
             <TouchableOpacity
               onPress={() => favoriteMutation.mutate(item.id)}
               hitSlop={8}
             >
-              <Text style={styles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
+              <Text style={dynStyles.favoriteIcon}>{item.is_favorite ? '❤️' : '🤍'}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -220,21 +223,21 @@ export default function LibraryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.filterRow}>
+    <SafeAreaView style={dynStyles.container} edges={['bottom']}>
+      <View style={dynStyles.filterRow}>
         <TouchableOpacity
-          style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
+          style={[dynStyles.filterChip, filter === 'all' && dynStyles.filterChipActive]}
           onPress={() => setFilter('all')}
         >
-          <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
+          <Text style={[dynStyles.filterText, filter === 'all' && dynStyles.filterTextActive]}>
             {t('library.all')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, filter === 'favorite' && styles.filterChipActive]}
+          style={[dynStyles.filterChip, filter === 'favorite' && dynStyles.filterChipActive]}
           onPress={() => setFilter('favorite')}
         >
-          <Text style={[styles.filterText, filter === 'favorite' && styles.filterTextActive]}>
+          <Text style={[dynStyles.filterText, filter === 'favorite' && dynStyles.filterTextActive]}>
             ❤️ {t('library.favorites')}
           </Text>
         </TouchableOpacity>
@@ -245,13 +248,13 @@ export default function LibraryScreen() {
         showsHorizontalScrollIndicator={false}
         data={CATEGORIES}
         keyExtractor={(item) => item.key}
-        contentContainerStyle={styles.categoryRow}
+        contentContainerStyle={dynStyles.categoryRow}
         renderItem={({ item: cat }) => (
           <TouchableOpacity
-            style={[styles.categoryChip, categoryFilter === cat.key && styles.categoryChipActive]}
+            style={[dynStyles.categoryChip, categoryFilter === cat.key && dynStyles.categoryChipActive]}
             onPress={() => setCategoryFilter(cat.key)}
           >
-            <Text style={styles.categoryChipText}>
+            <Text style={dynStyles.categoryChipText}>
               {cat.emoji} {cat.key === 'all' ? t('library.all') : cat.key}
             </Text>
           </TouchableOpacity>
@@ -259,29 +262,29 @@ export default function LibraryScreen() {
       />
 
       {showingCached && (
-        <View style={styles.cachedBanner}>
-          <Text style={styles.cachedText}>{t('offline.cachedData')}</Text>
+        <View style={dynStyles.cachedBanner}>
+          <Text style={dynStyles.cachedText}>{t('offline.cachedData')}</Text>
         </View>
       )}
 
       {isLoading && !cachedItems ? (
-        <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 80 }} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 80 }} />
       ) : isError && !cachedItems ? (
         <ErrorView onRetry={refetch} />
       ) : displayItems?.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>📭</Text>
-          <Text style={styles.emptyText}>
+        <View style={dynStyles.emptyState}>
+          <Text style={dynStyles.emptyEmoji}>📭</Text>
+          <Text style={dynStyles.emptyText}>
             {filter === 'favorite' ? t('library.emptyFavorites') : t('library.emptyAll')}
           </Text>
           {filter !== 'favorite' && (
             <TouchableOpacity
-              style={styles.emptyCta}
+              style={dynStyles.emptyCta}
               onPress={() => router.push('/message/create')}
               accessibilityRole="button"
               accessibilityLabel={t('library.createMessage')}
             >
-              <Text style={styles.emptyCtaText}>{t('library.createMessage')}</Text>
+              <Text style={dynStyles.emptyCtaText}>{t('library.createMessage')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -290,7 +293,7 @@ export default function LibraryScreen() {
           data={displayItems}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={dynStyles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         />
@@ -300,180 +303,182 @@ export default function LibraryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  categoryRow: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-    gap: Spacing.xs,
-  },
-  categoryChip: {
-    paddingHorizontal: Spacing.sm + 4,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    marginRight: Spacing.xs,
-  },
-  categoryChipActive: {
-    backgroundColor: Colors.light.primaryLight,
-    borderColor: Colors.light.primary,
-  },
-  categoryChipText: {
-    fontSize: FontSize.xs,
-    color: Colors.light.text,
-    fontFamily: FontFamily.medium,
-  },
-  filterChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  filterChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  filterText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    fontFamily: FontFamily.semibold,
-  },
-  filterTextActive: {
-    color: '#FFF',
-  },
-  cachedBanner: {
-    backgroundColor: Colors.light.surfaceVariant,
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    alignItems: 'center',
-  },
-  cachedText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-  },
-  list: {
-    padding: Spacing.lg,
-  },
-  messageCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  messageLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.light.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.md,
-  },
-  avatarLetter: {
-    fontSize: FontSize.lg,
-    fontFamily: FontFamily.bold,
-    color: Colors.light.primaryDark,
-  },
-  messageContent: {
-    flex: 1,
-  },
-  messageHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  voiceName: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.text,
-  },
-  categoryBadge: {
-    fontSize: 14,
-  },
-  messageText: {
-    fontSize: FontSize.sm,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-    lineHeight: 18,
-  },
-  miniPlayerRow: {
-    marginTop: Spacing.xs,
-  },
-  messageDate: {
-    fontSize: FontSize.xs,
-    color: Colors.light.textTertiary,
-    marginTop: 4,
-  },
-  messageActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  favoriteIcon: {
-    fontSize: 20,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: Spacing.md,
-  },
-  emptyText: {
-    fontSize: FontSize.md,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-  },
-  emptyCta: {
-    marginTop: Spacing.lg,
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm + 4,
-    borderRadius: BorderRadius.full,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  emptyCtaText: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.semibold,
-    color: Colors.light.surface,
-  },
-  swipeDeleteContainer: {
-    backgroundColor: Colors.light.error,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.sm,
-  },
-  swipeDeleteText: {
-    color: '#FFF',
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.md,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    filterRow: {
+      flexDirection: 'row',
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.sm,
+      gap: Spacing.sm,
+    },
+    categoryRow: {
+      paddingHorizontal: Spacing.lg,
+      paddingBottom: Spacing.sm,
+      gap: Spacing.xs,
+    },
+    categoryChip: {
+      paddingHorizontal: Spacing.sm + 4,
+      paddingVertical: Spacing.xs + 2,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginRight: Spacing.xs,
+    },
+    categoryChipActive: {
+      backgroundColor: colors.primaryLight,
+      borderColor: colors.primary,
+    },
+    categoryChipText: {
+      fontSize: FontSize.xs,
+      color: colors.text,
+      fontFamily: FontFamily.medium,
+    },
+    filterChip: {
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterText: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      fontFamily: FontFamily.semibold,
+    },
+    filterTextActive: {
+      color: '#FFF',
+    },
+    cachedBanner: {
+      backgroundColor: colors.surfaceVariant,
+      marginHorizontal: Spacing.lg,
+      marginBottom: Spacing.sm,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      borderRadius: BorderRadius.sm,
+      alignItems: 'center',
+    },
+    cachedText: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+    },
+    list: {
+      padding: Spacing.lg,
+    },
+    messageCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    messageLeft: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatarSmall: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.primaryLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: Spacing.md,
+    },
+    avatarLetter: {
+      fontSize: FontSize.lg,
+      fontFamily: FontFamily.bold,
+      color: colors.primaryDark,
+    },
+    messageContent: {
+      flex: 1,
+    },
+    messageHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+    },
+    voiceName: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+      color: colors.text,
+    },
+    categoryBadge: {
+      fontSize: 14,
+    },
+    messageText: {
+      fontSize: FontSize.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 18,
+    },
+    miniPlayerRow: {
+      marginTop: Spacing.xs,
+    },
+    messageDate: {
+      fontSize: FontSize.xs,
+      color: colors.textTertiary,
+      marginTop: 4,
+    },
+    messageActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    favoriteIcon: {
+      fontSize: 20,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyEmoji: {
+      fontSize: 64,
+      marginBottom: Spacing.md,
+    },
+    emptyText: {
+      fontSize: FontSize.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    emptyCta: {
+      marginTop: Spacing.lg,
+      backgroundColor: colors.primary,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.sm + 4,
+      borderRadius: BorderRadius.full,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    emptyCtaText: {
+      fontSize: FontSize.md,
+      fontFamily: FontFamily.semibold,
+      color: colors.surface,
+    },
+    swipeDeleteContainer: {
+      backgroundColor: colors.error,
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+      paddingHorizontal: Spacing.xl,
+      borderRadius: BorderRadius.lg,
+      marginBottom: Spacing.sm,
+    },
+    swipeDeleteText: {
+      color: '#FFF',
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.md,
+    },
+  });
+}

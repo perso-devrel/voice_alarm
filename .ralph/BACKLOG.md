@@ -168,7 +168,7 @@
   - [x] root _layout.tsx + tabs _layout.tsx 테마 적용
   - [x] settings.tsx createStyles 패턴 전체 재작성
   - [x] Batch 1: 탭 화면 4개 (index, alarms, voices, people)
-  - [ ] Batch 2: 스택 화면 (character, library, alarm/create, alarm/edit 등)
+  - [x] Batch 2: 스택 화면 (character, library, alarm/create, alarm/edit)
   - [ ] Batch 3: 컴포넌트 (Toast, OfflineBanner, ErrorBoundary, LoginButtons 등)
   - [ ] Batch 4: 나머지 스택 화면 (player, message, voice, dub, gift 등)
 - [ ] 카드 컴포넌트 스타일 일관성 — `BorderRadius.lg`, `shadow` 토큰, `Spacing.md` 간격 통일

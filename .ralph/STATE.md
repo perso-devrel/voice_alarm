@@ -1,8 +1,8 @@
 # 현재 상태
 
 - 브랜치: develop_loop
-- 마지막 루프: 2026-04-24 — P5 다크모드 Batch 1 완료 (탭 화면 4개)
-- 현재 Phase: **P5 UI 폴리시 진행 중. 다음: 다크모드 화면별 마이그레이션 Batch 2 (스택 화면)**
+- 마지막 루프: 2026-04-24 — P5 다크모드 Batch 2 완료 (스택 화면 4개)
+- 현재 Phase: **P5 UI 폴리시 진행 중. 다음: 다크모드 Batch 3 (컴포넌트)**
 - 전체 typecheck 통과
 
 ## 완료된 리팩토링
@@ -32,10 +32,11 @@
 - **P5 UI 폴리시 B1**: alarms/voices 하단 패딩 추가, voices/library 빈 상태 CTA, 홈 최근메시지 빈 상태.
 - **P5 다크모드 인프라**: ThemeColorScheme 인터페이스, useTheme 훅, useAppStore darkMode persist, Settings 토글 연결, root/tabs layout 테마 적용.
 - **P5 다크모드 Batch 1**: 5개 탭 화면(index, alarms, voices, people, settings) 모두 createStyles(colors) 패턴 적용 완료. ~110개 Colors.light 참조 제거.
+- **P5 다크모드 Batch 2**: 4개 스택 화면(character, library, alarm/create, alarm/edit) createStyles(colors) 패턴 적용 완료. ~135개 Colors.light 참조 제거.
 
 ## 남은 리팩토링 목표
 
-1. P5: 다크모드 스택 화면 마이그레이션 (Batch 2~4, ~20개 파일)
+1. P5: 다크모드 컴포넌트+나머지 스택 화면 마이그레이션 (Batch 3~4, ~16개 파일)
 2. P5: 커플 뷰 개선 + 카드 스타일 일관성 + 알람 시간 설정 UI
 
 ## GitHub 이슈 매핑
@@ -43,13 +44,13 @@
 
 ## 다음 루프 지시
 
-**P5 다크모드 화면 마이그레이션 Batch 2로 진행하라.**
-- 대상: `character/index.tsx`, `library/index.tsx`, `alarm/create.tsx`, `alarm/edit.tsx` (스택 화면 4개)
+**P5 다크모드 Batch 3 (컴포넌트)으로 진행하라.**
+- 대상: Toast, OfflineBanner, ErrorBoundary, LoginButtons, FamilyMemberRow, PeopleSkeletonCard 등 공용 컴포넌트
 - 패턴: `useTheme()` → `createStyles(colors)` → `Colors.light.*` 제거
-- 탭 화면 5개(index, alarms, voices, people, settings)는 모두 완료
+- 탭 화면 5개 + 스택 화면 4개 모두 완료
 
 ## 알려진 이슈
 - [blocked] Perso API 404
 - [blocked] ElevenLabs 통합 테스트
 - FontFamily/fontForWeight 중복 (fontForWeight는 남아 있으나 현재 사용처 없음 — 추후 정리)
-- 다크모드 미적용 화면 ~20개 (스택 화면 + 컴포넌트, Colors.light 직접 참조)
+- 다크모드 미적용 화면 ~16개 (컴포넌트 + 나머지 스택 화면, Colors.light 직접 참조)
