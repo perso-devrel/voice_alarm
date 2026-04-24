@@ -14,6 +14,7 @@ import {
   requestNotificationPermissions,
   addNotificationResponseListener,
   scheduleSnoozeNotification,
+  registerPushTokenWithServer,
   SNOOZE_ACTION,
 } from '../src/services/notifications';
 import { OfflineBanner } from '../src/components/OfflineBanner';
@@ -64,7 +65,9 @@ export default function RootLayout() {
     loadPersistedState();
     setupAudioSession();
     ensureAudioDir();
-    requestNotificationPermissions();
+    requestNotificationPermissions().then((granted) => {
+      if (granted) registerPushTokenWithServer();
+    });
 
     responseListener.current = addNotificationResponseListener((response) => {
       const actionId = response.actionIdentifier;

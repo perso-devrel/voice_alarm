@@ -1,7 +1,9 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import type { Alarm } from '../types';
 import { parseRepeatDays } from '../lib/alarmForm';
+import { registerPushToken } from './api';
 
 const ALARM_CATEGORY = 'alarm';
 const SNOOZE_ACTION = 'snooze';
@@ -134,4 +136,18 @@ export function addNotificationResponseListener(
   handler: (response: Notifications.NotificationResponse) => void,
 ): Notifications.EventSubscription {
   return Notifications.addNotificationResponseReceivedListener(handler);
+}
+
+export async function registerPushTokenWithServer(): Promise<string | null> {
+  try {
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) return null;
+
+    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+    const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+    await registerPushToken(token, platform);
+    return token;
+  } catch {
+    return null;
+  }
 }

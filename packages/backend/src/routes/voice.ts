@@ -1,10 +1,17 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
+import type { VoiceStorage } from '@voice-alarm/voice';
 import { ElevenLabsClient } from '../lib/elevenlabs';
 import { getDB } from '../lib/db';
 import { getSharedInMemoryVoiceStorage, MockVoiceProvider } from '@voice-alarm/voice';
+import { R2VoiceStorage } from '../lib/r2-storage';
 
 import { UUID_RE } from '../lib/validate';
+
+function getStorage(env: { VOICE_BUCKET?: R2Bucket }): VoiceStorage {
+  if (env.VOICE_BUCKET) return new R2VoiceStorage(env.VOICE_BUCKET);
+  return getSharedInMemoryVoiceStorage();
+}
 
 const voice = new Hono<AppEnv>();
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MiB
@@ -60,7 +67,7 @@ voice.post('/upload', async (c) => {
       ? originalNameRaw.slice(0, 200)
       : audioFile.name || undefined;
 
-  const storage = getSharedInMemoryVoiceStorage();
+  const storage = getStorage(c.env);
   const meta = await storage.store({
     userId,
     bytes: new Uint8Array(buffer),

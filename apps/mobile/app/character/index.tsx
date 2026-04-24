@@ -17,7 +17,7 @@ import {
 import type { XpEvent, StreakAchievement, CharacterStats } from '../../src/services/api';
 import {
   formatProgress,
-  pickRandomDialogue,
+  pickStreakAwareDialogue,
   progressBarWidthPct,
   shouldShowStageTransition,
   stageToEmoji,
@@ -102,9 +102,10 @@ export default function CharacterScreen() {
     prevStageRef.current = stage;
   }, [stage, emojiScale, emojiOpacity]);
 
+  const currentStreak = data?.streak?.current ?? 0;
   const dialogue = useMemo(
-    () => pickRandomDialogue(stage, () => ((dialogueSeed * 9301 + 49297) % 233280) / 233280),
-    [stage, dialogueSeed],
+    () => pickStreakAwareDialogue(stage, currentStreak, () => ((dialogueSeed * 9301 + 49297) % 233280) / 233280),
+    [stage, currentStreak, dialogueSeed],
   );
 
   const handleTap = useCallback(() => {

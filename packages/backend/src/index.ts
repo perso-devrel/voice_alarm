@@ -8,6 +8,7 @@ import { bodyLimitMiddleware } from './middleware/bodyLimit';
 import { publicCache, privateCache, noStore } from './middleware/cache';
 import { getDB, initDB } from './lib/db';
 import { selectFiringAlarms, type ScheduledAlarm } from './lib/scheduler';
+import { sendAlarmPush } from './lib/fcm';
 import voiceRoutes from './routes/voice';
 import ttsRoutes from './routes/tts';
 import alarmRoutes from './routes/alarm';
@@ -21,6 +22,7 @@ import dubRoutes from './routes/dub';
 import billingRoutes from './routes/billing';
 import familyRoutes from './routes/family';
 import characterRoutes from './routes/character';
+import pushRoutes from './routes/push';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -112,6 +114,7 @@ api.route('/dub', dubRoutes);
 api.route('/billing', billingRoutes);
 api.route('/family', familyRoutes);
 api.route('/characters', characterRoutes);
+api.route('/push', pushRoutes);
 
 app.route('/api', api);
 
@@ -173,7 +176,10 @@ async function scheduled(event: ScheduledEvent, env: Env): Promise<void> {
     }),
   );
 
-  // TODO: FCM delivery — firing[].user_id/target_user_id 로 푸시 전송
+  for (const alarm of firing) {
+    const targetUserId = alarm.target_user_id ?? alarm.user_id;
+    await sendAlarmPush(db, targetUserId, alarm.id, alarm.time);
+  }
 }
 
 export default {

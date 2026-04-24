@@ -397,6 +397,22 @@ export const migrations: Migration[] = [
         ON streak_achievements(character_id, milestone)`,
     ],
   },
+  {
+    id: 14,
+    name: 'push-tokens',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS push_tokens (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        token TEXT NOT NULL,
+        platform TEXT NOT NULL CHECK(platform IN ('ios','android','web')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_push_tokens_user ON push_tokens(user_id)',
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_push_tokens_unique ON push_tokens(user_id, token)',
+    ],
+  },
 ];
 
 export async function runMigrations(db: Client): Promise<string[]> {

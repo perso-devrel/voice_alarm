@@ -652,3 +652,13 @@ export async function getFamilyGroupCurrent() {
 export async function createFamilyAlarmText(payload: FamilyAlarmCreatePayload) {
   return post<FamilyAlarmCreateResponse>('/family/alarms', payload);
 }
+
+// ===== Push Token API =====
+
+export async function registerPushToken(token: string, platform: 'ios' | 'android' | 'web') {
+  return post<{ success: boolean }>('/push/token', { token, platform });
+}
+
+export async function unregisterPushToken(token: string) {
+  return request<{ success: boolean }>({ method: 'DELETE', path: '/push/token', body: { token } });
+}

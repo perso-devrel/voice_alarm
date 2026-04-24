@@ -100,32 +100,34 @@
 - [x] `apps/mobile/src/i18n/ko.json` — 스트릭/능력치 관련 번역 키 추가 (17개, ko/en)
 - [x] typecheck 통과 확인
 
-### 나무 테마 강화
-- [ ] `apps/mobile/src/lib/character.ts` — 나무 메타포 대사 업데이트 (스트릭 관련: "뿌리가 깊어지고 있어요")
-- [ ] 능력치 이름 나무 테마 적용: diligence→뿌리 깊이, health→줄기 튼튼함, consistency→잎 무성함
+### 나무 테마 강화 ✅ (2026-04-24)
+- [x] `apps/mobile/src/lib/character.ts` — DIALOGUES 4→7개 확장 + STREAK_DIALOGUES 5계층 + pickStreakAwareDialogue
+- [x] 능력치 이름 나무 테마 적용 확인 (i18n에서 이미 완료: 뿌리 깊이/줄기 튼튼함/잎 무성함)
 
 ## P3 — 배포 + 서비스화
 
-### R2 스토리지 연동 (음성 파일)
-- [ ] `packages/backend/wrangler.toml` — R2 bucket 바인딩 추가 (`VOICE_BUCKET`, bucket: `voice-alarm-voices`)
-- [ ] `packages/backend/src/types.ts` — Env에 `VOICE_BUCKET: R2Bucket` 추가
-- [ ] `packages/backend/src/routes/voice.ts` — 업로드 시 R2에 저장, 다운로드 시 R2에서 읽기 (메모리 저장 교체)
-- [ ] typecheck 통과 확인
+### R2 스토리지 연동 (음성 파일) ✅ (2026-04-24)
+- [x] `packages/backend/wrangler.toml` — R2 bucket 바인딩 추가 (`VOICE_BUCKET`, bucket: `voice-alarm-voices`)
+- [x] `packages/backend/src/types.ts` — Env에 `VOICE_BUCKET?: R2Bucket` 추가
+- [x] `packages/backend/src/lib/r2-storage.ts` (신규) — R2VoiceStorage implements VoiceStorage
+- [x] `packages/backend/src/routes/voice.ts` — R2 우선, in-memory 폴백으로 변경
+- [x] typecheck 통과 확인
 
-### FCM 푸시 구조 세팅
-- [ ] `packages/backend/src/lib/migrations.ts` — 마이그레이션 14: `push_tokens` 테이블 (user_id, token, platform)
-- [ ] `packages/backend/src/lib/fcm.ts` 신규 — FCM HTTP v1 API 클라이언트 (구조만, 실 전송은 console.warn 로그)
-- [ ] `packages/backend/src/index.ts` — scheduled()에서 firing 알람 → FCM 전송 호출 (182행 TODO 해결)
-- [ ] `apps/mobile/src/services/push.ts` 신규 — expo-notifications로 FCM 토큰 발급 + 서버 등록
-- [ ] `apps/mobile/src/services/api.ts` — `registerPushToken(token, platform)` 함수 추가
-- [ ] `apps/mobile/app/_layout.tsx` — 앱 시작 시 push 토큰 등록 호출
-- [ ] typecheck 통과 확인
+### FCM 푸시 구조 세팅 ✅ (2026-04-24)
+- [x] `packages/backend/src/lib/migrations.ts` — 마이그레이션 14: `push_tokens` 테이블
+- [x] `packages/backend/src/lib/fcm.ts` 신규 — FCM mock 클라이언트 (console.warn 로그)
+- [x] `packages/backend/src/routes/push.ts` 신규 — POST/DELETE /push/token
+- [x] `packages/backend/src/index.ts` — scheduled() FCM 통합
+- [x] `apps/mobile/src/services/notifications.ts` — registerPushTokenWithServer
+- [x] `apps/mobile/src/services/api.ts` — registerPushToken, unregisterPushToken
+- [x] `apps/mobile/app/_layout.tsx` — 앱 시작 시 push 토큰 자동 등록
+- [x] typecheck 통과 확인
 
-### 배포 설정 정비
-- [ ] `packages/backend/wrangler.toml` — cron 트리거 `*/5 * * * *` (5분 간격) 추가
-- [ ] Cloudflare Workers 무료 티어 제한 검증 (100k req/day, 10ms CPU)
-- [ ] Turso 무료 티어 제한 검증 (9GB, 25M reads/month)
-- [ ] `wrangler deploy` 테스트 (백엔드 배포 성공 확인)
+### 배포 설정 정비 ✅ (2026-04-24)
+- [x] `packages/backend/wrangler.toml` — cron 트리거 `*/5 * * * *` 추가
+- [x] Cloudflare Workers 무료 티어 제한 검증 (JOURNAL 기록)
+- [x] Turso 무료 티어 제한 검증 (JOURNAL 기록)
+- [ ] `wrangler deploy` 테스트 — 사용자가 직접 실행 (시크릿 설정 필요)
 
 ## P4 — 기획서(Notion) 동기화 + 추가 정비
 
