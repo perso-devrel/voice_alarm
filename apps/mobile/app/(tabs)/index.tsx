@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSize, FontFamily } from '../../src/constants/theme';
 import { getAlarms, getMessages, getStats } from '../../src/services/api';
 import type { Stats, WeekTrend } from '../../src/services/api';
 import { playAudio, getLocalAudioPath, isAudioCached } from '../../src/services/audio';
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   },
   statCount: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.primary,
   },
   statLabel: {
@@ -365,12 +365,13 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: FontSize.hero,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.xs,
   },
   subtitle: {
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     color: Colors.light.textSecondary,
   },
   nextAlarmCard: {
@@ -391,12 +392,12 @@ const styles = StyleSheet.create({
   nextAlarmLabel: {
     fontSize: FontSize.sm,
     color: 'rgba(255,255,255,0.8)',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     marginBottom: Spacing.xs,
   },
   nextAlarmTime: {
     fontSize: 48,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: '#FFFFFF',
     marginBottom: Spacing.sm,
   },
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
   },
   cheerTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
   },
   cheerText: {
@@ -447,14 +448,14 @@ const styles = StyleSheet.create({
   playButton: {
     fontSize: FontSize.sm,
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   quickActions: {
     marginBottom: Spacing.lg,
   },
   sectionTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.md,
   },
@@ -481,7 +482,7 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
     color: Colors.light.text,
   },
   loginPrompt: {
@@ -496,7 +497,7 @@ const styles = StyleSheet.create({
   },
   loginTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     color: Colors.light.text,
     marginBottom: Spacing.sm,
   },
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
   statsErrorText: {
     fontSize: FontSize.sm,
     color: '#f87171',
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   statsErrorRetry: {
     fontSize: FontSize.xs,
@@ -551,6 +552,6 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: '#FFFFFF',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

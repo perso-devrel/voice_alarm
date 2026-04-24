@@ -53,7 +53,8 @@
       ],
       "expo-av",
       "expo-document-picker",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ],
     "extra": {
       "router": {

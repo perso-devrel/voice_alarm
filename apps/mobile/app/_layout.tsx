@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Stack } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import type * as Notifications from 'expo-notifications';
 import { useAppStore } from '../src/stores/useAppStore';
 import { setupAudioSession, ensureAudioDir } from '../src/services/audio';
@@ -18,6 +20,8 @@ import { OfflineBanner } from '../src/components/OfflineBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { AuthProvider } from '../src/hooks/useAuth';
 import '../src/i18n';
+
+SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +39,19 @@ export default function RootLayout() {
   const router = useRouter();
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
   const hasNavigatedToOnboarding = useRef(false);
+
+  const [fontsLoaded, fontError] = useFonts({
+    'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-Medium': require('../assets/fonts/Pretendard-Medium.otf'),
+    'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.otf'),
+    'Pretendard-Bold': require('../assets/fonts/Pretendard-Bold.otf'),
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded || fontError) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
 
   useEffect(() => {
     if (stateLoaded && !hasCompletedOnboarding && !hasNavigatedToOnboarding.current) {
@@ -83,9 +100,13 @@ export default function RootLayout() {
     };
   }, []);
 
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
   return (
     <ErrorBoundary>
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <StatusBar style="dark" />

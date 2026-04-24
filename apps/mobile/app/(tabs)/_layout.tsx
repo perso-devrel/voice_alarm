@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Colors } from '../../src/constants/theme';
+import { Colors, FontFamily } from '../../src/constants/theme';
 import { OfflineBanner } from '../../src/components/OfflineBanner';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: FontFamily.semibold,
   },
   icon: {
     fontSize: 22,

@@ -63,3 +63,26 @@ export const FontSize = {
   xxl: 28,
   hero: 34,
 } as const;
+
+export const FontFamily = {
+  regular: 'Pretendard-Regular',
+  medium: 'Pretendard-Medium',
+  semibold: 'Pretendard-SemiBold',
+  bold: 'Pretendard-Bold',
+} as const;
+
+export function fontForWeight(weight?: string): string {
+  switch (weight) {
+    case '700':
+    case 'bold':
+      return FontFamily.bold;
+    case '600':
+    case 'semibold':
+      return FontFamily.semibold;
+    case '500':
+    case 'medium':
+      return FontFamily.medium;
+    default:
+      return FontFamily.regular;
+  }
+}

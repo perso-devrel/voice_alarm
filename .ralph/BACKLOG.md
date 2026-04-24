@@ -19,15 +19,19 @@
 - [x] 추가: `.github/CONTRIBUTING.md` — web dev 명령어 삭제
 - [x] 추가: `packages/backend/src/middleware/cors.test.ts` — web origin 제거 + 테스트 업데이트
 
-### Phase 1-B: Pretendard 폰트 적용
-- [ ] `expo-font` 의존성 확인 (이미 Expo에 포함)
-- [ ] Pretendard 폰트 파일(Regular/Medium/SemiBold/Bold) 다운로드 → `apps/mobile/assets/fonts/` 에 배치
-- [ ] `apps/mobile/app/_layout.tsx`에서 `useFonts()`로 Pretendard 로드 + 로딩 중 스플래시 유지
-- [ ] `packages/ui/src/tokens.ts`의 `FontFamily` 업데이트 (`system` → `'Pretendard-Regular'` 등)
-- [ ] 전체 앱에서 `fontFamily` 스타일을 Pretendard 토큰으로 통일
-- [ ] 폰트 로드 실패 시 시스템 폰트 폴백 처리
+### Phase 1-B: Pretendard 폰트 적용 ✅ (2026-04-24)
+- [x] `expo-font` + `expo-splash-screen` 의존성 설치
+- [x] Pretendard 폰트 파일(Regular/Medium/SemiBold/Bold) 다운로드 → `apps/mobile/assets/fonts/` 에 배치
+- [x] `apps/mobile/app/_layout.tsx`에서 `useFonts()`로 Pretendard 로드 + 로딩 중 스플래시 유지
+- [x] `packages/ui/src/tokens.ts`의 `FontFamily` 업데이트 + `fontForWeight()` 유틸리티 추가
+- [x] `apps/mobile/src/constants/theme.ts`에 `FontFamily` + `fontForWeight()` 추가
+- [x] 홈 화면 + 탭바 fontWeight → fontFamily Pretendard 적용
+- [x] 폰트 로드 실패 시 시스템 폰트 폴백 처리
+- [x] typecheck 통과 확인
+
+### Phase 1-B-2: 전체 앱 fontWeight→fontFamily 마이그레이션 (낮은 우선순위)
+- [ ] 나머지 28개 파일 fontWeight → fontFamily(FontFamily 토큰) 변환
 - [ ] iOS/Android 모두 한국어+영어 렌더링 확인
-- [ ] typecheck 통과 확인
 
 ### Phase 1-C: 모바일 탭 축소 (8개 → 5개)
 - [ ] `app/(tabs)/character.tsx` → `app/character/index.tsx` 스택 화면으로 이동

@@ -7,6 +7,7 @@ export {
   FontSize,
   FontWeight,
   FontFamily,
+  fontForWeight,
   getColors,
 } from './tokens';
 
@@ -17,6 +18,7 @@ export type {
   BorderRadiusKey,
   FontSizeKey,
   FontWeightKey,
+  FontFamilyKey,
 } from './tokens';
 
 export { resolveStateView } from './stateView';
