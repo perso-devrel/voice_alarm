@@ -131,7 +131,18 @@
     "alarmAllowed": "알람 수신 허용",
     "noGroup": "아직 가족 그룹이 없어요",
     "noGroupHint": "설정에서 가족 플랜으로 업그레이드하세요",
-    "sendFamilyAlarm": "가족 알람 보내기"
+    "sendFamilyAlarm": "가족 알람 보내기",
+    "inviteCode": "초대코드",
+    "generateInvite": "초대코드 발급",
+    "generating": "발급 중...",
+    "codeCopied": "초대코드가 복사되었습니다",
+    "shareInvite": "초대코드를 공유하세요",
+    "shareMessage": "VoiceAlarm에 가족으로 참여하세요! 초대코드: {{code}}",
+    "expiresAt": "{{time}} 만료",
+    "revokeInvite": "코드 취소",
+    "revoked": "취소됨",
+    "noInvites": "발급된 초대코드가 없어요",
+    "pendingInvites": "대기 중 초대"
   },
   "library": {
     "title": "보관함",

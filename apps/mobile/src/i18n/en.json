@@ -131,7 +131,18 @@
     "alarmAllowed": "Alarm allowed",
     "noGroup": "No family group yet",
     "noGroupHint": "Upgrade to a family plan in Settings",
-    "sendFamilyAlarm": "Send family alarm"
+    "sendFamilyAlarm": "Send family alarm",
+    "inviteCode": "Invite Code",
+    "generateInvite": "Generate Invite",
+    "generating": "Generating...",
+    "codeCopied": "Invite code copied",
+    "shareInvite": "Share the invite code",
+    "shareMessage": "Join my family on VoiceAlarm! Code: {{code}}",
+    "expiresAt": "Expires {{time}}",
+    "revokeInvite": "Revoke",
+    "revoked": "Revoked",
+    "noInvites": "No invite codes yet",
+    "pendingInvites": "Pending Invites"
   },
   "library": {
     "title": "Library",

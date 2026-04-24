@@ -47,18 +47,17 @@
 
 ## P1 — Friends + Family 탭 통합 (People)
 
-### People 탭 신규 생성 (부분 완료 2026-04-24)
+### People 탭 신규 생성 ✅ (2026-04-24)
 - [x] `app/(tabs)/people.tsx` 신규 — 세그먼트 컨트롤 (멤버/친구/요청)
 - [x] 플랜별 UI 분기: free/personal → "멤버" 세그먼트 숨김 (기본탭 "친구"), family → "멤버" 세그먼트 표시 (기본탭 "멤버")
 - [x] 친구 세그먼트: 이메일 추가 + 친구 목록/삭제
 - [x] 요청 세그먼트: 대기중 요청 수락
 - [x] 멤버 세그먼트: 가족 멤버 표시 + 역할 뱃지 + 알람 허용 상태
-- [ ] 멤버 세그먼트: 초대코드 발급 UI 이동
-- [ ] 커플 뷰(family 2인 그룹): 서로가 보이는 간결한 카드 레이아웃 (현재 border 강조만)
+- [x] 멤버 세그먼트: 초대코드 발급 UI (owner에게만 표시, 코드 생성/복사/공유/취소)
 
-### 컴포넌트 추출
-- [ ] `src/components/FamilyMemberRow.tsx` 신규 — family.tsx의 MemberRow 컴포넌트 추출
-- [ ] `src/components/PeopleSkeletonCard.tsx` 신규 — friends.tsx의 SkeletonCard 추출
+### 컴포넌트 추출 ✅ (2026-04-24)
+- [x] `src/components/FamilyMemberRow.tsx` 신규 — people.tsx의 renderMember 컴포넌트 추출
+- [x] `src/components/PeopleSkeletonCard.tsx` 신규 — pulse 애니메이션 skeleton 카드
 
 ### 가족 알람 분리 ✅ (2026-04-24)
 - [x] `app/family-alarm/create.tsx` 신규 — 알람 예약 폼 (수신자 선택, 시간, 메시지, 반복요일)
@@ -66,11 +65,11 @@
 - [x] root _layout.tsx에 Stack.Screen 추가
 - [x] familyAlarm.* i18n 키 추가 (ko/en)
 
-### i18n 추가 (부분 완료 2026-04-24)
+### i18n 추가 ✅ (2026-04-24)
 - [x] `src/i18n/ko.json`에 `people.*` 키 추가 (멤버, 친구, 요청 등)
 - [x] `src/i18n/en.json` 동일
 - [x] `familyAlarm.*` 키 추가 (ko/en)
-- [ ] 초대코드 관련 i18n 키 추가
+- [x] 초대코드 관련 i18n 키 추가 (12개, ko/en)
 - [x] typecheck 통과 확인
 
 ## P2 — 캐릭터 시스템 정비 (나무 테마 + 스트릭)
@@ -158,6 +157,7 @@
 > 논의 불필요, 개발 소요 작고, 문제 발생 가능성 낮은 항목만 여기에 둔다.
 
 ### 디자인 폴리시
+- [ ] 커플 뷰(family 2인 그룹): 서로가 보이는 간결한 카드 레이아웃 (현재 border 강조 → 전용 2인 뷰로 개선)
 - [ ] 모든 탭 화면에 `SafeAreaView` + 하단 패딩(100px) 일관 적용 검증 — 탭바에 콘텐츠 가려지지 않도록
 - [ ] 빈 상태 UI 일관성 점검 — 모든 리스트 화면에 이모지 + 한줄 메시지 + CTA 버튼 패턴 적용
 - [ ] 다크모드 전체 화면 검증 — DarkColors 토큰만 사용하고 있는지, 하드코딩 컬러 제거
@@ -172,7 +172,7 @@
 - [ ] 알람 목록 정렬 — 가장 이른 시간순 (현재 생성순이면 변경)
 - [ ] 메시지 라이브러리에서 즐겨찾기 상단 고정
 - [ ] 설정 화면에 "앱 정보" 섹션 (버전, 라이선스, 개인정보 처리방침 링크)
-- [ ] 초대 코드 공유 시 클립보드 복사 + "복사됨" 토스트
+- [x] 초대 코드 공유 시 클립보드 복사 + "복사됨" 토스트 (P1 초대코드 UI에서 완료)
 
 ### 접근성 + 국제화 보강
 - [ ] 모든 터치 요소에 `accessibilityLabel` 누락 점검 (버튼, 아이콘, 카드)

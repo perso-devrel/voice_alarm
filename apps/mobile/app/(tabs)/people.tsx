@@ -7,9 +7,10 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
   RefreshControl,
+  Share,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,16 +22,20 @@ import {
   acceptFriendRequest,
   deleteFriend,
   getFamilyGroupCurrent,
+  createFamilyInvite,
+  getFamilyInvites,
+  revokeFamilyInvite,
 } from '../../src/services/api';
-import type { FamilyGroupMember } from '../../src/services/api';
+import type { FamilyInvite } from '../../src/services/api';
 import type { Friend, PendingFriendRequest } from '../../src/types';
 import { getApiErrorMessage } from '../../src/types';
-import { buildMemberDisplayName } from '../../src/lib/familyAlarmForm';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../src/constants/theme';
 import { useAppStore } from '../../src/stores/useAppStore';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
+import { FamilyMemberRow } from '../../src/components/FamilyMemberRow';
+import { PeopleSkeletonCard } from '../../src/components/PeopleSkeletonCard';
 
 type Segment = 'members' | 'friends' | 'requests';
 
@@ -78,6 +83,12 @@ export default function PeopleScreen() {
     enabled: isAuthenticated && isConnected && isFamilyPlan,
   });
 
+  const { data: invites } = useQuery({
+    queryKey: ['family-invites'],
+    queryFn: getFamilyInvites,
+    enabled: isAuthenticated && isConnected && isFamilyPlan && familyData?.role === 'owner',
+  });
+
   const sendMutation = useMutation({
     mutationFn: sendFriendRequest,
     onSuccess: () => {
@@ -106,6 +117,25 @@ export default function PeopleScreen() {
     },
   });
 
+  const createInviteMutation = useMutation({
+    mutationFn: createFamilyInvite,
+    onSuccess: async (invite) => {
+      queryClient.invalidateQueries({ queryKey: ['family-invites'] });
+      await Clipboard.setStringAsync(invite.code);
+      toast.show(t('people.codeCopied'));
+    },
+    onError: (err: unknown) => {
+      toast.show(getApiErrorMessage(err, t('common.error')));
+    },
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: revokeFamilyInvite,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family-invites'] });
+    },
+  });
+
   const handleSend = () => {
     const trimmed = email.trim();
     if (!trimmed) return;
@@ -123,9 +153,26 @@ export default function PeopleScreen() {
     );
   };
 
+  const handleShareInvite = async (invite: FamilyInvite) => {
+    try {
+      await Share.share({
+        message: t('people.shareMessage', { code: invite.code }),
+      });
+    } catch {
+      await Clipboard.setStringAsync(invite.code);
+      toast.show(t('people.codeCopied'));
+    }
+  };
+
+  const pendingInvites = (invites ?? []).filter((i) => i.status === 'pending');
+  const isOwner = familyData?.role === 'owner';
+
   const onRefresh = async () => {
     const tasks: Promise<unknown>[] = [refetchFriends(), refetchPending()];
-    if (isFamilyPlan) tasks.push(refetchFamily());
+    if (isFamilyPlan) {
+      tasks.push(refetchFamily());
+      if (isOwner) tasks.push(queryClient.invalidateQueries({ queryKey: ['family-invites'] }));
+    }
     await Promise.all(tasks);
   };
 
@@ -204,33 +251,13 @@ export default function PeopleScreen() {
     </View>
   );
 
-  const renderMember = ({ item }: { item: FamilyGroupMember }) => (
-    <View style={[styles.personCard, isCouple && styles.coupleCard]}>
-      <View style={[styles.avatar, item.role === 'owner' && styles.ownerAvatar]}>
-        <Text style={styles.avatarText}>
-          {buildMemberDisplayName(item).charAt(0).toUpperCase()}
-        </Text>
-      </View>
-      <View style={styles.personInfo}>
-        <View style={styles.memberNameRow}>
-          <Text style={styles.personName}>{buildMemberDisplayName(item)}</Text>
-          <View style={[styles.roleBadge, item.role === 'owner' ? styles.ownerBadge : styles.memberBadge]}>
-            <Text style={styles.roleBadgeText}>
-              {item.role === 'owner' ? t('people.owner') : t('people.member')}
-            </Text>
-          </View>
-        </View>
-        {item.email && <Text style={styles.personEmail}>{item.email}</Text>}
-        {item.allow_family_alarms && (
-          <Text style={styles.alarmAllowed}>⏰ {t('people.alarmAllowed')}</Text>
-        )}
-      </View>
-    </View>
+  const renderMember = ({ item }: { item: import('../../src/services/api').FamilyGroupMember }) => (
+    <FamilyMemberRow member={item} isCouple={isCouple} />
   );
 
   const renderMembersContent = () => {
     if (familyLoading) {
-      return <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />;
+      return <PeopleSkeletonCard count={3} />;
     }
     if (!familyData?.group) {
       return (
@@ -257,13 +284,61 @@ export default function PeopleScreen() {
           <RefreshControl refreshing={familyRefetching} onRefresh={onRefresh} />
         }
         ListFooterComponent={
-          <TouchableOpacity
-            style={styles.familyAlarmBtn}
-            onPress={() => router.push('/family-alarm/create')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.familyAlarmBtnText}>⏰ {t('people.sendFamilyAlarm')}</Text>
-          </TouchableOpacity>
+          <View>
+            <TouchableOpacity
+              style={styles.familyAlarmBtn}
+              onPress={() => router.push('/family-alarm/create')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.familyAlarmBtnText}>⏰ {t('people.sendFamilyAlarm')}</Text>
+            </TouchableOpacity>
+
+            {isOwner && (
+              <View style={styles.inviteSection}>
+                <Text style={styles.inviteSectionTitle}>{t('people.inviteCode')}</Text>
+                <TouchableOpacity
+                  style={[styles.inviteGenerateBtn, createInviteMutation.isPending && styles.addBtnDisabled]}
+                  onPress={() => createInviteMutation.mutate()}
+                  disabled={createInviteMutation.isPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.familyAlarmBtnText}>
+                    {createInviteMutation.isPending ? t('people.generating') : t('people.generateInvite')}
+                  </Text>
+                </TouchableOpacity>
+
+                {pendingInvites.length > 0 && (
+                  <View style={styles.inviteList}>
+                    <Text style={styles.inviteListTitle}>{t('people.pendingInvites')}</Text>
+                    {pendingInvites.map((inv) => (
+                      <View key={inv.id} style={styles.inviteCard}>
+                        <Text style={styles.inviteCode}>{inv.code}</Text>
+                        <Text style={styles.inviteExpiry}>
+                          {t('people.expiresAt', { time: new Date(inv.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                        </Text>
+                        <View style={styles.inviteActions}>
+                          <TouchableOpacity
+                            style={styles.inviteShareBtn}
+                            onPress={() => handleShareInvite(inv)}
+                            accessibilityLabel={t('people.shareInvite')}
+                          >
+                            <Text style={styles.inviteShareBtnText}>{t('people.shareInvite')}</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.inviteRevokeBtn}
+                            onPress={() => revokeMutation.mutate(inv.code)}
+                            accessibilityLabel={t('people.revokeInvite')}
+                          >
+                            <Text style={styles.inviteRevokeBtnText}>{t('people.revokeInvite')}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         }
       />
     );
@@ -271,7 +346,7 @@ export default function PeopleScreen() {
 
   const renderFriendsContent = () => {
     if (friendsLoading) {
-      return <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />;
+      return <PeopleSkeletonCard count={4} />;
     }
     if (!friends?.length) {
       return (
@@ -298,7 +373,7 @@ export default function PeopleScreen() {
 
   const renderRequestsContent = () => {
     if (pendingLoading) {
-      return <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />;
+      return <PeopleSkeletonCard count={2} />;
     }
     if (!pending?.length) {
       return (
@@ -458,10 +533,6 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginBottom: Spacing.sm,
   },
-  coupleCard: {
-    borderWidth: 1,
-    borderColor: Colors.light.primaryLight,
-  },
   avatar: {
     width: 44,
     height: 44,
@@ -471,9 +542,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: Spacing.md,
   },
-  ownerAvatar: {
-    backgroundColor: Colors.light.primary,
-  },
   avatarText: {
     fontSize: FontSize.lg,
     fontWeight: '700',
@@ -481,11 +549,6 @@ const styles = StyleSheet.create({
   },
   personInfo: {
     flex: 1,
-  },
-  memberNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
   },
   personName: {
     fontSize: FontSize.md,
@@ -495,27 +558,6 @@ const styles = StyleSheet.create({
   personEmail: {
     fontSize: FontSize.sm,
     color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  roleBadge: {
-    paddingHorizontal: Spacing.xs + 2,
-    paddingVertical: 1,
-    borderRadius: BorderRadius.full,
-  },
-  ownerBadge: {
-    backgroundColor: `${Colors.light.primary}20`,
-  },
-  memberBadge: {
-    backgroundColor: Colors.light.surfaceVariant,
-  },
-  roleBadgeText: {
-    fontSize: FontSize.xs - 1,
-    fontWeight: '600',
-    color: Colors.light.textSecondary,
-  },
-  alarmAllowed: {
-    fontSize: FontSize.xs,
-    color: Colors.light.success,
     marginTop: 2,
   },
   familyAlarmBtn: {
@@ -554,6 +596,86 @@ const styles = StyleSheet.create({
   },
   acceptBtnText: {
     color: '#FFF',
+    fontWeight: '600',
+    fontSize: FontSize.sm,
+  },
+  inviteSection: {
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.border,
+  },
+  inviteSectionTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: '600',
+    color: Colors.light.text,
+    marginBottom: Spacing.sm,
+  },
+  inviteGenerateBtn: {
+    backgroundColor: Colors.light.primaryDark,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  inviteList: {
+    marginTop: Spacing.md,
+  },
+  inviteListTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  inviteCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  inviteCode: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: 4,
+    textAlign: 'center',
+  },
+  inviteExpiry: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textTertiary,
+    textAlign: 'center',
+    marginTop: Spacing.xs,
+  },
+  inviteActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  inviteShareBtn: {
+    backgroundColor: Colors.light.primary,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  inviteShareBtnText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: FontSize.sm,
+  },
+  inviteRevokeBtn: {
+    backgroundColor: Colors.light.surfaceVariant,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  inviteRevokeBtnText: {
+    color: Colors.light.textSecondary,
     fontWeight: '600',
     fontSize: FontSize.sm,
   },

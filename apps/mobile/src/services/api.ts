@@ -531,6 +531,33 @@ export interface FamilyAlarmCreateResponse {
   message: { id: string; text: string; category: string };
 }
 
+// ===== Family Invites API =====
+
+export interface FamilyInvite {
+  id: string;
+  plan_group_id: string;
+  code: string;
+  status: 'pending' | 'used' | 'expired' | 'revoked';
+  created_at: string;
+  expires_at: string;
+  deep_link: string;
+  web_url: string;
+}
+
+export async function createFamilyInvite() {
+  const data = await post<{ invite: FamilyInvite }>('/family/invites', {});
+  return data.invite;
+}
+
+export async function getFamilyInvites() {
+  const data = await get<{ invites: FamilyInvite[] }>('/family/invites');
+  return data.invites;
+}
+
+export async function revokeFamilyInvite(code: string) {
+  return post<{ success: boolean }>(`/family/invites/${code}/revoke`, {});
+}
+
 // ===== Character API =====
 
 export type CharacterStage = 'seed' | 'sprout' | 'tree' | 'bloom';
