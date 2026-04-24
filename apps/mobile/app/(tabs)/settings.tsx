@@ -125,9 +125,9 @@ export default function SettingsScreen() {
                     key={m}
                     onPress={() => setDefaultSnoozeMinutes(m)}
                     style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 4,
-                      borderRadius: 12,
+                      paddingHorizontal: Spacing.md - 4,
+                      paddingVertical: Spacing.xs,
+                      borderRadius: BorderRadius.md,
                       backgroundColor: defaultSnoozeMinutes === m ? colors.primary : colors.surfaceVariant,
                     }}
                   >
@@ -328,6 +328,11 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       borderRadius: BorderRadius.lg,
       paddingHorizontal: Spacing.lg,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
     },
     settingRow: {
       flexDirection: 'row',

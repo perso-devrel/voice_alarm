@@ -60,7 +60,12 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       borderRadius: BorderRadius.lg,
       padding: Spacing.md,
-      marginBottom: Spacing.sm,
+      marginBottom: Spacing.md,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
     },
     avatar: {
       width: 44,

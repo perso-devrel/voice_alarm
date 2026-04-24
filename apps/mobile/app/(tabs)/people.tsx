@@ -36,6 +36,7 @@ import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { useToast } from '../../src/hooks/useToast';
 import { Toast } from '../../src/components/Toast';
 import { FamilyMemberRow } from '../../src/components/FamilyMemberRow';
+import { CoupleView } from '../../src/components/CoupleView';
 import { PeopleSkeletonCard } from '../../src/components/PeopleSkeletonCard';
 
 type Segment = 'members' | 'friends' | 'requests';
@@ -258,6 +259,55 @@ export default function PeopleScreen() {
     <FamilyMemberRow member={item} isCouple={isCouple} />
   );
 
+  const renderInviteSection = () => {
+    if (!isOwner) return null;
+    return (
+      <View style={styles.inviteSection}>
+        <Text style={styles.inviteSectionTitle}>{t('people.inviteCode')}</Text>
+        <TouchableOpacity
+          style={[styles.inviteGenerateBtn, createInviteMutation.isPending && styles.addBtnDisabled]}
+          onPress={() => createInviteMutation.mutate()}
+          disabled={createInviteMutation.isPending}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.familyAlarmBtnText}>
+            {createInviteMutation.isPending ? t('people.generating') : t('people.generateInvite')}
+          </Text>
+        </TouchableOpacity>
+
+        {pendingInvites.length > 0 && (
+          <View style={styles.inviteList}>
+            <Text style={styles.inviteListTitle}>{t('people.pendingInvites')}</Text>
+            {pendingInvites.map((inv) => (
+              <View key={inv.id} style={styles.inviteCard}>
+                <Text style={styles.inviteCode}>{inv.code}</Text>
+                <Text style={styles.inviteExpiry}>
+                  {t('people.expiresAt', { time: new Date(inv.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                </Text>
+                <View style={styles.inviteActions}>
+                  <TouchableOpacity
+                    style={styles.inviteShareBtn}
+                    onPress={() => handleShareInvite(inv)}
+                    accessibilityLabel={t('people.shareInvite')}
+                  >
+                    <Text style={styles.inviteShareBtnText}>{t('people.shareInvite')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.inviteRevokeBtn}
+                    onPress={() => revokeMutation.mutate(inv.code)}
+                    accessibilityLabel={t('people.revokeInvite')}
+                  >
+                    <Text style={styles.inviteRevokeBtnText}>{t('people.revokeInvite')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
   const renderMembersContent = () => {
     if (familyLoading) {
       return <PeopleSkeletonCard count={3} />;
@@ -268,6 +318,18 @@ export default function PeopleScreen() {
           <Text style={styles.emptyEmoji}>👨‍👩‍👧</Text>
           <Text style={styles.emptyText}>{t('people.noGroup')}</Text>
           <Text style={styles.emptyHint}>{t('people.noGroupHint')}</Text>
+        </View>
+      );
+    }
+
+    if (isCouple) {
+      return (
+        <View style={styles.coupleContainer}>
+          <CoupleView
+            members={members}
+            onSendAlarm={() => router.push('/family-alarm/create')}
+          />
+          {renderInviteSection()}
         </View>
       );
     }
@@ -295,52 +357,7 @@ export default function PeopleScreen() {
             >
               <Text style={styles.familyAlarmBtnText}>⏰ {t('people.sendFamilyAlarm')}</Text>
             </TouchableOpacity>
-
-            {isOwner && (
-              <View style={styles.inviteSection}>
-                <Text style={styles.inviteSectionTitle}>{t('people.inviteCode')}</Text>
-                <TouchableOpacity
-                  style={[styles.inviteGenerateBtn, createInviteMutation.isPending && styles.addBtnDisabled]}
-                  onPress={() => createInviteMutation.mutate()}
-                  disabled={createInviteMutation.isPending}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.familyAlarmBtnText}>
-                    {createInviteMutation.isPending ? t('people.generating') : t('people.generateInvite')}
-                  </Text>
-                </TouchableOpacity>
-
-                {pendingInvites.length > 0 && (
-                  <View style={styles.inviteList}>
-                    <Text style={styles.inviteListTitle}>{t('people.pendingInvites')}</Text>
-                    {pendingInvites.map((inv) => (
-                      <View key={inv.id} style={styles.inviteCard}>
-                        <Text style={styles.inviteCode}>{inv.code}</Text>
-                        <Text style={styles.inviteExpiry}>
-                          {t('people.expiresAt', { time: new Date(inv.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
-                        </Text>
-                        <View style={styles.inviteActions}>
-                          <TouchableOpacity
-                            style={styles.inviteShareBtn}
-                            onPress={() => handleShareInvite(inv)}
-                            accessibilityLabel={t('people.shareInvite')}
-                          >
-                            <Text style={styles.inviteShareBtnText}>{t('people.shareInvite')}</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.inviteRevokeBtn}
-                            onPress={() => revokeMutation.mutate(inv.code)}
-                            accessibilityLabel={t('people.revokeInvite')}
-                          >
-                            <Text style={styles.inviteRevokeBtnText}>{t('people.revokeInvite')}</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
+            {renderInviteSection()}
           </View>
         }
       />
@@ -535,7 +552,12 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       borderRadius: BorderRadius.lg,
       padding: Spacing.md,
-      marginBottom: Spacing.sm,
+      marginBottom: Spacing.md,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
     },
     avatar: {
       width: 44,
@@ -636,7 +658,12 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       borderRadius: BorderRadius.lg,
       padding: Spacing.md,
-      marginBottom: Spacing.sm,
+      marginBottom: Spacing.md,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 6,
+      elevation: 2,
     },
     inviteCode: {
       fontSize: FontSize.xl,
@@ -703,6 +730,10 @@ function createStyles(colors: ThemeColors) {
       color: colors.textTertiary,
       textAlign: 'center',
       marginTop: Spacing.xs,
+    },
+    coupleContainer: {
+      flex: 1,
+      paddingBottom: 100,
     },
   });
 }

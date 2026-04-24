@@ -143,7 +143,10 @@
     "revokeInvite": "Revoke",
     "revoked": "Revoked",
     "noInvites": "No invite codes yet",
-    "pendingInvites": "Pending Invites"
+    "pendingInvites": "Pending Invites",
+    "coupleConnected": "Connected",
+    "bothAlarmAllowed": "Both can send alarms",
+    "coupleAlarmHint": "Enable alarm receiving in Settings"
   },
   "library": {
     "title": "Library",
