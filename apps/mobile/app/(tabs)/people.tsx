@@ -464,7 +464,7 @@ export default function PeopleScreen() {
             accessibilityState={{ selected: activeSegment === seg.key }}
             accessibilityLabel={seg.label}
           >
-            <Text style={[styles.segmentText, activeSegment === seg.key && styles.segmentTextActive]}>
+            <Text style={[styles.segmentText, activeSegment === seg.key && styles.segmentTextActive]} numberOfLines={1}>
               {seg.label}
               {seg.badge != null && seg.badge > 0 ? ` (${seg.badge})` : ''}
             </Text>

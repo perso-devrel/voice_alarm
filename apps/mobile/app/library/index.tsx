@@ -173,6 +173,21 @@ export default function LibraryScreen() {
     return map[category] || '💌';
   };
 
+  const CATEGORY_I18N: Record<string, string> = {
+    morning: 'library.categoryMorning',
+    lunch: 'library.categoryLunch',
+    afternoon: 'library.categoryAfternoon',
+    evening: 'library.categoryEvening',
+    night: 'library.categoryNight',
+    cheer: 'library.categoryCheer',
+    love: 'library.categoryLove',
+    health: 'library.categoryHealth',
+    custom: 'library.categoryCustom',
+  };
+
+  const getCategoryLabel = (key: string) =>
+    CATEGORY_I18N[key] ? t(CATEGORY_I18N[key]) : key;
+
   const renderItem = ({ item }: { item: LibraryItem }) => {
     const isActive = currentPlayingId === item.message_id;
     return (
@@ -186,7 +201,7 @@ export default function LibraryScreen() {
           onPress={() => router.push(`/message/${item.message_id}`)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`${item.voice_name}: ${item.text}`}
+          accessibilityLabel={`${item.voice_name}, ${getCategoryLabel(item.category)}: ${item.text}`}
         >
           <View style={dynStyles.messageLeft}>
             <View style={dynStyles.avatarSmall}>
@@ -195,7 +210,10 @@ export default function LibraryScreen() {
             <View style={dynStyles.messageContent}>
               <View style={dynStyles.messageHeader}>
                 <Text style={dynStyles.voiceName}>{item.voice_name}</Text>
-                <Text style={dynStyles.categoryBadge}>{getCategoryEmoji(item.category)}</Text>
+                <Text
+                  style={dynStyles.categoryBadge}
+                  accessibilityLabel={t('library.a11yCategoryBadge', { category: getCategoryLabel(item.category) })}
+                >{getCategoryEmoji(item.category)}</Text>
               </View>
               <Text style={dynStyles.messageText} numberOfLines={2}>
                 &quot;{item.text}&quot;
@@ -273,10 +291,10 @@ export default function LibraryScreen() {
             onPress={() => setCategoryFilter(cat.key)}
             accessibilityRole="radio"
             accessibilityState={{ selected: categoryFilter === cat.key }}
-            accessibilityLabel={cat.key === 'all' ? t('library.all') : cat.key}
+            accessibilityLabel={cat.key === 'all' ? t('library.all') : getCategoryLabel(cat.key)}
           >
             <Text style={dynStyles.categoryChipText}>
-              {cat.emoji} {cat.key === 'all' ? t('library.all') : cat.key}
+              {cat.emoji} {cat.key === 'all' ? t('library.all') : getCategoryLabel(cat.key)}
             </Text>
           </TouchableOpacity>
         )}

@@ -171,7 +171,17 @@
     "deleteError": "메시지 삭제에 실패했어요.",
     "createMessage": "메시지 만들기",
     "addFavorite": "즐겨찾기 추가",
-    "removeFavorite": "즐겨찾기 해제"
+    "removeFavorite": "즐겨찾기 해제",
+    "categoryMorning": "아침",
+    "categoryLunch": "점심",
+    "categoryAfternoon": "오후",
+    "categoryEvening": "저녁",
+    "categoryNight": "밤",
+    "categoryCheer": "응원",
+    "categoryLove": "사랑",
+    "categoryHealth": "건강",
+    "categoryCustom": "직접 작성",
+    "a11yCategoryBadge": "카테고리: {{category}}"
   },
   "settings": {
     "title": "설정",

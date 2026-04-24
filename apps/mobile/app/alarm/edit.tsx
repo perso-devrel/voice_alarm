@@ -523,6 +523,7 @@ function createStyles(colors: ThemeColors) {
     },
     quickDays: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       gap: Spacing.sm,
     },
     quickChip: {

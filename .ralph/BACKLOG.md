@@ -190,8 +190,8 @@
 - [x] 스택 화면 접근성 Batch 1 (alarm/create ~25, alarm/edit ~15, library/index ~6 = ~46 라벨)
 - [x] 스택 화면 접근성 Batch 2 (voice/record, message/create, dub/translate, family-alarm/create, voice/picker)
 - [x] 스택 화면 접근성 Batch 3 (voice/upload, voice/diarize, character/index, player, voice/[id], friend/[id]) + friend/[id] 다크모드 수정
-- [ ] 이모지가 단독으로 정보를 전달하는 곳에 텍스트 라벨 병기 확인
-- [ ] 한국어/영어 전환 시 레이아웃 깨짐 없는지 점검 (영어가 한국어보다 길어서 줄바꿈 발생 가능)
+- [x] 이모지가 단독으로 정보를 전달하는 곳에 텍스트 라벨 병기 확인 (library 카테고리 뱃지/필터 i18n, player 장식 이모지 a11y)
+- [x] 한국어/영어 전환 시 레이아웃 깨짐 점검 (segment numberOfLines, quickDays flexWrap, FamilyMemberRow flexShrink)
 
 ---
 
@@ -224,11 +224,17 @@
 
 </details>
 
+## P6 — TypeScript 엄격 모드 강화
+
+- [x] 백엔드 `strict: false` → `strict: true` 전환 (zero errors, 즉시 적용)
+- [x] `any` 타입 전수 조사: 백엔드 0건, 모바일 0건 — 이미 clean
+- [x] `unknown` 타입 검토: 모두 입력 검증 경계면에서 올바르게 사용 중 — 변경 불필요
+- [x] `@ts-expect-error` 검토: test 파일 2건 — 의도적 잘못된 입력 테스트, 정상
+
 ## 자가 생성 가능 풀 (BACKLOG 고갈 시)
 
 - 백엔드 테스트 커버리지 확장 (character, family, billing, dub 라우트)
 - 모바일 E2E 테스트 (Detox 또는 Maestro)
-- 앱 접근성 강화 (스크린 리더, 고대비)
 - 성능 프로파일링 + 최적화
 - Sentry 에러 모니터링 연동
 - 앱 아이콘 + 스플래시 스크린 디자인

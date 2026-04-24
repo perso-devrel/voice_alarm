@@ -258,7 +258,7 @@ export default function PlayerScreen() {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text style={styles.categoryEmoji}>{getEmoji()}</Text>
+        <Text style={styles.categoryEmoji} accessibilityElementsHidden>{getEmoji()}</Text>
 
         <View
           style={styles.profileSection}

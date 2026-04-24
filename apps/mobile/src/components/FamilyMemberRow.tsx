@@ -26,7 +26,7 @@ export function FamilyMemberRow({ member, isCouple }: Props) {
       </View>
       <View style={dynStyles.info}>
         <View style={dynStyles.nameRow}>
-          <Text style={dynStyles.name}>{displayName}</Text>
+          <Text style={dynStyles.name} numberOfLines={1}>{displayName}</Text>
           <View style={[dynStyles.roleBadge, member.role === 'owner' ? dynStyles.ownerBadge : dynStyles.memberBadge]}>
             <Text style={dynStyles.roleBadgeText}>
               {member.role === 'owner' ? t('people.owner') : t('people.member')}
@@ -90,6 +90,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: FontSize.md,
       fontFamily: FontFamily.semibold,
       color: colors.text,
+      flexShrink: 1,
     },
     email: {
       fontSize: FontSize.sm,
