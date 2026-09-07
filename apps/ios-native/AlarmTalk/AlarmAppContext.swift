@@ -36,6 +36,31 @@ final class AlarmAppContext {
     /// 기본은 no-op 이라 테스트/콜드부팅에서 안전하다.
     var rearmHolidayOffOneShot: (String) async -> Void = { _ in }
 
+    /// 해제·다시 울림을 사용 기록에 적는 자리(`Shared/AlarmIntents.swift` 가 부른다).
+    ///
+    /// ⚠ **울림 경로라 네트워크를 부르지 않는다** — 로컬 큐에 적기만 한다
+    /// (`docs/spec/usage-events.md` §2). 계정은 큐가 스스로 채운다.
+    ///
+    /// ⚠ **static 인 이유는 `stopVoiceIfOwnedStatic` 과 같다.** 락스크린에서 콜드 부팅된
+    /// 실행은 Scene 의 `.task` 가 아직 안 돌아 `shared` 가 nil 이다 — 인스턴스에 매달아
+    /// 두면 **누른 사실 자체가** 그 창에서 사라진다.
+    ///
+    /// ⚠ **알람 기록을 못 찾아도 적는다.** 식별자는 있을 때만 붙인다(`alarm_id` 는
+    /// nullable 이다 — `packages/shared/src/schemas/usage-event.ts`). 안드로이드는
+    /// `RingingService.dismiss` 가 Intent 의 id 로 **무조건** 적는다(조회에 매달지 않는다) —
+    /// 못 찾은 것은 안 누른 것이 아니다.
+    ///
+    /// 클로저로 둔 이유는 나머지 훅과 같다: 테스트가 갈아 끼울 수 있게. 갈아 끼웠으면
+    /// **되돌려 놓을 것** — 전역 상태라 다른 테스트로 샌다.
+    static var recordUsageEvent: (UsageEventType, LocalAlarmRecord?) -> Void = { type, record in
+        UsageEventQueue.shared.record(
+            type,
+            alarmID: record?.id,
+            voiceProfileID: record?.voiceProfileId,
+            messageID: record?.ttsMessageId
+        )
+    }
+
     init(store: LocalAlarmStore) {
         self.store = store
         AlarmAppContext.shared = self
