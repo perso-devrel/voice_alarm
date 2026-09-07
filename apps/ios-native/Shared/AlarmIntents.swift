@@ -60,16 +60,20 @@ struct StopAlarmIntent: LiveActivityIntent {
             // ignored: AlarmKit 에서 이미 dismiss 된 알람일 가능성.
         }
         #if ALARMTALK_APP
+        // 안드로이드 `RingingService.dismiss` 의 미러 — **누른 자리**에서, **무조건** 적는다.
+        // ⚠ `handleAlarmStopped` **앞**에서 기록을 찾는다: `markStopped` 가
+        //   `.fixed` 공휴일off 갈래의 `alarmKitID` 를 비우므로 그 뒤에는 되짚을 수 없다.
+        // ⚠ 이 기록을 `handleAlarmStopped` 안으로 옮기지 말 것 — 그 함수는 '목록에서
+        //   사라진 알람' 루프도 부른다. 알람을 지우거나 스위치를 끄기만 해도 해제로
+        //   적히게 된다.
+        // ⚠ **ctx·기록이 없어도 적는다.** 락스크린 콜드 부팅에서는 `shared` 가 nil 이거나
+        //   저장소의 디스크 로드가 아직 안 끝나 못 찾는다 — 그건 안 누른 것이 아니다.
+        //   안드로이드는 Intent 의 알람 id 로 무조건 적어서 이 창이 아예 없다.
+        AlarmAppContext.recordUsageEvent(
+            .alarmDismissed,
+            AlarmAppContext.shared?.store?.recordByAlarmKitID(uuid.uuidString)
+        )
         if let ctx = AlarmAppContext.shared {
-            // 안드로이드 `RingingService.dismiss` 의 미러 — **누른 자리**에서 적는다.
-            // ⚠ `handleAlarmStopped` **앞**에서 기록을 찾는다: `markStopped` 가
-            //   `.fixed` 공휴일off 갈래의 `alarmKitID` 를 비우므로 그 뒤에는 되짚을 수 없다.
-            // ⚠ 이 기록을 `handleAlarmStopped` 안으로 옮기지 말 것 — 그 함수는 '목록에서
-            //   사라진 알람' 루프도 부른다. 알람을 지우거나 스위치를 끄기만 해도 해제로
-            //   적히게 된다.
-            if let record = ctx.store?.recordByAlarmKitID(uuid.uuidString) {
-                ctx.recordUsageEvent(.alarmDismissed, record)
-            }
             await ctx.handleAlarmStopped(alarmKitIDString: uuid.uuidString)
         }
         #endif
@@ -133,9 +137,13 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
         // 안드로이드 `RingingService.snooze` 와 같은 자리 — **누른 사실**을 먼저 적는다.
         // 한도에 걸려 아래 `.deny` 로 종료되더라도 사건은 '다시 울림을 눌렀다' 하나다
         // (안드로이드도 그때 해제를 따로 적지 않는다).
-        if let record = ctx?.store?.recordByAlarmKitID(uuid.uuidString) {
-            ctx?.recordUsageEvent(.alarmSnoozed, record)
-        }
+        // ⚠ 여기도 **기록을 못 찾아도 적는다** — 바로 아래 `.unknown` 갈래가 그 창을
+        //   이미 인정하고 있다(콜드 부팅이면 판단 근거가 없다). 같은 요청 안에서 저장소를
+        //   한쪽은 못 믿고 한쪽은 믿을 수는 없다.
+        AlarmAppContext.recordUsageEvent(
+            .alarmSnoozed,
+            ctx?.store?.recordByAlarmKitID(uuid.uuidString)
+        )
         let decision = ctx?.snoozeDecision(alarmKitIDString: uuid.uuidString) ?? .unknown
         if decision == .deny {
             // 한도 도달 / 다시 울림 비활성 — Android 처럼 알람을 끝낸다.

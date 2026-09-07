@@ -7,7 +7,9 @@ final class AlarmIntentsTests: XCTestCase {
     private var store: LocalAlarmStore!
     private var ctx: AlarmAppContext!
     /// 인텐트가 적은 사용 기록. 실제 큐 대신 여기로 받는다(디스크·키체인을 타지 않는다).
-    private var recorded: [(UsageEventType, String)] = []
+    private var recorded: [(UsageEventType, String?)] = []
+    /// 전역 훅을 갈아 끼우므로 원래대로 되돌려 놓는다 — 안 그러면 다른 테스트로 샌다.
+    private var originalRecordUsageEvent: ((UsageEventType, LocalAlarmRecord?) -> Void)!
 
     override func setUp() async throws {
         // 경로는 저장소에게 묻는다 — 손으로 조립하면 기기의 진짜 알람 파일을 지운다.
@@ -17,12 +19,14 @@ final class AlarmIntentsTests: XCTestCase {
         for r in store.alarms { store.delete(r) }
         ctx = AlarmAppContext(store: store)
         recorded = []
-        ctx.recordUsageEvent = { [weak self] type, record in
-            self?.recorded.append((type, record.id))
+        originalRecordUsageEvent = AlarmAppContext.recordUsageEvent
+        AlarmAppContext.recordUsageEvent = { [weak self] type, record in
+            self?.recorded.append((type, record?.id))
         }
     }
 
     override func tearDown() async throws {
+        AlarmAppContext.recordUsageEvent = originalRecordUsageEvent
         AlarmAppContext.shared = nil
         ctx = nil
         store = nil
@@ -127,6 +131,26 @@ final class AlarmIntentsTests: XCTestCase {
         _ = try await SnoozeAlarmIntent(alarmID: kitID, snoozeMinutes: 5).perform()
 
         XCTAssertEqual(recorded.map(\.0), [.alarmSnoozed])
+    }
+
+    func test_stopIntent_noContext_stillRecordsDismissed() async throws {
+        // 락스크린 콜드 부팅 — Scene 의 .task 가 아직 안 돌아 컨텍스트가 없다.
+        // 그래도 **누른 사실**은 남아야 한다(식별자는 못 붙일 뿐이다).
+        AlarmAppContext.shared = nil
+
+        _ = try await StopAlarmIntent(alarmID: UUID().uuidString).perform()
+
+        XCTAssertEqual(recorded.map(\.0), [.alarmDismissed])
+        XCTAssertNil(recorded.first?.1)
+    }
+
+    func test_snoozeIntent_storeNotLoaded_stillRecordsSnoozed() async throws {
+        // 저장소에 그 알람이 아직 없다(디스크 로드 전). 다시 울림 판단은 .unknown 으로
+        // 이미 이 창을 인정하고 있으므로, 기록도 같은 태도여야 한다.
+        _ = try await SnoozeAlarmIntent(alarmID: UUID().uuidString, snoozeMinutes: 5).perform()
+
+        XCTAssertEqual(recorded.map(\.0), [.alarmSnoozed])
+        XCTAssertNil(recorded.first?.1)
     }
 
     func test_handleAlarmStopped_alone_recordsNothing() async throws {

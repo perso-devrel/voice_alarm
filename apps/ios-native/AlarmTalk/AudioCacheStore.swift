@@ -775,10 +775,8 @@ final class AudioCacheStore {
     /// 옛 별칭 디렉터리(`AlarmTalkAudio`)의 스톡 사본을 정리한다.
     ///
     /// 그 디렉터리 파일명은 `<messageId>.<ext>` 라 캐시 키와 모양이 다르다. 그래서
-    /// **살아 있는 message id** 와 **알람이 가리키는 파일 이름** 둘로 남길 것을 가른다.
-    /// 스톡이 아닌 파일(직접 입력·녹음 사본)은 message id 목록에 없지만 `localAudioUri`
-    /// 로 참조되므로 이름 집합이 지켜 준다 — ⚠ **참조 목록이 비어 있으면 아무것도 지우지
-    /// 않는다**(호출자가 알람을 못 읽은 상태일 수 있다).
+    /// **살아 있는 message id** 와 **알람이 가리키는 파일 이름**, 그리고 **정본이 스톡인가**
+    /// 셋으로 남길 것을 가른다.
     private nonisolated func pruneLegacyStockAliases(
         liveMessageIds: Set<String>,
         referencedFileNames: Set<String>
@@ -787,22 +785,43 @@ final class AudioCacheStore {
         guard let directory = try? Self.legacyAudioDirectory() else { return 0 }
         let fileManager = FileManager.default
         let names = (try? fileManager.contentsOfDirectory(atPath: directory.path)) ?? []
+        guard !names.isEmpty else { return 0 }
+        let stockIds = retiredStockAliasCandidates()
         var deleted = 0
         for name in names {
             if referencedFileNames.contains(name) { continue }
             let base = (name as NSString).deletingPathExtension
             // 지금 매니페스트에 있는 클립의 별칭은 남긴다.
             if liveMessageIds.contains(base) { continue }
-            // ⚠ **스톡이 아닌 사본은 건드리지 않는다.** 이 디렉터리에는 직접 입력·녹음
-            //   음원의 별칭도 산다. 그것들은 `localAudioUri` 로만 참조되므로, 참조 목록에
-            //   없다고 지우면 사용자가 만든 알람이 소리를 잃는다. UUID 모양(= 서버
-            //   message id)만 대상으로 삼는다.
-            guard base.count == 36, base.contains("-") else { continue }
+            // ⚠ **스톡인지는 '정본이 있는가' 로 가른다 — 이름 모양으로 가르지 말 것.**
+            //   이 디렉터리에는 직접 입력·녹음 음원의 별칭도 살고, 그 이름도 서버 message id
+            //   (= UUID)다. 모양으로 가르면 방금 만들어 편집기가 들고 있는(아직 어떤 알람도
+            //   가리키지 않는) 직접 입력 음원이 스톡으로 오인돼 지워진다 — 미리듣기가
+            //   그 자리에서 깨진다. 안드로이드도 접두(`stock_`)로만 가른다.
+            guard stockIds.contains(base.lowercased()) else { continue }
             if (try? fileManager.removeItem(at: directory.appendingPathComponent(name))) != nil {
                 deleted += 1
             }
         }
         return deleted
+    }
+
+    /// 정본 디렉터리에 `stock_<id>` 로 남아 있는 스톡 클립의 id 들.
+    ///
+    /// 별칭 정리가 **정본 정리보다 먼저** 도는 덕에(위 `pruneReplacedStockAudio` 주석),
+    /// 은퇴한 클립의 정본이 아직 디스크에 있어 이 목록으로 잡힌다. 미리듣기
+    /// (`stock_preview_`)는 알람이 참조하지 않는 별개 갈래라 뺀다.
+    private nonisolated func retiredStockAliasCandidates() -> Set<String> {
+        guard let directory = try? Self.audioDirectory() else { return [] }
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+        let previewPrefix = Self.safeCacheKey("stock_preview_")
+        var ids: Set<String> = []
+        for name in names {
+            let base = Self.splitName(name).base
+            guard base.hasPrefix(Self.stockCacheKeyPrefix), !base.hasPrefix(previewPrefix) else { continue }
+            ids.insert(String(base.dropFirst(Self.stockCacheKeyPrefix.count)))
+        }
+        return ids
     }
 
     nonisolated func sweepStaleCache(

@@ -72,10 +72,14 @@ final class StockAudioPruneTests: XCTestCase {
         let staleId = "11111111-1111-4111-8111-111111111111"
         let liveId = "22222222-2222-4222-8222-222222222222"
         let boundId = "33333333-3333-4333-8333-333333333333"
+        // 스톡 별칭은 언제나 정본(`stock_<id>`)과 **한 쌍**으로 쓰인다 — 그게 스톡이라는 증거다.
+        _ = try put("stock_\(staleId).mp3", in: directory)
+        _ = try put("stock_\(liveId).mp3", in: directory)
+        _ = try put("stock_\(boundId).mp3", in: directory)
         let stale = try put("\(staleId).mp3", in: legacyDirectory)
         let live = try put("\(liveId).mp3", in: legacyDirectory)
         let bound = try put("\(boundId).mp3", in: legacyDirectory)
-        // 직접 입력·녹음 사본은 message id 모양이 아니다 — 건드리면 안 된다.
+        // 직접 입력·녹음 사본은 건드리면 안 된다.
         let recording = try put("recording-1.m4a", in: legacyDirectory)
 
         _ = AudioCacheStore.shared.pruneReplacedStockAudio(
@@ -88,5 +92,22 @@ final class StockAudioPruneTests: XCTestCase {
         XCTAssertTrue(exists(live), "매니페스트에 있는 별칭은 남긴다")
         XCTAssertTrue(exists(bound), "알람이 가리키는 별칭은 남긴다")
         XCTAssertTrue(exists(recording), "스톡이 아닌 사본은 건드리지 않는다")
+    }
+
+    /// ⚠ **UUID 모양이라고 스톡이 아니다.** 서버 `message_id` 는 직접 입력 음원도 UUID 라,
+    /// 이름 모양으로 가르면 방금 만들어 편집기가 들고 있는(아직 어떤 알람도 안 가리키는)
+    /// 음원이 통째로 지워진다 — 미리듣기가 그 자리에서 깨진다.
+    func test_정본이_없는_UUID_별칭은_스톡이_아니다() throws {
+        let manualId = "44444444-4444-4444-8444-444444444444"
+        let manual = try put("\(manualId).mp3", in: legacyDirectory)
+        // 살아 있는 스톡이 하나는 있어야 정리가 돈다(매니페스트 방어).
+        _ = try put("stock_55555555-5555-4555-8555-555555555555.mp3", in: directory)
+
+        _ = AudioCacheStore.shared.pruneReplacedStockAudio(
+            referencedKeys: [],
+            liveKeys: ["stock_55555555-5555-4555-8555-555555555555"]
+        )
+
+        XCTAssertTrue(exists(manual), "정본이 없는 별칭은 스톡이 아니다 — 남긴다")
     }
 }

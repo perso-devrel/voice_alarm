@@ -3,6 +3,9 @@ package com.alarmtalk.app.data
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * 사용 기록에 **어느 계정을 적는가**.
@@ -11,6 +14,8 @@ import org.junit.Test
  * 없다. 그래서 계정은 **적는 순간**에 정해져야 한다 — 코루틴이 실제로 도는 시점이 아니라.
  * iOS `UsageEventQueueTests` 의 같은 이름 테스트와 한 쌍이다.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class UsageEventRecorderAccountTest {
 
     @Test
@@ -28,6 +33,21 @@ class UsageEventRecorderAccountTest {
         current = "u2"
         dao.awaitInsert()
         assertEquals("u1", dao.inserted.single().userId)
+    }
+
+    @Test
+    fun `계정 조회가 던져도 부르는 쪽으로 새지 않는다`() {
+        // 계정은 암호화 프리퍼런스(키스토어)에서 읽는다 — 키가 무효화되면 던진다.
+        // `RingingService` 는 해제·다시 울림에서 이 함수를 **먼저** 부르므로, 여기서 새면
+        // 소리를 끄고 다음 예약을 잡는 일이 통째로 죽는다. 기록은 곁다리다.
+        val dao = FakeUsageEventDao()
+        val recorder = UsageEventRecorder(dao) { error("keystore invalidated") }
+
+        recorder.record(type = UsageEvents.ALARM_DISMISSED, alarmId = "a")
+
+        // 계정을 모르면 그 기록은 버린다 — 비워 두면 다음에 로그인한 사람 것이 된다.
+        Thread.sleep(50)
+        assertEquals(0, runBlocking { dao.count() })
     }
 
     private class FakeUsageEventDao : UsageEventDao {

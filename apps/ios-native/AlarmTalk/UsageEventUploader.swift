@@ -28,6 +28,17 @@ final class UsageEventUploader {
         for _ in 0..<maxBatchesPerRun {
             let batch = queue.oldest(userID: session.user.id, limit: batchSize)
             if batch.isEmpty { return }
+            // ⚠ **계정이 바뀌었으면 그 자리에서 멈춘다**(`docs/spec/usage-events.md` §4).
+            // 배치를 꺼낸 뒤·보내기 전에 본다 — 안드로이드 `UsageEventUploadWorker` 의
+            // 세대 검사와 같은 자리다. iOS 에는 세대 카운터가 없어 **토큰을 에폭으로** 쓴다.
+            // `await` 마다 다른 일이 끼어들 수 있어(같은 MainActor 의 로그아웃이 그렇다)
+            // 한 번 받아 둔 세션만 믿고 남은 배치를 계속 보내면, 떠난 계정의 기록이
+            // 그 뒤에도 계속 올라간다.
+            guard KeychainStore.runIfCurrentSession(
+                userID: session.user.id,
+                token: session.token,
+                action: {}
+            ) else { return }
             do {
                 try await api.uploadUsageEvents(batch, authToken: session.token)
                 queue.remove(ids: Set(batch.map { $0.id }))

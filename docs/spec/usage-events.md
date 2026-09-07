@@ -17,6 +17,11 @@
 한 건에 담기는 것: 사건 종류, **일어난 시각**, 알람·목소리·문구의 **식별자**, 짧은 부가
 값(`detail`, 120자).
 
+⚠ **식별자를 못 붙여도 사건은 적는다.** 식별자는 전부 nullable 이다 — 잠금화면에서 콜드
+부팅된 iOS 는 알람 기록을 아직 못 읽어 알람 id 를 모를 수 있는데, **못 찾은 것은 안 누른
+것이 아니다.** 못 적으면 그 회차는 영영 복구되지 않는다(나중에 어느 버튼을 눌렀는지
+되짚을 방법이 없다).
+
 ⚠ **문구 원문 같은 개인 텍스트를 담지 않는다.** 문구는 이미 `messages` 에 있고, 기록에
 사본을 만들면 **목소리 삭제·동의 철회 때 지워야 할 곳이 하나 더 늘어난다.** 자유 문자열은
 `detail` 하나뿐이고 앱·서버 양쪽에서 자른다.
@@ -110,7 +115,8 @@
 | 울림 기록 | `alarm/RingingService.kt` 의 `startRinging` | `AlarmKitViewModel.swift` 의 `.alerting` 진입 | — |
 | 알람 생성·수정·삭제 | `data/AlarmRepository.kt` 의 `recordAlarmEvent` | `Views/Editor/AlarmEditorSheet.swift` 의 `recordSaveUsageEvent`, `AlarmKitViewModel.deleteLocalAlarm` | — |
 | 사용중/비사용중 | 붙임 `recordAlarmEvent` / 놓음 `deleteAlarmLocked`·`updateAlarm`(`manualMessageReleasedByEdit`) | 붙임·놓음 모두 `AlarmEditorSheet.recordSaveUsageEvent`, 삭제는 `AlarmKitViewModel.deleteLocalAlarm` | `message_library.in_use` |
-| 해제·다시 울림 | `alarm/RingingService.kt` 의 `dismiss`/`snooze` | `Shared/AlarmIntents.swift` 의 `StopAlarmIntent`/`SnoozeAlarmIntent` — **누른 자리**에서 적는다(`handleAlarmStopped` 는 알람을 지우거나 끌 때도 불린다) | — |
+| 해제·다시 울림 | `alarm/RingingService.kt` 의 `dismiss`/`snooze` — Intent 의 알람 id 로 **무조건** 적는다 | `Shared/AlarmIntents.swift` 의 `StopAlarmIntent`/`SnoozeAlarmIntent` — **누른 자리**에서 적고(`handleAlarmStopped` 는 알람을 지우거나 끌 때도 불린다) **조회에 매달지 않는다**(콜드 부팅에서는 기록을 못 찾는다) | — |
+| 계정이 바뀌면 멈춤 | `sync/UsageEventUploadWorker.kt` 의 `startGeneration` 비교 | `UsageEventUploader.swift` 의 `runIfCurrentSession`(세대 카운터가 없어 **토큰을 에폭으로** 쓴다) | — |
 | 남긴 계정 | `data/UsageEventRecorder.kt` 의 `currentUserId` | `UsageEventQueue.swift` 의 `currentUserID` | — |
 | 미래 시각 자르기 | — | — | `routes/events.ts` 의 `boundOccurredAt` |
 | 보관 기간 | — | — | `index.ts` 의 `USAGE_EVENT_RETENTION_DAYS` |

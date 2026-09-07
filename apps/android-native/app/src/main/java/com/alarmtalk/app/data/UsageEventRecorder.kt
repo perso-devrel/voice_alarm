@@ -61,7 +61,18 @@ class UsageEventRecorder(
         // 계정은 **적는 순간**에 정한다 — 코루틴이 실제로 도는 시점이 아니라. 안에서 읽으면
         // 그 틈에 로그아웃·로그인이 끼어들 때 A 의 사건이 B 의 이름으로 저장된다(서버는
         // 토큰의 주인으로 적으므로 되돌릴 수 없다). iOS `UsageEventQueue.record` 와 한 쌍이다.
-        val userId = currentUserId()
+        //
+        // ⚠ **그 조회도 실패할 수 있다 — 여기서 새면 알람이 죽는다.** 계정은 암호화
+        // 프리퍼런스에서 읽는데(키스토어), 키가 무효화되거나 파일이 깨지면 `getString` 이
+        // `SecurityException` 을 던진다. `RingingService` 는 해제·다시 울림에서 **이 함수를
+        // 먼저** 부르므로(메인 스레드), 새어 나가면 소리를 끄고 다음 예약을 잡는 일이
+        // 통째로 죽는다 — 기록은 곁다리인데 본업을 막는다.
+        // 못 읽으면 **그 기록을 버린다.** 계정을 비워 두면 다음에 로그인한 사람의 기록으로
+        // 올라가므로(`UsageEventDao.oldest` 는 null 을 아무에게나 준다) 그게 더 나쁘다.
+        val userId = runCatching { currentUserId() }.getOrElse { error ->
+            Log.w(AlarmTalkLog.TAG, "Failed to resolve account for usage event type=$type", error)
+            return
+        }
         scope.launch {
             runCatching {
                 dao.insert(
