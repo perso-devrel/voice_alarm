@@ -132,8 +132,8 @@ export function VoicePreview({ className }: { className?: string }) {
     const progress = duration > 0 ? Math.min(1, audio.currentTime / duration) : 0;
     const head = Math.min(BAR_COUNT - 1, Math.floor(progress * BAR_COUNT));
 
-    let level = MIN_LEVEL;
     const analyser = analyserRef.current;
+    let level: number;
     if (analyser) {
       const buf = new Uint8Array(analyser.fftSize);
       analyser.getByteTimeDomainData(buf);
