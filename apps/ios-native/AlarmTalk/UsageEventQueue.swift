@@ -85,11 +85,15 @@ final class UsageEventQueue: @unchecked Sendable {
         occurredAt: Date = Date()
     ) {
         let trimmedDetail = detail.map { String($0.prefix(120)) }
+        // 계정은 **적는 순간**에 정한다 — 파일 쓰기가 실제로 도는 시점이 아니라.
+        // 큐 안에서 읽으면 그 틈에 로그아웃·로그인이 끼어들 때 A 의 사건이 B 의 이름으로
+        // 저장된다(서버는 토큰의 주인으로 적으므로 되돌릴 수 없다).
+        // `userID` 는 **덮어쓰기용**이다 — 편집기처럼 메모리에 든 세션이 더 정확한 자리
+        // (Keychain 쓰기가 실패해도 세션은 살아 있다)만 넘긴다. `??` 라 그 자리는
+        // 키체인을 읽지도 않는다.
+        let resolvedUserID = userID ?? currentUserID()
         queue.async { [weak self] in
             guard let self else { return }
-            // 계정은 여기서 정한다. `userID` 는 **덮어쓰기용**이다 — 편집기처럼 메모리에
-            // 든 세션이 더 정확한 자리(Keychain 쓰기가 실패해도 세션은 살아 있다)만 넘긴다.
-            // 키체인 읽기는 여기(백그라운드 큐)에서 한다 — 울림 경로를 기다리게 하지 않는다.
             let event = QueuedUsageEvent(
                 id: UUID().uuidString,
                 type: type,
@@ -98,7 +102,7 @@ final class UsageEventQueue: @unchecked Sendable {
                 voiceProfileID: voiceProfileID,
                 messageID: messageID,
                 detail: trimmedDetail,
-                userID: userID ?? self.currentUserID()
+                userID: resolvedUserID
             )
             var events = self.loadLocked()
             events.append(event)

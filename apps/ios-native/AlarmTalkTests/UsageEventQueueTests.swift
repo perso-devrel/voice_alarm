@@ -64,6 +64,53 @@ struct UsageEventQueueTests {
         #expect(queue.oldest(userID: "u1", limit: 10).first?.alarmID == "a")
     }
 
+    @Test("계정은 적는 순간에 정해진다 — 그 뒤에 바뀌어도 남의 이름으로 가지 않는다")
+    func stampsAccountAtRecordTime() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("usage-events-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let box = AccountBox("u1")
+        let queue = UsageEventQueue(fileURL: url, currentUserID: { box.read() })
+
+        queue.record(.alarmRang, alarmID: "a")
+        // 파일 쓰기는 비동기여도 **계정은 이미 정해져 있어야 한다.** 큐 안에서 읽으면
+        // 이 시점에 아직 0이고, 그 사이 로그아웃·로그인이 끼어들면 남의 기록이 된다.
+        #expect(box.readCount == 1)
+
+        box.set("u2")
+        try waitUntil { queue.count == 1 }
+        #expect(queue.oldest(userID: "u2", limit: 10).isEmpty)
+        #expect(queue.oldest(userID: "u1", limit: 10).first?.alarmID == "a")
+    }
+
+    /// 기록 도중 계정이 바뀌는 상황을 만든다. 큐가 다른 스레드에서 읽을 수 있어 잠근다.
+    private final class AccountBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: String?
+        private var reads = 0
+
+        init(_ value: String?) { self.value = value }
+
+        func read() -> String? {
+            lock.lock()
+            defer { lock.unlock() }
+            reads += 1
+            return value
+        }
+
+        func set(_ next: String?) {
+            lock.lock()
+            defer { lock.unlock() }
+            value = next
+        }
+
+        var readCount: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return reads
+        }
+    }
+
     @Test("넘긴 계정이 이긴다 — 편집기는 메모리에 든 세션을 쓴다")
     func explicitUserIDWins() throws {
         let (queue, url) = makeQueue(currentUserID: "u1")

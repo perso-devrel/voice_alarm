@@ -58,6 +58,10 @@ class UsageEventRecorder(
         detail: String? = null,
         occurredAtMillis: Long = System.currentTimeMillis(),
     ) {
+        // 계정은 **적는 순간**에 정한다 — 코루틴이 실제로 도는 시점이 아니라. 안에서 읽으면
+        // 그 틈에 로그아웃·로그인이 끼어들 때 A 의 사건이 B 의 이름으로 저장된다(서버는
+        // 토큰의 주인으로 적으므로 되돌릴 수 없다). iOS `UsageEventQueue.record` 와 한 쌍이다.
+        val userId = currentUserId()
         scope.launch {
             runCatching {
                 dao.insert(
@@ -69,7 +73,7 @@ class UsageEventRecorder(
                         voiceProfileId = voiceProfileId,
                         messageId = messageId,
                         detail = detail?.take(120),
-                        userId = currentUserId(),
+                        userId = userId,
                     ),
                 )
                 trimIfNeeded()
