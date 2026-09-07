@@ -47,7 +47,12 @@ interface UsageEventDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(event: UsageEventEntity)
 
-    @Query("SELECT * FROM usage_events WHERE userId IS NULL OR userId = :userId ORDER BY occurredAtMillis ASC LIMIT :limit")
+    /**
+     * ⚠ **주인 없는 행은 꺼내지 않는다.** 기록기가 계정을 모르면 아예 적지 않으므로
+     * (`UsageEventRecorder.record`) 그런 행은 옛 빌드가 남긴 것뿐이고, 지금 로그인한
+     * 사람에게 붙이면 **되돌릴 수 없는 오기록**이 된다(서버는 토큰의 주인으로 적는다).
+     */
+    @Query("SELECT * FROM usage_events WHERE userId = :userId ORDER BY occurredAtMillis ASC LIMIT :limit")
     suspend fun oldest(userId: String, limit: Int): List<UsageEventEntity>
 
     @Query("DELETE FROM usage_events WHERE id IN (:ids)")

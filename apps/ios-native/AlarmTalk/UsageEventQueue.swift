@@ -91,7 +91,12 @@ final class UsageEventQueue: @unchecked Sendable {
         // `userID` 는 **덮어쓰기용**이다 — 편집기처럼 메모리에 든 세션이 더 정확한 자리
         // (Keychain 쓰기가 실패해도 세션은 살아 있다)만 넘긴다. `??` 라 그 자리는
         // 키체인을 읽지도 않는다.
-        let resolvedUserID = userID ?? currentUserID()
+        //
+        // ⚠ **계정을 모르면 적지 않는다.** 비워 두면 다음에 로그인한 사람의 기록으로
+        // 올라간다 — 서버는 토큰의 주인으로 적고(배치에 계정이 실리지 않는다) `user_id` 는
+        // NOT NULL 이라, 주인 없는 사건은 **어차피 올바르게 올릴 방법이 없다.**
+        // 잃는 것은 로그아웃 구간(자동 401 로 세션만 잃은 구간 포함)의 사건 몇 건이다.
+        guard let resolvedUserID = (userID ?? currentUserID())?.nilIfBlank else { return }
         queue.async { [weak self] in
             guard let self else { return }
             let event = QueuedUsageEvent(
@@ -117,7 +122,9 @@ final class UsageEventQueue: @unchecked Sendable {
     func oldest(userID: String, limit: Int) -> [QueuedUsageEvent] {
         queue.sync {
             loadLocked()
-                .filter { $0.userID == nil || $0.userID == userID }
+                // 주인 없는 행은 보내지 않는다 — 이제 그런 행을 만들지도 않는다(위 `record`).
+                // 남아 있다면 옛 빌드가 남긴 것이고, 그걸 지금 사람에게 붙이면 안 된다.
+                .filter { $0.userID == userID }
                 .sorted { $0.occurredAt < $1.occurredAt }
                 .prefix(limit)
                 .map { $0 }

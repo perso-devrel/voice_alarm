@@ -50,6 +50,19 @@ class UsageEventRecorderAccountTest {
         assertEquals(0, runBlocking { dao.count() })
     }
 
+    @Test
+    fun `계정이 없으면 아예 적지 않는다`() {
+        // 로그아웃 구간(자동 401 로 세션만 잃은 구간 포함)에도 알람은 울린다. 그때 남긴
+        // 사건을 계정 없이 적어 두면 **다음에 로그인한 사람의 기록**으로 올라간다.
+        val dao = FakeUsageEventDao()
+        val recorder = UsageEventRecorder(dao) { null }
+
+        recorder.record(type = UsageEvents.ALARM_RANG, alarmId = "a")
+
+        Thread.sleep(50)
+        assertEquals(0, runBlocking { dao.count() })
+    }
+
     private class FakeUsageEventDao : UsageEventDao {
         val inserted = mutableListOf<UsageEventEntity>()
 
@@ -58,7 +71,7 @@ class UsageEventRecorderAccountTest {
         }
 
         override suspend fun oldest(userId: String, limit: Int): List<UsageEventEntity> =
-            synchronized(inserted) { inserted.filter { it.userId == null || it.userId == userId } }
+            synchronized(inserted) { inserted.filter { it.userId == userId } }
 
         override suspend fun deleteByIds(ids: List<String>) {
             synchronized(inserted) { inserted.removeAll { it.id in ids } }

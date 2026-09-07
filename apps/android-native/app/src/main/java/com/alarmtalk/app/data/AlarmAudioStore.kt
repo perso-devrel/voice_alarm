@@ -863,6 +863,17 @@ class AlarmAudioStore(
         return deleted
     }
 
+    /**
+     * 그 캐시 키의 오디오를 **언제 만들었는가**(없으면 null).
+     *
+     * 교체 표식(`custom_audio_invalidated_at`)과 비교하는 값이다 — 알람 행의 수정 시각은
+     * 쓸 수 없다. 시각만 고치거나 **울리기만 해도**(`markRinging`) 그 값이 앞으로 가는데,
+     * 그때 오디오는 그대로라 낡은 목소리가 새것으로 통과해 버린다.
+     * 파일 mtime 을 쓴다 — `sweepStaleCache` 가 이미 같은 신호로 나이를 잰다.
+     */
+    fun cachedAudioCreatedAtMillis(cacheKey: String): Long? =
+        findCachedFile(cacheKey)?.lastModified()?.takeIf { it > 0L }
+
     private fun findCachedFile(cacheKey: String): File? {
         val safeKey = safeCacheKey(cacheKey)
         return audioDir.listFiles()?.firstOrNull { file ->

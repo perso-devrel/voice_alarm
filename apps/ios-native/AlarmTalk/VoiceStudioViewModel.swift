@@ -1441,10 +1441,17 @@ final class VoiceStudioViewModel: ObservableObject {
             // 소유자 미기록(옛 행)은 이 계정 것으로 본다(안드로이드·잠금 경로와 같은 관용).
             guard record.ownerUserId == nil || record.ownerUserId == owner else { return false }
             guard record.voiceProfileId == profileID else { return false }
-            // 표식보다 나중에 갱신된 행은 그 오디오가 이미 새것이다.
+            // 표식보다 나중에 **만든 오디오**는 이미 새 목소리다.
+            //
+            // ⚠ **행의 `updatedAtMillis` 로 재지 말 것**(리뷰 27차). 시각·이름만 고쳐도,
+            //   심지어 **울리기만 해도**(`markRinging`·`markSnoozed`) 그 값이 앞으로 가는데
+            //   오디오는 그대로다 — 매일 울리는 알람이 스스로 면제를 받아 **지운 사람의
+            //   목소리로 계속 울게 된다.** 오디오 시각을 모르면 강등한다(표식 이전 규칙).
             if let invalidatedBefore {
-                let updated = Date(timeIntervalSince1970: Double(record.updatedAtMillis) / 1000)
-                guard updated < invalidatedBefore else { return false }
+                let createdMillis = record.audioCacheKey?.nilIfBlank
+                    .flatMap { audioCache?.cachedAudioCreatedAtMillis(cacheKey: $0) } ?? 0
+                let created = Date(timeIntervalSince1970: Double(createdMillis) / 1000)
+                guard created < invalidatedBefore else { return false }
             }
             return record.usesCustomMessageVoice
         }

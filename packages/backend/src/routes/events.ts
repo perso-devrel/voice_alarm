@@ -12,6 +12,7 @@ import { UsageEventBatchSchema, type UsageEvent } from '@alarmtalk/shared';
 import type { AppEnv } from '../types';
 import { getDB } from '../lib/db';
 import { jsonError } from '../lib/api-error';
+import { inPlaceholders } from '../lib/caller-ids';
 import { withWriteTransaction } from '../lib/transactions';
 
 const events = new Hono<AppEnv>();
@@ -66,6 +67,26 @@ events.post('/', async (c) => {
     occurred_at: boundOccurredAt(event.occurred_at),
   }));
   await withWriteTransaction(db, async (tx) => {
+    // ⚠ **이미 들어 있는 사건은 아래 보관함 갱신에서 건너뛴다 — 재전송은 멱등이어야 한다.**
+    // `INSERT OR IGNORE` 는 중복 사건을 버리지만 그 뒤의 사실 갱신까지 막지는 않는다.
+    // 재전송은 위에서 `occurred_at` 을 **다시** 자르므로 처음보다 늦은 시각이 실릴 수 있고,
+    // 그러면 그 사이에 들어온 반대 사실(붙임↔해제)을 되돌린다. 넣기와 갱신은 한
+    // 트랜잭션이라, 이미 저장돼 있다 = 그때 갱신도 끝났다는 뜻이다.
+    // ⚠ **조회는 INSERT 앞에 둔다** — 뒤에 두면 방금 넣은 것까지 '이미 있음' 이 되어
+    //   아무 갱신도 돌지 않는다.
+    // ⚠ **사용자 조건을 걸지 않는다** — 남의 id 와 겹치면 INSERT 도 무시되므로 갱신도
+    //   함께 건너뛰는 것이 맞다.
+    const messageEvents = list.filter((event: UsageEvent) => event.message_id);
+    const alreadyStored = new Set<string>();
+    for (let i = 0; i < messageEvents.length; i += INSERT_CHUNK) {
+      const chunk = messageEvents.slice(i, i + INSERT_CHUNK);
+      const found = await tx.execute({
+        sql: `SELECT id FROM usage_events WHERE id IN (${inPlaceholders(chunk)})`,
+        args: chunk.map((event: UsageEvent) => event.id),
+      });
+      for (const row of found.rows) alreadyStored.add(String(row.id));
+    }
+
     for (let i = 0; i < list.length; i += INSERT_CHUNK) {
       const chunk = list.slice(i, i + INSERT_CHUNK);
       const values = chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
@@ -100,6 +121,8 @@ events.post('/', async (c) => {
     // 정리 대상이 된다.
     for (const event of list) {
       if (!event.message_id) continue;
+      // 이미 저장돼 있던 사건이다 — 그때 같은 트랜잭션에서 갱신까지 끝났다.
+      if (alreadyStored.has(event.id)) continue;
       // ⚠ **남기는 것은 도착 순서가 아니라 더 최근 사실이다 — 붙임·해제 양쪽 다.**
       //   오프라인 큐는 며칠 밀릴 수 있고, 같은 문구(=같은 `message_id`)를 두 기기가
       //   함께 쓸 수 있다(캐시 히트가 같은 id 를 돌려준다). 그래서 두 갈래 모두

@@ -892,6 +892,13 @@ class AlarmRepository(
      *   만든 알람 — 즉 새 목소리로 제대로 합성된 것 — 까지 톤으로 깎는다. 서버가 먼저
      *   나가고 기기가 늦게 표식을 읽는 이번 롤아웃에서 실제로 생기는 창이다.
      *   `null` 이면 예전처럼 시각을 보지 않는다(세대를 모르는 옛 신호).
+     *
+     * ⚠ **비교 대상은 오디오를 만든 시각이지 알람 행의 수정 시각이 아니다**(리뷰 27차).
+     *   `updatedAtMillis` 는 시각·이름만 고쳐도 앞으로 가고, **울리기만 해도** 간다
+     *   (`markRinging` 이 그 값을 갱신한다). 그걸 보면 매일 울리는 알람은 스스로 면제를
+     *   받아 **지운 사람의 목소리로 계속 울게 된다** — 표식은 0건 강등에도 확정되므로
+     *   다음 회차에 다시 잡히지도 않는다. 오디오 시각을 모르면(캐시 키가 없거나 파일이
+     *   사라졌으면) **강등한다** — 표식 이전 규칙 그대로다.
      */
     suspend fun degradeCustomMessageAlarmsUsingVoiceProfile(
         voiceProfileId: String,
@@ -903,9 +910,19 @@ class AlarmRepository(
             alarm.voiceProfileId == voiceProfileId &&
                 (allowSystemVoice || !isSystemVoiceId(alarm.voiceProfileId)) &&
                 alarm.usesCustomMessageVoice() &&
-                // 표식보다 나중에 갱신된 행은 그 오디오가 이미 새것이다.
-                (invalidatedBeforeMillis == null || alarm.updatedAtMillis < invalidatedBeforeMillis)
+                // 표식보다 나중에 **만든 오디오**는 이미 새 목소리다.
+                (
+                    invalidatedBeforeMillis == null ||
+                        audioCreatedAtMillis(alarm) < invalidatedBeforeMillis
+                    )
         }
+
+    /** 그 알람이 물고 있는 오디오를 만든 시각. 모르면 0 — 즉 '낡았다' 쪽으로 판정한다. */
+    private fun audioCreatedAtMillis(alarm: AlarmEntity): Long =
+        alarm.audioCacheKey
+            ?.takeIf { it.isNotBlank() }
+            ?.let { alarmAudioStore.cachedAudioCreatedAtMillis(it) }
+            ?: 0L
 
     // 복원·로그아웃과 직렬화한다 — 행을 고치고 OS 예약까지 다시 거는 구간이다([restoreMutex]).
     // **모든 공개 진입점**이 여기로만 들어오므로 락은 이 한 곳에서만 잡는다(Mutex 는 재진입

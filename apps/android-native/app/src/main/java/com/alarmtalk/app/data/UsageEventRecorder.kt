@@ -71,6 +71,12 @@ class UsageEventRecorder(
         // 올라가므로(`UsageEventDao.oldest` 는 null 을 아무에게나 준다) 그게 더 나쁘다.
         val userId = runCatching { currentUserId() }.getOrElse { error ->
             Log.w(AlarmTalkLog.TAG, "Failed to resolve account for usage event type=$type", error)
+            null
+        }?.takeIf { it.isNotBlank() } ?: run {
+            // 던지지 않고 **null 을 돌려주는** 갈래도 같다 — 로그아웃 중이거나(자동 401 로
+            // 세션만 잃은 구간 포함) 저장소에 계정이 없을 때다. 주인 없는 사건은 서버가
+            // `user_id NOT NULL` 로 받으므로 어차피 올바르게 올릴 방법이 없다.
+            Log.i(AlarmTalkLog.TAG, "Skipping usage event without account type=$type")
             return
         }
         scope.launch {

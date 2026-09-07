@@ -83,6 +83,18 @@ struct UsageEventQueueTests {
         #expect(queue.oldest(userID: "u1", limit: 10).first?.alarmID == "a")
     }
 
+    @Test("계정이 없으면 아예 적지 않는다 — 다음에 로그인한 사람 것이 되면 안 된다")
+    func skipsRecordingWithoutAccount() throws {
+        let (queue, url) = makeQueue(currentUserID: nil)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        queue.record(.alarmRang, alarmID: "a")
+
+        // 비동기 쓰기가 없다는 것을 보이려면 잠깐 기다렸다 세는 수밖에 없다.
+        usleep(200_000)
+        #expect(queue.count == 0)
+    }
+
     /// 기록 도중 계정이 바뀌는 상황을 만든다. 큐가 다른 스레드에서 읽을 수 있어 잠근다.
     private final class AccountBox: @unchecked Sendable {
         private let lock = NSLock()

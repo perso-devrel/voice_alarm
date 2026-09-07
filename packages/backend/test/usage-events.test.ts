@@ -119,6 +119,34 @@ describe('POST /events — 사용 기록 배치 수집', () => {
     expect(update!.args[0]).toBe(stored);
   });
 
+  it('이미 저장된 사건은 보관함을 다시 건드리지 않는다 — 재전송은 멱등이다', async () => {
+    const dup = event({ type: 'manual_message_attached', message_id: MESSAGE_ID });
+    // 응답만 못 받고 서버는 커밋했던 배치 — 같은 id 가 이미 들어 있다.
+    mockDB.pushResultFor('SELECT id FROM usage_events', [{ id: dup.id }]);
+
+    const res = await buildApp('user-1').request(jsonReq('POST', '/events', { events: [dup] }));
+
+    expect(res.status).toBe(200);
+    // INSERT 는 그대로 시도한다(OR IGNORE 가 버린다).
+    expect(mockDB.calls.some((c) => c.sql.includes('INSERT OR IGNORE INTO usage_events'))).toBe(true);
+    // 갱신은 없어야 한다 — 다시 자른 시각이 그 사이에 들어온 해제를 되돌린다.
+    expect(mockDB.calls.some((c) => c.sql.includes('SET in_use = 1'))).toBe(false);
+  });
+
+  it('중복 조회는 INSERT 앞에서 돈다 — 뒤로 가면 모든 갱신이 조용히 사라진다', async () => {
+    await buildApp('user-1').request(
+      jsonReq('POST', '/events', {
+        events: [event({ type: 'manual_message_attached', message_id: MESSAGE_ID })],
+      }),
+    );
+    const select = mockDB.calls.findIndex((c) => c.sql.includes('SELECT id FROM usage_events'));
+    const insert = mockDB.calls.findIndex((c) => c.sql.includes('INSERT OR IGNORE INTO usage_events'));
+    expect(select).toBeGreaterThanOrEqual(0);
+    expect(select).toBeLessThan(insert);
+    // 새 사건은 그대로 반영된다 — 위 건너뛰기가 정상 경로를 죽이지 않는다.
+    expect(mockDB.calls.some((c) => c.sql.includes('SET in_use = 1'))).toBe(true);
+  });
+
   it('모르는 종류는 400 — 앱이 서버보다 앞서 나가도 조용히 버려지지 않는다', async () => {
     const res = await buildApp().request(
       jsonReq('POST', '/events', { events: [event({ type: 'something_new' })] }),
