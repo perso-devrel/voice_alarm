@@ -104,9 +104,12 @@ describe('scheduled() — usage_events 보관 기간 정리', () => {
     // 파라미터 바인딩(인라인 금지) + 한 회차에 지우는 양을 묶는다.
     expect(stmt.sql).toContain('occurred_at < ?');
     expect(stmt.sql).toContain('LIMIT ?');
+    // 기기 시계가 미래여도 늙는다 — 서버가 적은 도착 시각으로도 지운다.
+    expect(stmt.sql).toContain('received_at < datetime(?)');
     // ⚠ **문서와 같은 값이어야 한다** — `docs/legal/privacy-policy.ko.md` 3장 표의 1년.
     const expected = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString();
     expect(stmt.args[0]).toBe(expected);
+    expect(stmt.args[1]).toBe(expected);
   });
 });
 

@@ -36,6 +36,20 @@ final class AlarmAppContext {
     /// 기본은 no-op 이라 테스트/콜드부팅에서 안전하다.
     var rearmHolidayOffOneShot: (String) async -> Void = { _ in }
 
+    /// 해제·다시 울림을 사용 기록에 적는 자리(`Shared/AlarmIntents.swift` 가 부른다).
+    ///
+    /// ⚠ **울림 경로라 네트워크를 부르지 않는다** — 로컬 큐에 적기만 한다
+    /// (`docs/spec/usage-events.md` §2). 계정은 큐가 스스로 채운다.
+    /// 클로저로 둔 이유는 나머지 훅과 같다: 테스트가 갈아 끼울 수 있게.
+    var recordUsageEvent: (UsageEventType, LocalAlarmRecord) -> Void = { type, record in
+        UsageEventQueue.shared.record(
+            type,
+            alarmID: record.id,
+            voiceProfileID: record.voiceProfileId,
+            messageID: record.ttsMessageId
+        )
+    }
+
     init(store: LocalAlarmStore) {
         self.store = store
         AlarmAppContext.shared = self

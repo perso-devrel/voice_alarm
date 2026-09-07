@@ -61,6 +61,15 @@ struct StopAlarmIntent: LiveActivityIntent {
         }
         #if ALARMTALK_APP
         if let ctx = AlarmAppContext.shared {
+            // 안드로이드 `RingingService.dismiss` 의 미러 — **누른 자리**에서 적는다.
+            // ⚠ `handleAlarmStopped` **앞**에서 기록을 찾는다: `markStopped` 가
+            //   `.fixed` 공휴일off 갈래의 `alarmKitID` 를 비우므로 그 뒤에는 되짚을 수 없다.
+            // ⚠ 이 기록을 `handleAlarmStopped` 안으로 옮기지 말 것 — 그 함수는 '목록에서
+            //   사라진 알람' 루프도 부른다. 알람을 지우거나 스위치를 끄기만 해도 해제로
+            //   적히게 된다.
+            if let record = ctx.store?.recordByAlarmKitID(uuid.uuidString) {
+                ctx.recordUsageEvent(.alarmDismissed, record)
+            }
             await ctx.handleAlarmStopped(alarmKitIDString: uuid.uuidString)
         }
         #endif
@@ -121,6 +130,12 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
         // 명확한 .deny 일 때만 수행한다. (잘못 종료하면 사용자가 의도한 다시 울림이
         // 사라지는 회귀가 되므로.)
         let ctx = AlarmAppContext.shared
+        // 안드로이드 `RingingService.snooze` 와 같은 자리 — **누른 사실**을 먼저 적는다.
+        // 한도에 걸려 아래 `.deny` 로 종료되더라도 사건은 '다시 울림을 눌렀다' 하나다
+        // (안드로이드도 그때 해제를 따로 적지 않는다).
+        if let record = ctx?.store?.recordByAlarmKitID(uuid.uuidString) {
+            ctx?.recordUsageEvent(.alarmSnoozed, record)
+        }
         let decision = ctx?.snoozeDecision(alarmKitIDString: uuid.uuidString) ?? .unknown
         if decision == .deny {
             // 한도 도달 / 다시 울림 비활성 — Android 처럼 알람을 끝낸다.

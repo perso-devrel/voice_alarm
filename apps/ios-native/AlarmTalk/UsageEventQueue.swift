@@ -54,7 +54,17 @@ final class UsageEventQueue: @unchecked Sendable {
     /// 파일 접근을 직렬화한다. 기록은 아무 스레드에서나 들어온다(울림 서비스·편집기·동기화).
     private let queue = DispatchQueue(label: "com.alarmtalk.usage-events")
 
-    init(fileURL: URL? = nil) {
+    /// 지금 로그인한 계정. **기록기가 스스로 채운다 — 부르는 쪽에 맡기지 않는다.**
+    /// 호출부마다 넘기게 하면 언젠가 빠뜨리고, 빠진 행은 계정이 비어 있어 **다음에
+    /// 로그인한 사람의 기록으로** 올라간다(서버는 토큰의 주인으로 적는다 — 되돌릴 수 없다).
+    /// 안드로이드 `UsageEventRecorder(currentUserId)` 와 같은 자리다.
+    private let currentUserID: @Sendable () -> String?
+
+    init(
+        fileURL: URL? = nil,
+        currentUserID: @escaping @Sendable () -> String? = { KeychainStore.readSession()?.user.id }
+    ) {
+        self.currentUserID = currentUserID
         if let fileURL {
             self.fileURL = fileURL
         } else {
@@ -74,18 +84,22 @@ final class UsageEventQueue: @unchecked Sendable {
         userID: String? = nil,
         occurredAt: Date = Date()
     ) {
-        let event = QueuedUsageEvent(
-            id: UUID().uuidString,
-            type: type,
-            occurredAt: occurredAt,
-            alarmID: alarmID,
-            voiceProfileID: voiceProfileID,
-            messageID: messageID,
-            detail: detail.map { String($0.prefix(120)) },
-            userID: userID
-        )
+        let trimmedDetail = detail.map { String($0.prefix(120)) }
         queue.async { [weak self] in
             guard let self else { return }
+            // 계정은 여기서 정한다. `userID` 는 **덮어쓰기용**이다 — 편집기처럼 메모리에
+            // 든 세션이 더 정확한 자리(Keychain 쓰기가 실패해도 세션은 살아 있다)만 넘긴다.
+            // 키체인 읽기는 여기(백그라운드 큐)에서 한다 — 울림 경로를 기다리게 하지 않는다.
+            let event = QueuedUsageEvent(
+                id: UUID().uuidString,
+                type: type,
+                occurredAt: occurredAt,
+                alarmID: alarmID,
+                voiceProfileID: voiceProfileID,
+                messageID: messageID,
+                detail: trimmedDetail,
+                userID: userID ?? self.currentUserID()
+            )
             var events = self.loadLocked()
             events.append(event)
             if events.count > self.limit {

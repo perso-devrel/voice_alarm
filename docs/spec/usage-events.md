@@ -38,6 +38,11 @@
 - 앱은 **성공한 배치만** 큐에서 지운다. 실패하면 남겨 두고 다음 기회에 다시 보낸다.
 - **일어난 시각(`occurred_at`)과 도착 시각(`received_at`)을 나눈다.** 며칠 늦게 도착해도
   진실은 앞의 값이다.
+- ⚠ **단 미래는 없다.** `occurred_at` 은 기기 시계라 앞서 있을 수 있다 — 서버는 **도착
+  시각을 넘는 값을 도착 시각으로 자른다.** 거부하지 않는 이유는 앱이 2xx 가 아닌 배치를
+  영원히 재전송하기 때문이다(400 은 그 기기의 큐를 영구히 막는다). 안 자르면 두 가지가
+  깨진다 — 미래에 앉은 행이 보관 1년(§6)을 영영 빠져나가고, §5 의 시각 비교가 미래 값에
+  고정돼 **이후의 정당한 기록이 전부 무시된다.** 늦게 도착한 **과거** 값은 그대로 둔다.
 
 ## 4. 계정이 바뀌면 보내지 않는다
 
@@ -45,16 +50,33 @@
 방법이 없다. 큐의 각 행에 남긴 계정을 적어 두고, 그 계정 것만 꺼내 보낸다. 업로드 도중
 세션 세대가 바뀌면 **그 자리에서 멈춘다**.
 
+⚠ **계정을 적는 것은 기록기(큐)이지 부르는 쪽이 아니다.** 호출부마다 계정을 넘기게 하면
+언젠가 빠뜨리고, 빠진 행은 **비어 있는 계정** 이 되어 다음에 로그인한 사람의 기록으로
+올라간다(서버는 토큰의 주인으로 적는다 — 되돌릴 수 없다). 그래서 계정은 기록기가 생성
+시점에 스스로 채운다(안드로이드 `UsageEventRecorder(currentUserId)`, iOS
+`UsageEventQueue(currentUserID:)`). 비어 있는 계정은 **로그아웃 중에 남긴 것**이라는 뜻이다.
+
 ## 5. 사용중/비사용중은 **폰이 판정한다**
 
 그 오디오를 쓰는 알람이 **이 기기에** 남아 있는가 — 이건 기기만 알 수 있다(참조 카운트).
 서버는 그 결과를 받아 적을 뿐이고, 추측하지 않는다. 추측하면 기기마다 다른 사실이 서로를
 덮어쓴다.
 
-- 알람을 지울 때 **오디오가 실제로 지워졌을 때만** `manual_message_released` 를 남긴다.
-  같은 캐시 키를 다른 알람이 아직 쓰면 파일은 그대로이므로 여전히 사용중이다.
-- ⚠ **늦게 도착한 '해제' 가 최신 '사용중' 을 덮지 않는다.** 오프라인 큐는 며칠 밀릴 수
-  있어, 서버가 시각을 비교해 더 최근 사실만 남긴다.
+- 알람을 **지우거나 고쳐서** 그 오디오를 참조하는 알람이 이 기기에 하나도 안 남았을 때
+  `manual_message_released` 를 남긴다. 같은 캐시 키를 다른 알람이 아직 쓰면 여전히 사용중이다.
+  - ⚠ **파일 삭제 여부와는 다르다.** 지울 때는 파일도 사라지지만, **고쳐서 놓아 준
+    오디오는 지우지 않는다** — 30일 sweep 에 맡긴다. 그 사이 같은 문구를 다시 고르면
+    서버 호출도 월 한도 차감도 없이 재사용되기 때문이다(`docs/spec/voice-and-message.md` §8).
+    그러니 언젠가 `in_use = 0` 을 보고 정리하는 것을 만들 때, **오디오가 기기에서
+    사라졌다고 가정하지 말 것.**
+  - ⚠ **문구가 그대로면 적지 않는다.** 오디오만 다시 만든 경우까지 해제로 적으면, 해제와
+    붙임이 같은 시각에 찍혀 순서가 뒤집히고(정렬 키가 시각 하나뿐이다) 아래 비교가 늦게
+    온 해제를 받아들여 **붙어 있는 문구가 비사용중으로** 뒤집힌다.
+- ⚠ **늦게 도착한 기록이 최신 사실을 덮지 않는다 — 붙임·해제 양쪽 다.** 오프라인 큐는
+  며칠 밀릴 수 있고 같은 문구를 두 기기가 함께 쓸 수 있다(캐시 히트가 같은 `message_id`
+  를 돌려준다). 서버가 `in_use_updated_at` 을 비교해 **더 최근 사실만** 남긴다.
+  한쪽에만 가드를 두면 뒤늦게 도착한 '붙임' 이 최신 '해제' 를 되돌려 그 문구가 영원히
+  사용중으로 남는다.
 
 ## 6. 보관 기간
 
@@ -63,6 +85,10 @@
 ⚠ **이 숫자는 두 곳에 있고 반드시 같아야 한다** — 개인정보 처리방침 3장 표와 코드 상수
 (`USAGE_EVENT_RETENTION_DAYS`). 문서와 코드가 갈라지면 어느 쪽이 진실인지 아무도 모른다.
 회귀 테스트가 그 값을 고정한다(`test/scheduled-prune.test.ts`).
+
+⚠ **계정을 지우면 그 계정의 기록도 함께 지운다 — 1년을 기다리지 않는다.** `usage_events`
+는 `users` 의 FK 자식이라, 파기에서 빼먹으면 `DELETE FROM users` 가 FK 로 던져 **탈퇴가
+통째로 롤백된다**(마지막 기록이 1년을 채울 때까지 계정을 지울 수 없다).
 
 ## 구현 지도
 
@@ -73,5 +99,9 @@
 | 전송 | `sync/UsageEventUploadWorker.kt` | `UsageEventUploader.swift` | `routes/events.ts` |
 | 울림 기록 | `alarm/RingingService.kt` 의 `startRinging` | `AlarmKitViewModel.swift` 의 `.alerting` 진입 | — |
 | 알람 생성·수정·삭제 | `data/AlarmRepository.kt` 의 `recordAlarmEvent` | `Views/Editor/AlarmEditorSheet.swift` 의 `recordSaveUsageEvent`, `AlarmKitViewModel.deleteLocalAlarm` | — |
-| 사용중/비사용중 | 같은 두 자리(참조 카운트 판정 뒤) | 같은 두 자리 | `message_library.in_use` |
+| 사용중/비사용중 | 붙임 `recordAlarmEvent` / 놓음 `deleteAlarmLocked`·`updateAlarm`(`manualMessageReleasedByEdit`) | 붙임·놓음 모두 `AlarmEditorSheet.recordSaveUsageEvent`, 삭제는 `AlarmKitViewModel.deleteLocalAlarm` | `message_library.in_use` |
+| 해제·다시 울림 | `alarm/RingingService.kt` 의 `dismiss`/`snooze` | `Shared/AlarmIntents.swift` 의 `StopAlarmIntent`/`SnoozeAlarmIntent` — **누른 자리**에서 적는다(`handleAlarmStopped` 는 알람을 지우거나 끌 때도 불린다) | — |
+| 남긴 계정 | `data/UsageEventRecorder.kt` 의 `currentUserId` | `UsageEventQueue.swift` 의 `currentUserID` | — |
+| 미래 시각 자르기 | — | — | `routes/events.ts` 의 `boundOccurredAt` |
 | 보관 기간 | — | — | `index.ts` 의 `USAGE_EVENT_RETENTION_DAYS` |
+| 계정 파기 시 삭제 | — | — | `lib/account-deletion.ts` 의 `purgeUserAccount` |

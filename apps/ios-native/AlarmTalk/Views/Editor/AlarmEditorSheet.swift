@@ -2353,25 +2353,30 @@ struct AlarmEditorSheet: View {
             if let alias = reusableTtsInputAlias(listenerTitle: currentListenerTitle),
                applyReusedTtsAudio(alias) {
                 // 재사용 성공 — 서버 호출을 건너뛴다.
-            } else if let quotaBlock = await manualQuotaBlockIfExhausted() {
-                // ⚠ **보내기 전에 남은 횟수를 한 번 더 본다**(2026-09-07 지시).
-                //    순서는 **① 로컬 확인 → ② 남은 횟수 확인 → ③ 생성 요청** 이다.
-                //    바로 위 재사용이 실패했다 = 이 폰에 없다 = 서버를 불러야 한다 =
-                //    차감 대상이다. 한도가 0인데 요청부터 보내 429 를 받을 이유가 없다.
-                //    강제는 서버 예약이 하고(안드로이드와 같다), 이건 왕복을 줄이는 것뿐이라
-                //    조회에 실패하면 그냥 진행한다.
-                validationAlert = quotaBlock
-                return
             } else if !NetworkMonitor.shared.isOnline {
                 // ⚠ **오프라인이면 요청을 보내 보지 않는다**(2026-09-06 지시).
                 // 바로 위 재사용이 실패했다 = 이 문구의 오디오가 **이 기기에 없다**.
                 // 서버에 있든 없든 지금은 가져올 수 없으므로, 왕복을 기다렸다 실패를
                 // 보여 주는 대신 그 자리에서 이유를 말한다(안드로이드
                 // `SaveBlockReason.OFFLINE_NEW_MESSAGE` 와 같은 판정·같은 문구).
+                //
+                // ⚠ **한도 조회보다 위여야 한다.** 아래 `manualQuotaBlockIfExhausted` 는
+                // 네트워크를 부른다 — 순서가 뒤집히면 스펙이 "요청도 보내지 않는다" 라고
+                // 적은 상태에서 요청이 나가고, 소켓이 매달리면 저장 버튼이 멈춘 것처럼 보인다.
                 validationAlert = ValidationAlertContent(
                     title: "연결이 필요해요",
                     message: "이 문구의 음성이 아직 이 기기에 없어요. 연결되면 다시 저장해 주세요."
                 )
+                return
+            } else if let quotaBlock = await manualQuotaBlockIfExhausted() {
+                // ⚠ **보내기 전에 남은 횟수를 한 번 더 본다**(2026-09-07 지시).
+                //    순서는 **① 로컬 확인 → (오프라인이면 위에서 막는다 — 요청 없음) →
+                //    ② 남은 횟수 확인 → ③ 생성 요청** 이다.
+                //    바로 위 재사용이 실패했다 = 이 폰에 없다 = 서버를 불러야 한다 =
+                //    차감 대상이다. 한도가 0인데 요청부터 보내 429 를 받을 이유가 없다.
+                //    강제는 서버 예약이 하고(안드로이드와 같다), 이건 왕복을 줄이는 것뿐이라
+                //    조회에 실패하면 그냥 진행한다.
+                validationAlert = quotaBlock
                 return
             } else {
             let prepared = await voiceStudio.generateTTS(
@@ -2634,7 +2639,7 @@ struct AlarmEditorSheet: View {
             await alarmKit.cancelScheduledAlarm(record: existing)
         }
         rememberChoicesUsed(merged)
-        recordSaveUsageEvent(record: merged, isNew: existing == nil)
+        recordSaveUsageEvent(record: merged, previous: existing)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         onSchedulingDidFinish()
         return true
@@ -2645,11 +2650,11 @@ struct AlarmEditorSheet: View {
     /// 직접 입력 문구가 붙었으면 그 문구가 이 기기에서 **사용중**이 됐다고도 남긴다.
     /// 판정은 저장 갈래와 같은 모양이다(랜덤도 테마 클립도 아닌데 문구 id 가 있으면 직접 입력).
     /// 안드로이드 `AlarmRepository.recordAlarmEvent` 와 같은 규칙이다.
-    private func recordSaveUsageEvent(record: LocalAlarmRecord, isNew: Bool) {
+    private func recordSaveUsageEvent(record: LocalAlarmRecord, previous: LocalAlarmRecord?) {
         let userID = auth.session?.user.id
         let queue = UsageEventQueue.shared
         queue.record(
-            isNew ? .alarmCreated : .alarmUpdated,
+            previous == nil ? .alarmCreated : .alarmUpdated,
             alarmID: record.id,
             voiceProfileID: record.voiceProfileId,
             messageID: record.ttsMessageId,
@@ -2666,6 +2671,28 @@ struct AlarmEditorSheet: View {
                 messageID: record.ttsMessageId,
                 userID: userID
             )
+        }
+        // 고쳐서 앞 문구를 놓았고, 그 오디오를 쓰는 알람이 이 기기에 하나도 안 남았으면
+        // '비사용중' 으로 적는다. 안 적으면 그 문구가 서버에서 영원히 사용중으로 남는다
+        // (안드로이드 `AlarmRepository.updateAlarm` 의 같은 갈래).
+        //
+        // ⚠ **문구가 같으면 적지 않는다.** 오디오만 다시 만든 경우까지 적으면 해제와
+        //   붙임이 같은 시각에 찍혀 순서가 뒤집히고, 붙어 있는 문구가 비사용중이 된다.
+        // ⚠ **파일은 지우지 않는다** — 30일 sweep 이 회수하고, 그 사이 같은 문구를 다시
+        //   고르면 서버 호출도 월 한도 차감도 없이 재사용된다.
+        if let previous,
+           let releasedMessageID = previous.ttsMessageId?.nilIfBlank,
+           releasedMessageID != record.ttsMessageId?.nilIfBlank {
+            let previousKey = previous.audioCacheKey?.nilIfBlank
+            if previousKey == nil || store.countByAudioCacheKey(previousKey!) == 0 {
+                queue.record(
+                    .manualMessageReleased,
+                    alarmID: previous.id,
+                    voiceProfileID: previous.voiceProfileId,
+                    messageID: releasedMessageID,
+                    userID: userID
+                )
+            }
         }
     }
 

@@ -678,8 +678,13 @@ CAF 를 직접 쓰고 `AVChannelLayoutKey` 를 반드시 넣는다(없으면 파
 
 ### 저장할 때의 순서
 
-**① 로컬 확인 → ② 남은 횟수 확인 → ③ 생성 요청.** 앱은 폰에 있으면 서버를 아예 부르지
-않고, 없으면 **보내기 전에** 남은 횟수를 그 자리에서 조회해 0이면 알럿으로 막는다.
+**① 로컬 확인 → ② 오프라인이면 여기서 막는다(요청 없음) → ③ 남은 횟수 확인 →
+④ 생성 요청.** 앱은 폰에 있으면 서버를 아예 부르지 않고, 없으면 **보내기 전에** 남은
+횟수를 그 자리에서 조회해 0이면 알럿으로 막는다.
+
+⚠ **오프라인 갈래는 횟수 조회보다 위다.** 그 조회 자체가 네트워크를 부르므로, 순서가
+뒤집히면 "요청도 보내지 않는다"(위 표)가 깨지고 소켓이 매달릴 때 저장 버튼이 멈춘 것처럼
+보인다. iOS 가 이 순서를 한 번 뒤집었다(2026-09-07 리뷰).
 
 ⚠ **강제는 서버 하나다.** 앱의 사전 확인은 불필요한 왕복을 줄이는 것뿐이라, 조회가
 실패하면 그냥 진행하고 서버가 429(`MANUAL_TTS_QUOTA_EXCEEDED`)로 막는다 — 다른 기기가 그
@@ -752,6 +757,7 @@ CAF 를 직접 쓰고 `AVChannelLayoutKey` 를 반드시 넣는다(없으면 파
 | 테마 선택은 **독립 상태**(음원 파생 금지) | `AlarmEditorState.selectedBucket` | `AlarmEditorSheet.selectedBucketDraft` | — |
 | 저장된 알람이 기기 언어를 따라감 | `sync/StockClipLanguageRebinder.kt` | `StockClipLanguageRebinder.swift` | — |
 | 직접 입력 한도 차감 | `ui/editor/AlarmEditorScreen.kt` 의 저장 경로(로컬 확인 → 횟수 확인) | `Views/Editor/AlarmEditorSheet.swift` 의 `manualQuotaBlockIfExhausted` | `routes/tts.ts` 의 `reserveManualTtsQuota`(캐시 히트·미스 양쪽) |
+| 오프라인이면 **요청 없이** 막는다 | `SaveBlockReason.OFFLINE_NEW_MESSAGE` — 저장 버튼이 `saveEditor()` **전에** 판정 | `AlarmEditorSheet.saveFlow` 의 오프라인 갈래는 `manualQuotaBlockIfExhausted` **앞** | — |
 
 ## 검증 방법
 

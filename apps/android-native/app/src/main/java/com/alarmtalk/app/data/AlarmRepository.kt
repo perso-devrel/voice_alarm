@@ -411,6 +411,24 @@ class AlarmRepository(
         ensureDynamicVoiceRefreshScheduled(updated)
         Log.i(TAG, "Updated local alarm id=$alarmId enabled=${updated.enabled} fireAt=${updated.fireAtMillis}")
         recordAlarmEvent(UsageEvents.ALARM_UPDATED, updated)
+        // 편집으로 앞 문구를 놓았고, 그 오디오를 쓰는 알람이 이 기기에 하나도 안 남았으면
+        // '비사용중' 으로 적는다. 안 적으면 그 문구가 서버에서 **영원히 사용중**으로 남는다.
+        //
+        // ⚠ **파일은 지우지 않는다.** 30일 sweep 이 회수하고, 그 사이 같은 문구를 다시
+        //   고르면 서버 호출도 월 한도 차감도 없이 재사용된다(`manualAudioReadyLocally`).
+        //   여기서 지우면 되돌아올 때 한도를 깎게 된다.
+        // ⚠ **충돌 알람 삭제 뒤**여야 한다 — 그 행이 같은 캐시 키를 들고 있으면 참조로 세어진다.
+        manualMessageReleasedByEdit(current, updated)?.let { releasedMessageId ->
+            val previousCacheKey = current.audioCacheKey?.takeIf { it.isNotBlank() }
+            if (previousCacheKey == null || alarmDao.countByAudioCacheKey(previousCacheKey) == 0) {
+                usageEvents?.record(
+                    type = UsageEvents.MANUAL_MESSAGE_RELEASED,
+                    alarmId = current.id,
+                    voiceProfileId = current.voiceProfileId,
+                    messageId = releasedMessageId,
+                )
+            }
+        }
         updated
     }
 
@@ -1916,6 +1934,20 @@ internal fun nextWeatherVariantState(
         resolvedAtMillis = currentResolvedAtMillis,
     )
     else -> WeatherVariantState(index = draftIndex, resolvedAtMillis = null)
+}
+
+/**
+ * 편집으로 **놓여난** 직접 입력 문구 id. 참조 카운트를 세기 전 단계다.
+ *
+ * ⚠ **같은 문구가 그대로 붙어 있으면 null 이다.** 문구는 그대로인데 오디오만 다시 만든
+ * 경우까지 해제로 적으면, 해제와 붙임이 **같은 밀리초**에 찍힐 수 있고(둘은 각각 기록된다)
+ * 업로드 정렬은 시각 하나뿐이라 순서가 뒤집힌다. 그때 서버의 `in_use_updated_at <= ?` 가
+ * 늦게 온 해제를 이기게 해서, **붙어 있는 문구가 비사용중으로** 뒤집힌다.
+ */
+internal fun manualMessageReleasedByEdit(current: AlarmEntity, updated: AlarmEntity): String? {
+    val previousMessageId = current.ttsMessageId?.takeIf { it.isNotBlank() } ?: return null
+    if (previousMessageId == updated.ttsMessageId) return null
+    return previousMessageId
 }
 
 /**

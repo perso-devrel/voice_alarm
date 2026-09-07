@@ -325,11 +325,18 @@ async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext)
   try {
     const cutoff = new Date(now.getTime() - USAGE_EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000)
       .toISOString();
+    // ⚠ `received_at` 도 함께 본다. `occurred_at` 은 기기 시계라(수집 시 도착 시각으로
+    // 자르지만) 그 자르기 이전에 들어온 행이 미래에 앉아 있을 수 있다 — 서버가 적은
+    // 도착 시각으로도 늙게 해서 **어떤 행도 1년을 넘기지 못하게** 한다.
+    // `datetime(?)` 이 필요하다: `received_at` 은 DDL 기본값이라 `YYYY-MM-DD HH:MM:SS`
+    // (공백 구분, `Z` 없음)로 저장되고, ISO 문자열과 그대로 비교하면 경계에서 어긋난다.
     await db.execute({
       sql: `DELETE FROM usage_events WHERE id IN (
-              SELECT id FROM usage_events WHERE occurred_at < ? LIMIT ?
+              SELECT id FROM usage_events
+               WHERE occurred_at < ? OR received_at < datetime(?)
+               LIMIT ?
             )`,
-      args: [cutoff, USAGE_EVENT_PRUNE_BATCH],
+      args: [cutoff, cutoff, USAGE_EVENT_PRUNE_BATCH],
     });
   } catch (err) {
     captureCron('scheduled.usage_event_prune', err);

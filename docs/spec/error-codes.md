@@ -53,6 +53,11 @@
 2. **공용 표** — `ApiErrorMessages.kt` / `APIErrorMessages.swift`. 아무도 안 맡은 코드를 받는다.
 3. **폴백** — 서버 문장(한국어면) 또는 화면이 준 기본 문장.
 
+⚠ **공용 표는 '아무 데서나' 가 아니라 정해진 자리에서 불린다.** 일반 오류 헬퍼
+(`userFacingError` / `userFacingErrorMessage`)는 코드를 보지 않는다 — 표를 부르는 자리는
+**로그인 · TTS 생성 · 목소리 등록 · 목소리 승격** 넷이고, 두 앱이 같은 넷이다. 여기를
+늘릴 때는 **양쪽을 같이** 늘린다(한쪽만 늘리면 같은 실패가 두 앱에서 다르게 읽힌다).
+
 ⚠ **모든 코드에 문구를 둘 필요는 없다.** `INVALID_JSON` 처럼 사용자가 할 수 있는 게 없는
 것은 비워 두고 폴백에 맡긴다 — 억지로 채우면 알아들을 수 없는 말만 늘어난다.
 
@@ -85,3 +90,4 @@
 | 응답에서 코드 꺼내기 | `network/ApiErrors.kt` 의 `apiErrorCode` | `APIError.serverErrorCode` | — |
 | 코드 → 문구(공용) | `network/ApiErrorMessages.kt` | `APIErrorMessages.swift` | — |
 | 코드 → 문구(목소리 화면) | `ui/main/MainViewModelVoiceActions.kt` | `VoiceStudioViewModel+ErrorMapping.swift` | — |
+| 코드 → 문구(로그인 화면) | `ui/main/MainViewModelAuthActions.kt` 의 login 갈래 | `AuthViewModel.loginErrorMessage` | — |

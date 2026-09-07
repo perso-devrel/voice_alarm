@@ -73,7 +73,20 @@ describe('POST /events — 사용 기록 배치 수집', () => {
       '2026-09-06T21:00:00.000Z',
       MESSAGE_ID,
       'user-1',
+      '2026-09-06T21:00:00.000Z',
     ]);
+  });
+
+  it('붙임도 더 최근 사실을 덮지 않는다 — 다른 기기의 최신 해제를 되돌리면 안 된다', async () => {
+    await buildApp('user-1').request(
+      jsonReq('POST', '/events', {
+        events: [event({ type: 'manual_message_attached', message_id: MESSAGE_ID })],
+      }),
+    );
+    const update = mockDB.calls.find((c) => c.sql.includes('SET in_use = 1'));
+    // 해제와 **같은** 가드가 있어야 한다. 한쪽만 막으면 뒤늦게 도착한 붙임이 최신 해제를
+    // 되돌려 그 문구가 영원히 '사용중' 으로 남는다.
+    expect(update!.sql).toContain('in_use_updated_at <= ?');
   });
 
   it('해제는 더 최근 사실을 덮지 않는다 — 늦게 도착한 큐가 사용중을 되돌리면 안 된다', async () => {
@@ -86,6 +99,24 @@ describe('POST /events — 사용 기록 배치 수집', () => {
     expect(update).toBeDefined();
     // 시각 비교 가드가 있어야 한다(오프라인 큐는 며칠 밀릴 수 있다).
     expect(update!.sql).toContain('in_use_updated_at <= ?');
+  });
+
+  it('미래 시각은 도착 시각으로 자른다 — 보관 1년을 빠져나가지 못한다', async () => {
+    const future = new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000).toISOString();
+    await buildApp('user-1').request(
+      jsonReq('POST', '/events', {
+        events: [
+          event({ type: 'manual_message_attached', message_id: MESSAGE_ID, occurred_at: future }),
+        ],
+      }),
+    );
+    const insert = mockDB.calls.find((c) => c.sql.includes('INSERT OR IGNORE INTO usage_events'));
+    const stored = insert!.args[3] as string; // (id, user_id, type, occurred_at, ...)
+    expect(stored).not.toBe(future);
+    expect(Date.parse(stored)).toBeLessThanOrEqual(Date.now());
+    // 보관함 시각에도 **자른 값**이 박혀야 한다 — 미래 값이 남으면 이후 기록이 전부 무시된다.
+    const update = mockDB.calls.find((c) => c.sql.includes('SET in_use = 1'));
+    expect(update!.args[0]).toBe(stored);
   });
 
   it('모르는 종류는 400 — 앱이 서버보다 앞서 나가도 조용히 버려지지 않는다', async () => {

@@ -47,7 +47,24 @@ events.post('/', async (c) => {
     );
   }
 
-  const list = parsed.data.events;
+  // ⚠ **`occurred_at` 은 기기 시계다 — 미래로 가 있을 수 있다.** 그대로 두면 두 가지가
+  // 깨진다: 보관 1년 정리(`index.ts` 의 `occurred_at < cutoff`)를 영원히 빠져나가고,
+  // 아래 `in_use_updated_at` 비교가 미래 값에 고정돼 **이후의 정당한 기록이 전부 무시된다.**
+  // 거부하지 않고 **다듬는다** — 앱은 2xx 가 아니면 큐를 지우지 않고 계속 재전송하므로
+  // 400 은 그 기기의 큐를 영구히 막는다(CLAUDE.md 「거부와 다듬기를 구분한다」).
+  // 늦게 도착한 **과거** 값은 그대로 둔다 — 그게 실제로 일어난 시각이다.
+  const receivedAtMs = Date.now();
+  const boundOccurredAt = (value: string): string => {
+    const ms = Date.parse(value);
+    // 파싱 불가는 스키마가 이미 막지만, 뚫리면 도착 시각으로 굳힌다.
+    if (Number.isNaN(ms)) return new Date(receivedAtMs).toISOString();
+    // toISOString 이 오프셋 표기(+09:00)까지 UTC 로 굳혀, 문자열로 비교하는 정리 쿼리와 맞춘다.
+    return new Date(Math.min(ms, receivedAtMs)).toISOString();
+  };
+  const list: UsageEvent[] = parsed.data.events.map((event: UsageEvent) => ({
+    ...event,
+    occurred_at: boundOccurredAt(event.occurred_at),
+  }));
   await withWriteTransaction(db, async (tx) => {
     for (let i = 0; i < list.length; i += INSERT_CHUNK) {
       const chunk = list.slice(i, i + INSERT_CHUNK);
@@ -78,17 +95,26 @@ events.post('/', async (c) => {
     // 정리 대상이 된다.
     for (const event of list) {
       if (!event.message_id) continue;
+      // ⚠ **남기는 것은 도착 순서가 아니라 더 최근 사실이다 — 붙임·해제 양쪽 다.**
+      //   오프라인 큐는 며칠 밀릴 수 있고, 같은 문구(=같은 `message_id`)를 두 기기가
+      //   함께 쓸 수 있다(캐시 히트가 같은 id 를 돌려준다). 그래서 두 갈래 모두
+      //   `in_use_updated_at` 을 비교해 **더 최근 사실만** 남긴다 — 한쪽만 막으면
+      //   뒤늦게 도착한 '붙임' 이 최신 '해제' 를 되돌린다.
       if (event.type === 'manual_message_attached') {
         await tx.execute({
           sql: `UPDATE message_library
                    SET in_use = 1, in_use_updated_at = ?, last_used_at = ?
-                 WHERE message_id = ? AND user_id = ?`,
-          args: [event.occurred_at, event.occurred_at, event.message_id, userPk],
+                 WHERE message_id = ? AND user_id = ?
+                   AND (in_use_updated_at IS NULL OR in_use_updated_at <= ?)`,
+          args: [
+            event.occurred_at,
+            event.occurred_at,
+            event.message_id,
+            userPk,
+            event.occurred_at,
+          ],
         });
       } else if (event.type === 'manual_message_released') {
-        // ⚠ **뒤늦게 도착한 '해제' 가 최신 '사용중' 을 덮지 않게 한다.** 오프라인 큐는
-        //   며칠 밀릴 수 있고, 그 사이 다른 기기에서 같은 문구를 다시 붙였을 수 있다.
-        //   시각을 비교해 **더 최근 사실만** 남긴다.
         await tx.execute({
           sql: `UPDATE message_library
                    SET in_use = 0, in_use_updated_at = ?

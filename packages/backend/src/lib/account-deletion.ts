@@ -329,6 +329,14 @@ export async function purgeUserAccount(
       sql: `DELETE FROM paid_voice_retention WHERE user_id IN (?, ?)`,
       args: userIds,
     });
+    // 사용 기록도 users 의 FK 자식이다(`usage_events.user_id REFERENCES users(id)`).
+    // 안 지우면 아래 `DELETE FROM users` 가 FK 로 던져 **탈퇴가 통째로 롤백된다** —
+    // 마지막 기록이 1년을 채울 때까지 계정을 지울 수 없게 된다. 기록은 식별자만 담으므로
+    // 남겨 둘 이유도 없다(파기 범위에 포함).
+    await tx.execute({
+      sql: `DELETE FROM usage_events WHERE user_id IN (?, ?)`,
+      args: userIds,
+    });
     // 인증 코드(이메일 키)는 users 행 삭제 전에 이메일을 역참조해 지운다.
     await tx.execute({
       sql: `DELETE FROM email_verification_codes

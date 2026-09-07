@@ -1417,6 +1417,11 @@ tts.post('/generate', async (c) => {
               { manual_quota: { limit: reservation.limit, used: reservation.used, remaining: 0 } },
             );
           }
+          // 히트로 예약한 횟수도 되돌릴 수 있어야 한다 — 아래 catch 의 환불이 이 두 값을
+          // 본다. 여기 뒤에도 던질 수 있는 DB 쓰기가 남아 있어(바로 아래 `last_used_at`),
+          // 안 적어 두면 **오디오는 못 받았는데 횟수만 깎인 채** 끝난다.
+          manualQuotaPoolKey = pool.poolKey;
+          manualQuotaMonth = reservation.month;
           manualQuotaResult = {
             used: reservation.used,
             limit: reservation.limit,
